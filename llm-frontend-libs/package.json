@@ -19,13 +19,17 @@
   "repository": "github:grafana/grafana-experimental",
   "author": "Grafana Labs <team@grafana.com> (https://grafanap.com)",
   "license": "Apache-2.0",
-  "dependencies": {},
+  "dependencies": {
+    "@emotion/css": "^11.5.0",
+    "react": "^17.0.2"
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.13.12",
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
     "@grafana/tsconfig": "^1.0.0-rc1",
     "@grafana/ui": "next",
+    "@grafana/data": "next",
     "@rollup/plugin-commonjs": "11.0.2",
     "@rollup/plugin-json": "4.0.3",
     "@rollup/plugin-node-resolve": "7.1.1",
@@ -35,6 +39,7 @@
     "@types/jest": "27.0.3",
     "@types/node": "10.14.1",
     "@types/react": "16.8.16",
+    "@types/react-select": "4.0.13",
     "@types/react-test-renderer": "^17.0.1",
     "@types/rollup-plugin-visualizer": "2.6.0",
     "@types/sinon": "^7.5.2",
