@@ -10,7 +10,7 @@ interface StackProps {
   gap?: number;
 }
 
-const Stack: React.FC<StackProps> = ({ children, ...props }) => {
+export const Stack: React.FC<StackProps> = ({ children, ...props }) => {
   const theme = useTheme2();
   const styles = useStyles(theme, props);
 
@@ -26,5 +26,3 @@ const useStyles = stylesFactory((theme: GrafanaTheme2, props: StackProps) => ({
     gap: theme.spacing(props.gap ?? 2),
   }),
 }));
-
-export default Stack;

@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Experimental Grafana components and APIs",
   "main": "index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "dev": "watch 'npm run bundle' ./src",
     "build": "yarn clean && yarn typecheck && yarn bundle",
@@ -28,8 +29,8 @@
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
     "@grafana/tsconfig": "^1.0.0-rc1",
-    "@grafana/ui": "next",
-    "@grafana/data": "next",
+    "@grafana/ui": "canary",
+    "@grafana/data": "canary",
     "@rollup/plugin-commonjs": "11.0.2",
     "@rollup/plugin-json": "4.0.3",
     "@rollup/plugin-node-resolve": "7.1.1",

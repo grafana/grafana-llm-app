@@ -1,14 +1,22 @@
-import { Button } from '@grafana/ui';
-import React from 'react';
-import Stack from './Stack';
+import React from "react";
+import { Button } from "@grafana/ui";
+import { Stack } from "./Stack";
 
 interface EditorListProps<T> {
   items: T[];
-  renderItem: (item: Partial<T>, onChangeItem: (item: T) => void, onDeleteItem: () => void) => React.ReactElement;
+  renderItem: (
+    item: Partial<T>,
+    onChangeItem: (item: T) => void,
+    onDeleteItem: () => void
+  ) => React.ReactElement;
   onChange: (items: Array<Partial<T>>) => void;
 }
 
-function EditorList<T>({ items, renderItem, onChange }: EditorListProps<T>) {
+export function EditorList<T>({
+  items,
+  renderItem,
+  onChange,
+}: EditorListProps<T>) {
   const onAddItem = () => {
     const newItems = [...items, {}];
 
@@ -38,9 +46,13 @@ function EditorList<T>({ items, renderItem, onChange }: EditorListProps<T>) {
           )}
         </div>
       ))}
-      <Button onClick={onAddItem} variant="secondary" size="md" icon="plus" aria-label="Add" />
+      <Button
+        onClick={onAddItem}
+        variant="secondary"
+        size="md"
+        icon="plus"
+        aria-label="Add"
+      />
     </Stack>
   );
 }
-
-export default EditorList;

@@ -1,6 +1,6 @@
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Select, stylesFactory, useTheme2, ContainerProps, SelectContainer as BaseSelectContainer,  SelectCommmonProps } from '@grafana/ui';
+import { Select, stylesFactory, useTheme2, SelectContainerProps, SelectContainer as BaseSelectContainer,  SelectCommonProps } from '@grafana/ui';
 import React, { useState } from 'react';
 import { GroupTypeBase } from 'react-select';
 
@@ -8,7 +8,7 @@ interface InlineSelectProps<T> extends SelectCommonProps<T> {
   label?: string;
 }
 
-function InlineSelect<T>({ label: labelProp, ...props }: InlineSelectProps<T>) {
+export function InlineSelect<T>({ label: labelProp, ...props }: InlineSelectProps<T>) {
   const theme = useTheme2();
   const [id] = useState(() => Math.random().toString(16).slice(2));
   const styles = getSelectStyles(theme);
@@ -32,10 +32,8 @@ function InlineSelect<T>({ label: labelProp, ...props }: InlineSelectProps<T>) {
   );
 }
 
-export default InlineSelect;
-
 const SelectContainer = <Option, isMulti extends boolean, Group extends GroupTypeBase<Option>>(
-  props: ContainerProps<Option, isMulti, Group>
+  props: SelectContainerProps<Option, isMulti, Group>
 ) => {
   const { children } = props;
 
@@ -50,7 +48,7 @@ const SelectContainer = <Option, isMulti extends boolean, Group extends GroupTyp
 };
 
 const ValueContainer = <Option, isMulti extends boolean, Group extends GroupTypeBase<Option>>(
-  props: ContainerProps<Option, isMulti, Group>
+  props: SelectContainerProps<Option, isMulti, Group>
 ) => {
   const { className, children } = props;
   const theme = useTheme2();
