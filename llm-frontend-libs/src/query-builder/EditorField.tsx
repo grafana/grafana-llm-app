@@ -13,7 +13,7 @@ interface EditorFieldProps {
   tooltip?: PopoverContent;
 }
 
-const EditorField: React.FC<EditorFieldProps> = (props) => {
+export const EditorField: React.FC<EditorFieldProps> = (props) => {
   const { label, optional, tooltip, children } = props;
 
   const theme = useTheme2();
@@ -43,8 +43,6 @@ const EditorField: React.FC<EditorFieldProps> = (props) => {
     </div>
   );
 };
-
-export default EditorField;
 
 const getStyles = stylesFactory((theme: GrafanaTheme2, props: EditorFieldProps) => {
   return {

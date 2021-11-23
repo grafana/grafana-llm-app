@@ -1,4 +1,1 @@
-
-export const foo = (a: number) => {
-    return a +1;
-}
+export * from './query-builder'

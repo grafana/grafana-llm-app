@@ -5,7 +5,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 
 interface InputGroupProps {}
 
-const InputGroup: React.FC<InputGroupProps> = ({ children }) => {
+export const InputGroup: React.FC<InputGroupProps> = ({ children }) => {
   const theme = useTheme2();
   const styles = useStyles(theme);
 
@@ -50,5 +50,3 @@ const useStyles = stylesFactory((theme: GrafanaTheme2) => ({
     },
   }),
 }));
-
-export default InputGroup;

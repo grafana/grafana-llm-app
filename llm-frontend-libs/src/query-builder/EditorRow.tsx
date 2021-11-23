@@ -1,14 +1,13 @@
-import { css } from '@emotion/css';
-import { GrafanaTheme2 } from '@grafana/data';
-import { stylesFactory, useTheme2 } from '@grafana/ui';
-import React from 'react';
-import Stack from './Stack';
+import { css } from "@emotion/css";
+import { GrafanaTheme2 } from "@grafana/data";
+import { useStyles2 } from "@grafana/ui";
+import React from "react";
+import { Stack } from "./Stack";
 
 interface EditorRowProps {}
 
-const EditorRow: React.FC<EditorRowProps> = ({ children }) => {
-  const theme = useTheme2();
-  const styles = getStyles(theme);
+export const EditorRow: React.FC<EditorRowProps> = ({ children }) => {
+  const styles = useStyles2(getStyles);
 
   return (
     <div className={styles.root}>
@@ -17,9 +16,7 @@ const EditorRow: React.FC<EditorRowProps> = ({ children }) => {
   );
 };
 
-export default EditorRow;
-
-const getStyles = stylesFactory((theme: GrafanaTheme2) => {
+const getStyles = (theme: GrafanaTheme2) => {
   return {
     root: css({
       padding: theme.spacing(1),
@@ -27,4 +24,4 @@ const getStyles = stylesFactory((theme: GrafanaTheme2) => {
       borderRadius: theme.shape.borderRadius(1),
     }),
   };
-});
+};
