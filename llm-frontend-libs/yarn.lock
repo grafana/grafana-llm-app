@@ -1144,13 +1144,13 @@
   resolved "https://npm.pkg.github.com/download/@grafana/aws-sdk/0.0.3/716ea62353eebdae8ce198b95aa6f4fb9868b3c0f8b6db84c0b7e2be9e751fbf#bc632c6c77971a5474acbe45847420503679fc75"
   integrity sha512-V0PJLk+oU1C33knurXp8BkT5N2ctDu9b21zpK16vkJAs5aOiH/OaOhQ/IP9ipxYhB+b9PFjr8RXagV/8XJ8xwg==
 
-"@grafana/data@8.4.0-pre-eaf46600c4", "@grafana/data@canary":
-  version "8.4.0-pre-eaf46600c4"
-  resolved "https://npm.pkg.github.com/download/@grafana/data/8.4.0-pre-eaf46600c4/79183d8482251204c76d9a69478c04da728fa3bde9b9689715f9722a96892a0e#47d8584634b31525c8830494bf6f51eed541b6e3"
-  integrity sha512-bh+1K2fkdgXDqvXaviWKnoqq908cLTvN9XUsNs9isJqO4QvbaYd4Whr/BGZNjhrc9Yjbv08Wwl6yoVP+JStYng==
+"@grafana/data@8.4.0-pre-0f6ae272e9":
+  version "8.4.0-pre-0f6ae272e9"
+  resolved "https://npm.pkg.github.com/download/@grafana/data/8.4.0-pre-0f6ae272e9/dfdaf98772b5326a418e997755443206e62ccece2654d4e7b41e4049684e52a5#6c6b3666e84d9b46935404b90f900f0439d00771"
+  integrity sha512-ax6q9K7cggjQK2m+EeUSvA2fhTaHzQc23X45LGwEIgU/h2SOyT/yKw0jqLipVTv9MDR5oHs+/d4RjfDD7tSU0Q==
   dependencies:
     "@braintree/sanitize-url" "5.0.2"
-    "@grafana/schema" "8.4.0-pre-eaf46600c4"
+    "@grafana/schema" "8.4.0-pre-0f6ae272e9"
     "@types/d3-interpolate" "^1.4.0"
     d3-interpolate "1.4.0"
     date-fns "2.21.3"
@@ -1165,10 +1165,31 @@
     uplot "1.6.16"
     xss "1.0.6"
 
-"@grafana/e2e-selectors@8.4.0-pre-eaf46600c4":
-  version "8.4.0-pre-eaf46600c4"
-  resolved "https://npm.pkg.github.com/download/@grafana/e2e-selectors/8.4.0-pre-eaf46600c4/7f6384e0ce0ab2a2dbfda6287cdc58d16243fa4f39b869be7609eded13dcbfbf#0ccdb8fdd3743376ec4fdfe139159fcc78f4dca7"
-  integrity sha512-pI0/YvowmvhdtuVqdhfsUySWXJJpBHZTcwwv69+JpHhy489911IaZb63y+t/XQTZG4ANJttTQDq1EVn+KFrUVA==
+"@grafana/data@canary":
+  version "8.4.0-pre-177a0d69d1"
+  resolved "https://npm.pkg.github.com/download/@grafana/data/8.4.0-pre-177a0d69d1/74c4c78a9f59b16d684e3e2fc45989590c90d880c4e71efaa6f8fa4f280a9e6e#1566bac408fb22924a6243fd52b5ee318bd3f5bf"
+  integrity sha512-PmCEnEuV5RZRGTOKL7irRgKJaNaNV3MMoqRqGreHgKBQnr1arSFVkaHO4KJ3JGKHVvKo0kEZFZS64naR0+8bLQ==
+  dependencies:
+    "@braintree/sanitize-url" "5.0.2"
+    "@grafana/schema" "8.4.0-pre-177a0d69d1"
+    "@types/d3-interpolate" "^1.4.0"
+    d3-interpolate "1.4.0"
+    date-fns "2.21.3"
+    eventemitter3 "4.0.7"
+    lodash "4.17.21"
+    marked "4.0.0"
+    moment "2.29.1"
+    moment-timezone "0.5.33"
+    ol "6.7.0"
+    papaparse "5.3.0"
+    rxjs "7.3.0"
+    uplot "1.6.16"
+    xss "1.0.6"
+
+"@grafana/e2e-selectors@8.4.0-pre-0f6ae272e9":
+  version "8.4.0-pre-0f6ae272e9"
+  resolved "https://npm.pkg.github.com/download/@grafana/e2e-selectors/8.4.0-pre-0f6ae272e9/4993bd87f75f53daf148189a518e841d2994d0dc6a05f4b67e54cd78883b49bd#9241457bcf0e7d766bceea5ad528db20daa94327"
+  integrity sha512-EWEIGVMvRFZfMKDvDMbPFB9Yof3JcBd12OdoUBrPhOnFT53kYFTBeNX2bs6DS9lDM5Lho/BBf+SuXFJ5zlkhoA==
   dependencies:
     "@grafana/tsconfig" "^1.0.0-rc1"
     execa "5.1.1"
@@ -1176,10 +1197,15 @@
     typescript "4.4.3"
     yaml "^1.8.3"
 
-"@grafana/schema@8.4.0-pre-eaf46600c4":
-  version "8.4.0-pre-eaf46600c4"
-  resolved "https://npm.pkg.github.com/download/@grafana/schema/8.4.0-pre-eaf46600c4/d1832ee5202d2e7698ff1d5ab22bf6d664a465b53d86c9d6a58d1419200b289f#66492664dbc5b7e6007823744c01dbf7c7d21538"
-  integrity sha512-XQmk8txf9/XVSmLZp9oZuCKJ9mozK7tXDHeuktuPaWad5Nidz3mq3vjtXHGex6r5bFgjY0wrjC/1fZqZ6+V5lA==
+"@grafana/schema@8.4.0-pre-0f6ae272e9":
+  version "8.4.0-pre-0f6ae272e9"
+  resolved "https://npm.pkg.github.com/download/@grafana/schema/8.4.0-pre-0f6ae272e9/efabef8e01c1b6f0fd3a9d7cece6f9fb6309d6c7a033ac5244df98723370ec8a#caf0be6b7d4c7c1a2217e1555c07539eb373d21d"
+  integrity sha512-sOWboXgcApS6IrUvUVdLqvoZ+TXfMh80jMubnFBvtdl5rXvK3Cn8A44bJnbNuYuLcvdVSc65rILS6y9Moo2pjw==
+
+"@grafana/schema@8.4.0-pre-177a0d69d1":
+  version "8.4.0-pre-177a0d69d1"
+  resolved "https://npm.pkg.github.com/download/@grafana/schema/8.4.0-pre-177a0d69d1/a17343620c9a1f31d06876ba3a435cbc46b74b7403bb640aae133a6c7bd5316b#20d43906a38e7fdb21e55c4fde7cfdba802320fc"
+  integrity sha512-BTfTS6WqM5B1M6VbKbOvm5iU5CfSwTt0Xbz60ctri+B1561pGtUYEz7ZUWAWa7kmw0VIKPM95BOfxFJH0pNbZw==
 
 "@grafana/slate-react@0.22.10-grafana":
   version "0.22.10-grafana"
@@ -1209,16 +1235,16 @@
   integrity sha512-59noTHqQdYKPzpd4P6Rp/+3aIsA2eqxpu5v6LuwhV9QlEwsZRY0HTyEqO0PAyJes4C8Mry01qBHI6NpAbd8LiQ==
 
 "@grafana/ui@canary":
-  version "8.4.0-pre-eaf46600c4"
-  resolved "https://npm.pkg.github.com/download/@grafana/ui/8.4.0-pre-eaf46600c4/eda86f6887eb73890637acb674bdf9f7bfd1d4781a09e5fd1b79fc7d73fc6be5#dd65082512838dbf53682d8b3400128a209ff97e"
-  integrity sha512-8c//0zS6p0DXYI/G6WT1IRw2iEwxK4ZNoFRSlslmEdqBkltjF/6u94TgxVKVWeV7A4SBXCUl+0ft35dAehUlzw==
+  version "8.4.0-pre-0f6ae272e9"
+  resolved "https://npm.pkg.github.com/download/@grafana/ui/8.4.0-pre-0f6ae272e9/d861d0a01021f0e75d1f5f98577993b864026e372d66eeab48549303c279b070#e468cfa02b2bb6e95e28d60b195642ebbb2ea772"
+  integrity sha512-sY87oVzpNPYFgHcAzsdEQ3BVts9EhkjQ2oamWURwq6qAJjyyZzFnhpGj8V22joFD3qiYpF/v+H1M1SCwZL3GIw==
   dependencies:
     "@emotion/css" "11.1.3"
     "@emotion/react" "11.1.5"
     "@grafana/aws-sdk" "0.0.3"
-    "@grafana/data" "8.4.0-pre-eaf46600c4"
-    "@grafana/e2e-selectors" "8.4.0-pre-eaf46600c4"
-    "@grafana/schema" "8.4.0-pre-eaf46600c4"
+    "@grafana/data" "8.4.0-pre-0f6ae272e9"
+    "@grafana/e2e-selectors" "8.4.0-pre-0f6ae272e9"
+    "@grafana/schema" "8.4.0-pre-0f6ae272e9"
     "@grafana/slate-react" "0.22.10-grafana"
     "@monaco-editor/react" "4.2.2"
     "@popperjs/core" "2.5.4"

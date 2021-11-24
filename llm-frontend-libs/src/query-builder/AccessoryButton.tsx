@@ -1,8 +1,7 @@
+import React from 'react';
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { stylesFactory, useTheme2 , Button, ButtonProps } from '@grafana/ui';
- 
-import React from 'react';
 
 interface AccessoryButtonProps extends ButtonProps {}
 
