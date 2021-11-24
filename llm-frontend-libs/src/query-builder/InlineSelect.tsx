@@ -2,7 +2,7 @@ import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { Select, stylesFactory, useTheme2, SelectContainerProps, SelectContainer as BaseSelectContainer,  SelectCommonProps } from '@grafana/ui';
 import React, { useState } from 'react';
-import { GroupTypeBase } from 'react-select';
+import { GroupBase } from 'react-select';
 
 interface InlineSelectProps<T> extends SelectCommonProps<T> {
   label?: string;
@@ -32,7 +32,7 @@ export function InlineSelect<T>({ label: labelProp, ...props }: InlineSelectProp
   );
 }
 
-const SelectContainer = <Option, isMulti extends boolean, Group extends GroupTypeBase<Option>>(
+const SelectContainer = <Option, isMulti extends boolean, Group extends GroupBase<Option>>(
   props: SelectContainerProps<Option, isMulti, Group>
 ) => {
   const { children } = props;
@@ -47,7 +47,7 @@ const SelectContainer = <Option, isMulti extends boolean, Group extends GroupTyp
   );
 };
 
-const ValueContainer = <Option, isMulti extends boolean, Group extends GroupTypeBase<Option>>(
+const ValueContainer = <Option, isMulti extends boolean, Group extends GroupBase<Option>>(
   props: SelectContainerProps<Option, isMulti, Group>
 ) => {
   const { className, children } = props;
