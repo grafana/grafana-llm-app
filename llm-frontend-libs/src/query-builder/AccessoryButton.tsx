@@ -5,7 +5,7 @@ import { stylesFactory, useTheme2 , Button, ButtonProps } from '@grafana/ui';
 
 interface AccessoryButtonProps extends ButtonProps {}
 
-const AccessoryButton: React.FC<AccessoryButtonProps> = ({ className, ...props }) => {
+export const AccessoryButton: React.FC<AccessoryButtonProps> = ({ className, ...props }) => {
   const theme = useTheme2();
   const styles = getButtonStyles(theme);
 
@@ -19,4 +19,4 @@ const getButtonStyles = stylesFactory((theme: GrafanaTheme2) => ({
   }),
 }));
 
-export default AccessoryButton;
+
