@@ -22,5 +22,6 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ children }) => {
 const getStyles = stylesFactory((theme: GrafanaTheme2) => ({
   root: css({
     padding: theme.spacing(0, 1),
+    minHeight: theme.spacing(4),
   }),
 }));
