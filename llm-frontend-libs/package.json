@@ -10,7 +10,6 @@
     "bundle": "rollup -c rollup.config.ts",
     "clean": "rimraf ./dist ./compiled",
     "typecheck": "tsc --noEmit",
-    "publish": "npm publish  --access=public --scope=grafana",
     "test": "jest --notify --watch"
   },
   "files": [
