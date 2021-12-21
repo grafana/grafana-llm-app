@@ -35,7 +35,9 @@ const buildCjsPackage = ({ env }) => {
       commonjs({
         include: /node_modules/,
       }),
-      resolve(),
+      resolve({
+        browser: true,
+      }),
       env === 'production' && terser(),
     ],
   };
