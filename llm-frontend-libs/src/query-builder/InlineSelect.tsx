@@ -66,6 +66,7 @@ const getSelectStyles = stylesFactory((theme: GrafanaTheme2) => ({
 
   label: css({
     color: theme.colors.text.secondary,
+    whiteSpace: 'nowrap',
   }),
 
   container: css({
