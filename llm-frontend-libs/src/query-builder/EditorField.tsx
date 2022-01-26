@@ -8,7 +8,7 @@ import { Space } from './Space';
 interface EditorFieldProps {
   label: string;
   children: React.ReactElement;
-  width?: number;
+  width?: number | string;
   optional?: boolean;
   tooltip?: PopoverContent;
 }
