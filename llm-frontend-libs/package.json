@@ -1,6 +1,6 @@
 {
   "name": "@grafana/experimental",
-  "version": "0.0.2-canary.18",
+  "version": "0.0.2-canary.19",
   "description": "Experimental Grafana components and APIs",
   "main": "index.js",
   "types": "dist/index.d.ts",
