@@ -17,7 +17,7 @@
     "dist"
   ],
   "repository": "github:grafana/grafana-experimental",
-  "author": "Grafana Labs <team@grafana.com> (https://grafanap.com)",
+  "author": "Grafana Labs <team@grafana.com> (https://grafana.com)",
   "license": "Apache-2.0",
   "peerDependencies": {
     "@emotion/css": "11.1.3",
