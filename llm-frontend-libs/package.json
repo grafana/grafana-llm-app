@@ -29,6 +29,7 @@
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
     "@grafana/data": "canary",
+    "@grafana/toolkit": "^8.5.0-55750pre",
     "@grafana/tsconfig": "^1.0.0-rc1",
     "@grafana/ui": "canary",
     "@rollup/plugin-commonjs": "11.0.2",
