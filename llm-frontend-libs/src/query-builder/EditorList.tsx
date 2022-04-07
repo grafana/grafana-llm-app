@@ -1,6 +1,6 @@
-import React from "react";
-import { Button } from "@grafana/ui";
-import { Stack } from "./Stack";
+import React from 'react';
+import { Button } from '@grafana/ui';
+import { Stack } from './Stack';
 
 interface EditorListProps<T> {
   items: Array<Partial<T>>;
@@ -12,11 +12,7 @@ interface EditorListProps<T> {
   onChange: (items: Array<Partial<T>>) => void;
 }
 
-export function EditorList<T>({
-  items,
-  renderItem,
-  onChange,
-}: EditorListProps<T>) {
+export function EditorList<T>({ items, renderItem, onChange }: EditorListProps<T>) {
   const onAddItem = () => {
     const newItems = [...items, {}];
 
@@ -34,7 +30,6 @@ export function EditorList<T>({
     newItems.splice(itemIndex, 1);
     onChange(newItems);
   };
-
   return (
     <Stack>
       {items.map((item, index) => (
@@ -46,13 +41,7 @@ export function EditorList<T>({
           )}
         </div>
       ))}
-      <Button
-        onClick={onAddItem}
-        variant="secondary"
-        size="md"
-        icon="plus"
-        aria-label="Add"
-      />
+      <Button onClick={onAddItem} variant="secondary" size="md" icon="plus" aria-label="Add" type="button" />
     </Stack>
   );
 }
