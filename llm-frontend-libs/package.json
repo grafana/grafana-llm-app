@@ -32,6 +32,7 @@
     "@grafana/toolkit": "^8.5.0-55750pre",
     "@grafana/tsconfig": "^1.0.0-rc1",
     "@grafana/ui": "canary",
+    "@grafana/runtime": "canary",
     "@rollup/plugin-commonjs": "11.0.2",
     "@rollup/plugin-json": "4.0.3",
     "@rollup/plugin-node-resolve": "7.1.1",
