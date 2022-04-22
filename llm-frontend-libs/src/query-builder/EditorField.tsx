@@ -35,10 +35,14 @@ export const EditorField: React.FC<EditorFieldProps> = (props) => {
     </>
   );
 
+  const StyledChildren = () => {
+    return <div className={styles.child}>{children}</div>
+  } 
+
   return (
     <div className={styles.root}>
       <Field className={styles.field} label={labelEl} {...fieldProps}>
-        <div className={styles.child}>{children}</div>
+        <StyledChildren />
       </Field>
     </div>
   );
