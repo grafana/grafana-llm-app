@@ -35,6 +35,7 @@ export const EditorField: React.FC<EditorFieldProps> = (props) => {
     </>
   );
 
+  // This is needed to prevent <div /> from getting invalid properties from Field (e.g. "invalid")
   const StyledChildren = () => {
     return <div className={styles.child}>{children}</div>
   } 
