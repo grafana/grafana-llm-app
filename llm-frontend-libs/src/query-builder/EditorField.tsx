@@ -35,15 +35,10 @@ export const EditorField: React.FC<EditorFieldProps> = (props) => {
     </>
   );
 
-  // This is needed to prevent <div /> from getting invalid properties from Field (e.g. "invalid")
-  const StyledChildren = () => {
-    return <div className={styles.child}>{children}</div>
-  } 
-
   return (
     <div className={styles.root}>
       <Field className={styles.field} label={labelEl} {...fieldProps}>
-        <StyledChildren />
+        {children}
       </Field>
     </div>
   );
@@ -64,14 +59,6 @@ const getStyles = stylesFactory((theme: GrafanaTheme2, width?: number | string) 
     }),
     field: css({
       marginBottom: 0, // GrafanaUI/Field has a bottom margin which we must remove
-    }),
-
-    // TODO: really poor hack to align the switch
-    // Find a better solution to this
-    child: css({
-      display: 'flex',
-      alignItems: 'center',
-      minHeight: 30,
     }),
     icon: css({
       color: theme.colors.text.secondary,
