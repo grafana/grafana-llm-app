@@ -5,6 +5,7 @@ export { EditorHeader } from "./EditorHeader";
 export { EditorList } from "./EditorList";
 export { EditorRow } from "./EditorRow";
 export { EditorRows } from "./EditorRows";
+export { EditorSwitch } from "./EditorSwitch";
 export { FlexItem } from "./FlexItem";
 export { InlineSelect } from "./InlineSelect";
 export { InputGroup } from "./InputGroup";
