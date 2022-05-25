@@ -18,7 +18,9 @@ export const EditorField: React.FC<EditorFieldProps> = (props) => {
 
   const theme = useTheme2();
   const styles = getStyles(theme, width);
-  const childInputId = ReactUtils.getChildId(children);
+
+  // Null check for backward compatibility
+  const childInputId = ReactUtils?.getChildId(children);
 
   const labelEl = (
     <>
