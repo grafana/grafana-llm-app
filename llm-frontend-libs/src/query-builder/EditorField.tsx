@@ -5,7 +5,7 @@ import React, { ComponentProps } from 'react';
 
 import { Space } from './Space';
 
-interface EditorFieldProps extends ComponentProps<typeof Field>{
+interface EditorFieldProps extends ComponentProps<typeof Field> {
   label: string;
   children: React.ReactElement;
   width?: number | string;
@@ -20,7 +20,7 @@ export const EditorField: React.FC<EditorFieldProps> = (props) => {
   const styles = getStyles(theme, width);
 
   // Null check for backward compatibility
-  const childInputId = ReactUtils?.getChildId(children);
+  const childInputId = fieldProps?.htmlFor || ReactUtils?.getChildId(children);
 
   const labelEl = (
     <>
