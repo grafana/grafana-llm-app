@@ -1,7 +1,7 @@
-import { css } from "@emotion/css";
-import { GrafanaTheme2 } from "@grafana/data";
-import { stylesFactory, useTheme2 } from "@grafana/ui";
-import React from "react";
+import { css } from '@emotion/css';
+import { GrafanaTheme2 } from '@grafana/data';
+import { stylesFactory, useTheme2 } from '@grafana/ui';
+import React from 'react';
 
 interface EditorHeaderProps {}
 
@@ -14,9 +14,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ children }) => {
 
 const getStyles = stylesFactory((theme: GrafanaTheme2) => ({
   root: css({
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: theme.spacing(3),
     minHeight: theme.spacing(4),
   }),

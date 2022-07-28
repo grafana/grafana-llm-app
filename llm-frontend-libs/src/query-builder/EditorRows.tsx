@@ -1,5 +1,5 @@
-import React from "react";
-import { Stack } from "./Stack";
+import React from 'react';
+import { Stack } from './Stack';
 
 interface EditorRowsProps {}
 

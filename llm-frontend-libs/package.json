@@ -10,6 +10,7 @@
     "bundle": "rollup -c rollup.config.ts",
     "clean": "rimraf ./dist ./compiled",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .js,.tsx,.ts --cache",
     "test": "jest --notify --watch"
   },
   "files": [
@@ -29,10 +30,10 @@
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
     "@grafana/data": "canary",
+    "@grafana/runtime": "canary",
     "@grafana/toolkit": "^8.5.0-55750pre",
     "@grafana/tsconfig": "^1.0.0-rc1",
     "@grafana/ui": "canary",
-    "@grafana/runtime": "canary",
     "@rollup/plugin-commonjs": "11.0.2",
     "@rollup/plugin-json": "4.0.3",
     "@rollup/plugin-node-resolve": "7.1.1",
