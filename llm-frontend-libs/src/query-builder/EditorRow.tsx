@@ -1,8 +1,8 @@
-import { css } from "@emotion/css";
-import { GrafanaTheme2 } from "@grafana/data";
-import { useStyles2 } from "@grafana/ui";
-import React from "react";
-import { Stack } from "./Stack";
+import { css } from '@emotion/css';
+import { GrafanaTheme2 } from '@grafana/data';
+import { useStyles2 } from '@grafana/ui';
+import React from 'react';
+import { Stack } from './Stack';
 
 interface EditorRowProps {}
 

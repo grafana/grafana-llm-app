@@ -1,7 +1,7 @@
 import React from 'react';
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { stylesFactory, useTheme2 , Button, ButtonProps } from '@grafana/ui';
+import { stylesFactory, useTheme2, Button, ButtonProps } from '@grafana/ui';
 
 interface AccessoryButtonProps extends ButtonProps {}
 
@@ -18,5 +18,3 @@ const getButtonStyles = stylesFactory((theme: GrafanaTheme2) => ({
     paddingRight: theme.spacing(3 / 2),
   }),
 }));
-
-
