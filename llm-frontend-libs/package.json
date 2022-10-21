@@ -1,6 +1,6 @@
 {
   "name": "@grafana/experimental",
-  "version": "0.0.2-canary.39",
+  "version": "0.0.2-canary.40",
   "description": "Experimental Grafana components and APIs",
   "main": "index.js",
   "types": "dist/index.d.ts",
@@ -31,7 +31,7 @@
     "@babel/preset-typescript": "^7.13.0",
     "@grafana/data": "canary",
     "@grafana/runtime": "canary",
-    "@grafana/toolkit": "^8.5.0-55750pre",
+    "@grafana/toolkit": "canary",
     "@grafana/tsconfig": "^1.0.0-rc1",
     "@grafana/ui": "canary",
     "@rollup/plugin-commonjs": "11.0.2",
