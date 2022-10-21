@@ -1,5 +1,8 @@
+const standard = require('@grafana/toolkit/src/config/jest.plugin.config');
+const config = standard.jestConfig();
+
+// This process will use the same config that `yarn test` is using
 module.exports = {
-  moduleDirectories: ['node_modules', 'src'],
-  testEnvironment: 'jsdom',
-  setupFiles: ['<rootDir>/jest.setup.js'],
+  ...config,
+  watchPathIgnorePatterns: ['<rootDir>/node_modules/'],
 };
