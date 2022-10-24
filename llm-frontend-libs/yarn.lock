@@ -1023,7 +1023,7 @@
     core-js-pure "^3.25.1"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.10.1", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.1", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.13.10", "@babel/runtime@^7.14.5", "@babel/runtime@^7.15.4", "@babel/runtime@^7.17.2", "@babel/runtime@^7.18.3", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.10.1", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.1", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.13.10", "@babel/runtime@^7.15.4", "@babel/runtime@^7.18.3", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2":
   version "7.19.4"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.19.4.tgz#a42f814502ee467d55b38dd1c256f53a7b885c78"
   integrity sha512-EXpLCrk55f+cYqmHsSR+yD/0gAIMxxA9QK9lnQWzhMCvt+YmoBN7Zx94s++Kv0+unHk39vxNO8t+CMA2WSS3wA==
@@ -1339,13 +1339,13 @@
     ua-parser-js "^1.0.2"
     web-vitals "^2.1.4"
 
-"@grafana/data@9.3.0-84830pre", "@grafana/data@canary":
-  version "9.3.0-84830pre"
-  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-9.3.0-84830pre.tgz#db5494bd140bf873a65a48205a5e436374fcd07a"
-  integrity sha512-1WK8b+bpnb0RJushl6ArAhDkG4KLE6p3ssOklMe4IvYQciZVYKNAiQOFB0CWM1onYtUC+dAc0vuc/AXWwv+fuA==
+"@grafana/data@9.2.1", "@grafana/data@^9.2.0":
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-9.2.1.tgz#2a8fcb920f58747f90b792312757e0c8d2dab3aa"
+  integrity sha512-4eQDgcOx+ptQ4L5rHIS7CWqIvdrSWpDisCl4vRfW1EYEzjxGo4zI/aEduPmd0dvzF/oEzVZilN/z7YBTTHNr4g==
   dependencies:
     "@braintree/sanitize-url" "6.0.0"
-    "@grafana/schema" "9.3.0-84830pre"
+    "@grafana/schema" "9.2.1"
     "@types/d3-interpolate" "^1.4.0"
     d3-interpolate "1.4.0"
     date-fns "2.29.1"
@@ -1356,7 +1356,7 @@
     marked "4.1.0"
     moment "2.29.4"
     moment-timezone "0.5.35"
-    ol "7.1.0"
+    ol "6.15.1"
     papaparse "5.3.2"
     regenerator-runtime "0.13.9"
     rxjs "7.5.6"
@@ -1365,10 +1365,10 @@
     uplot "1.6.22"
     xss "1.0.13"
 
-"@grafana/e2e-selectors@9.3.0-84830pre":
-  version "9.3.0-84830pre"
-  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-9.3.0-84830pre.tgz#1517fa492f0d613d4d4232841470c9f9d2cbf4a4"
-  integrity sha512-vUUGcwPmcm6l1ahi1hyUC/BhrjBj3AZ81ABROFMrD6iXVQwFEZckucnDdBQtdObEH0mpIikI8AJWeQ4XiStDhw==
+"@grafana/e2e-selectors@9.2.1":
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-9.2.1.tgz#c00775be62732c09fdba6d859c327b94460a2cf3"
+  integrity sha512-I4qg9d8kmOgGCNF/ktLiPjx1jr93/8xvS5JvYi/36VbcPcajUvo2MqOUYG5iuKLgR2hDdqZPtCAOu83MKODAuw==
   dependencies:
     "@grafana/tsconfig" "^1.2.0-rc1"
     tslib "2.4.0"
@@ -1388,15 +1388,15 @@
     eslint-plugin-react-hooks "4.3.0"
     typescript "4.6.4"
 
-"@grafana/runtime@canary":
-  version "9.3.0-84830pre"
-  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-9.3.0-84830pre.tgz#74701fae3890c6aa2c6d271d60f2ccdc0b8d7a28"
-  integrity sha512-u5wBJz7dEXkdj5+Q2OcrURL+SCYe3rM3YFO4UzcIldMx1aBbcNmUmJTFsCPpPHjqdGpdle3tSzf2uwWZM/6k0Q==
+"@grafana/runtime@^9.2.0":
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-9.2.1.tgz#05660767e94ce999bb0848755cb8bf4e23de141a"
+  integrity sha512-oOVNW5Gcy/y3I3Oify+BvXQFhGgGAtEHFsBMGvJANEmIM4v1szhqc8LjZCnj/APnP00H0ABzpRpA96rmPy6dCw==
   dependencies:
     "@grafana/agent-web" "^0.4.0"
-    "@grafana/data" "9.3.0-84830pre"
-    "@grafana/e2e-selectors" "9.3.0-84830pre"
-    "@grafana/ui" "9.3.0-84830pre"
+    "@grafana/data" "9.2.1"
+    "@grafana/e2e-selectors" "9.2.1"
+    "@grafana/ui" "9.2.1"
     "@sentry/browser" "6.19.7"
     history "4.10.1"
     lodash "4.17.21"
@@ -1404,17 +1404,17 @@
     systemjs "0.20.19"
     tslib "2.4.0"
 
-"@grafana/schema@9.3.0-84830pre":
-  version "9.3.0-84830pre"
-  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-9.3.0-84830pre.tgz#22e9ba49293acb29fa5f0850e7b0f56a57023c25"
-  integrity sha512-ZyEr+p4bwH0JAYvIU2ogUQt5wxyOGuliTdicoT48QhE5kAt9pCOBasmOMd2lxOcuOGyji0mZ6BzAnh+y0ikprA==
+"@grafana/schema@9.2.1":
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-9.2.1.tgz#cc96ac2486dae34943546c13704fef21db87f14c"
+  integrity sha512-Ic/04W7nTbuZGp3MLrvfsVyW1l9FdwXsKIatgzz8O32KeGq/uiShnfUrUkvJ1VFB/eVHvtBgHSpiLgd1S+VeRw==
   dependencies:
     tslib "2.4.0"
 
-"@grafana/toolkit@canary":
-  version "9.3.0-84830pre"
-  resolved "https://registry.yarnpkg.com/@grafana/toolkit/-/toolkit-9.3.0-84830pre.tgz#3910fdf5020d483cb6976039bff91a32d9ce693b"
-  integrity sha512-SKJW6qvWLfVpQ7RwWcaZEKVY7fbaQBLHD2lVn3zUcvq8iGK599Qjc2XbsffpTeSxIX+Tc7F+VBlEgeMk7gImIw==
+"@grafana/toolkit@^9.2.0":
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/@grafana/toolkit/-/toolkit-9.2.1.tgz#d13e7b6411e271eef611102921032870d3131153"
+  integrity sha512-VKsHuTE4GyorCgHPafcZ5OeJMcSM0GABVkVTDiV3Y5P36hyHkw7m0Y6nb3Rcn+0Lp6I3KdfJgr2YTEabq3Naaw==
   dependencies:
     "@babel/core" "7.18.9"
     "@babel/plugin-proposal-class-properties" "7.18.6"
@@ -1428,10 +1428,10 @@
     "@babel/preset-env" "7.18.9"
     "@babel/preset-react" "7.18.6"
     "@babel/preset-typescript" "7.18.6"
-    "@grafana/data" "9.3.0-84830pre"
+    "@grafana/data" "9.2.1"
     "@grafana/eslint-config" "5.0.0"
     "@grafana/tsconfig" "^1.2.0-rc1"
-    "@grafana/ui" "9.3.0-84830pre"
+    "@grafana/ui" "9.2.1"
     "@jest/core" "27.5.1"
     "@types/command-exists" "^1.2.0"
     "@types/eslint" "8.4.1"
@@ -1513,17 +1513,16 @@
   resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-1.2.0-rc1.tgz#10973c978ec95b0ea637511254b5f478bce04de7"
   integrity sha512-+SgQeBQ1pT6D/E3/dEdADqTrlgdIGuexUZ8EU+8KxQFKUeFeU7/3z/ayI2q/wpJ/Kr6WxBBNlrST6aOKia19Ag==
 
-"@grafana/ui@9.3.0-84830pre", "@grafana/ui@canary":
-  version "9.3.0-84830pre"
-  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-9.3.0-84830pre.tgz#103abf20dd7df3908d9856e58f0fc9dcbac4c0f5"
-  integrity sha512-iRMGC24sAH3oV24fKZmXgNAKUTsgP/IQmuaI5y+F8/3vQRJFy2VqUrndsNNvv8Ax0bRw4x9TsjojjmyoIRW+OQ==
+"@grafana/ui@9.2.1", "@grafana/ui@^9.2.0":
+  version "9.2.1"
+  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-9.2.1.tgz#8f07661a0fa021e8de620492c14b2ff6e03b8a52"
+  integrity sha512-X/OebHrppvDn0agdyu/BJFwtqVztNycU8o+/xPn5+bl5L9qPRqrMLlxrA21JsK7MD4bjJ1ViuKk44vfvdn3zSQ==
   dependencies:
     "@emotion/css" "11.9.0"
     "@emotion/react" "11.9.3"
-    "@grafana/data" "9.3.0-84830pre"
-    "@grafana/e2e-selectors" "9.3.0-84830pre"
-    "@grafana/schema" "9.3.0-84830pre"
-    "@leeoniya/ufuzzy" "0.7.0"
+    "@grafana/data" "9.2.1"
+    "@grafana/e2e-selectors" "9.2.1"
+    "@grafana/schema" "9.2.1"
     "@monaco-editor/react" "4.4.5"
     "@popperjs/core" "2.11.5"
     "@react-aria/button" "3.6.1"
@@ -1541,7 +1540,6 @@
     d3 "5.15.0"
     date-fns "2.29.1"
     hoist-non-react-statics "3.3.2"
-    i18next "^21.9.2"
     immutable "4.1.0"
     is-hotkey "0.2.0"
     jquery "3.6.0"
@@ -1549,20 +1547,19 @@
     memoize-one "6.0.0"
     moment "2.29.4"
     monaco-editor "0.34.0"
-    ol "7.1.0"
+    ol "6.15.1"
     prismjs "1.29.0"
-    rc-cascader "3.7.0"
+    rc-cascader "3.6.1"
     rc-drawer "4.4.3"
     rc-slider "9.7.5"
     rc-time-picker "^3.7.3"
     react-beautiful-dnd "13.1.0"
-    react-calendar "3.9.0"
-    react-colorful "5.6.1"
+    react-calendar "3.7.0"
+    react-colorful "5.5.1"
     react-custom-scrollbars-2 "4.5.0"
     react-dropzone "14.2.2"
     react-highlight-words "0.18.0"
     react-hook-form "7.5.3"
-    react-i18next "^11.18.6"
     react-inlinesvg "3.0.0"
     react-popper "2.3.0"
     react-popper-tooltip "^4.3.1"
@@ -1916,11 +1913,6 @@
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
-
-"@leeoniya/ufuzzy@0.7.0":
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/@leeoniya/ufuzzy/-/ufuzzy-0.7.0.tgz#0b002fde00575de314b9d86390003c008f398236"
-  integrity sha512-5DRso63/NzmxUqxKnjBpKSl3tCfDtQf8mbnbgxBVsdZtxlv/aJQbIB/iHOMH0lq2CKlZhoEtaEus9puEMAf74Q==
 
 "@mapbox/jsonlint-lines-primitives@~2.0.2":
   version "2.0.2"
@@ -4928,11 +4920,6 @@ duplexer@^0.1.2:
   resolved "https://registry.yarnpkg.com/duplexer/-/duplexer-0.1.2.tgz#3abe43aef3835f8ae077d136ddce0f276b0400e6"
   integrity sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==
 
-earcut@^2.2.3:
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/earcut/-/earcut-2.2.4.tgz#6d02fd4d68160c114825d06890a92ecaae60343a"
-  integrity sha512-/pjZsA1b4RPHbeWZQn66SWS8nZZWLQQ23oE3Eam7aroEFGEvwKAsJfZ9ytiEMycfzXWpca4FA9QIOehf7PocBQ==
-
 electron-to-chromium@^1.4.251:
   version "1.4.284"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.284.tgz#61046d1e4cab3a25238f6bf7413795270f125592"
@@ -5898,13 +5885,6 @@ html-minifier-terser@^6.0.2:
     relateurl "^0.2.7"
     terser "^5.10.0"
 
-html-parse-stringify@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/html-parse-stringify/-/html-parse-stringify-3.0.1.tgz#dfc1017347ce9f77c8141a507f233040c59c55d2"
-  integrity sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg==
-  dependencies:
-    void-elements "3.1.0"
-
 html-webpack-plugin@^5.5.0:
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/html-webpack-plugin/-/html-webpack-plugin-5.5.0.tgz#c3911936f57681c1f9f4d8b68c158cd9dfe52f50"
@@ -5972,13 +5952,6 @@ hyphenate-style-name@^1.0.2:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/hyphenate-style-name/-/hyphenate-style-name-1.0.4.tgz#691879af8e220aea5750e8827db4ef62a54e361d"
   integrity sha512-ygGZLjmXfPHj+ZWh6LwbC37l43MhfztxetbFCoYTM2VjkIUpeHgSNn7QIyVFj7YQ1Wl9Cbw5sholVJPzWvC2MQ==
-
-i18next@^21.9.2:
-  version "21.10.0"
-  resolved "https://registry.yarnpkg.com/i18next/-/i18next-21.10.0.tgz#85429af55fdca4858345d0e16b584ec29520197d"
-  integrity sha512-YeuIBmFsGjUfO3qBmMOc0rQaun4mIpGKET5WDwvu8lU7gvwpcariZLNtL0Fzj+zazcHUrlXHiptcFhBMFaxzfg==
-  dependencies:
-    "@babel/runtime" "^7.17.2"
 
 iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   version "0.4.24"
@@ -7564,22 +7537,21 @@ object.values@^1.1.5:
     define-properties "^1.1.3"
     es-abstract "^1.19.1"
 
-ol-mapbox-style@9.1.0:
-  version "9.1.0"
-  resolved "https://registry.yarnpkg.com/ol-mapbox-style/-/ol-mapbox-style-9.1.0.tgz#1504b1a2c3cc23482c3c95cd55a1cf1d2ac8a451"
-  integrity sha512-R/XE6FdviaXNdnSw6ItHSEreMtQU68cwQCGv4Kl8yG0V1dZhnI5JWr8IOphJwffPVxfWTCnJb5aALGSB89MvhA==
+ol-mapbox-style@^8.0.5:
+  version "8.2.1"
+  resolved "https://registry.yarnpkg.com/ol-mapbox-style/-/ol-mapbox-style-8.2.1.tgz#0f0c252b6495853a137d7e4dd3f915fab664b356"
+  integrity sha512-3kBBuZC627vDL8vnUdfVbCbfkhkcZj2kXPHQcuLhC4JJEA+XkEVEtEde8x8+AZctRbHwBkSiubTPaRukgLxIRw==
   dependencies:
     "@mapbox/mapbox-gl-style-spec" "^13.23.1"
     mapbox-to-css-font "^2.4.1"
 
-ol@7.1.0:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/ol/-/ol-7.1.0.tgz#aab69a0539e59d6a4361cbc0f69f8b00c7298c9c"
-  integrity sha512-mAeV5Ca4mFhYaJoGWNZnIMN5VNnFTf63FgZjBiYu/DjQDGKNsD5QyvvqVziioVdOOgl6b8rPB/ypj2XNBinPwA==
+ol@6.15.1:
+  version "6.15.1"
+  resolved "https://registry.yarnpkg.com/ol/-/ol-6.15.1.tgz#364f459939ef71f970b2376a821a896529f65e3a"
+  integrity sha512-ZG2CKTpJ8Q+tPywYysVwPk+yevwJzlbwjRKhoCvd7kLVWMbfBl1O/+Kg/yrZZrhG9FNXbFH4GeOZ5yVRqo3P4w==
   dependencies:
-    earcut "^2.2.3"
     geotiff "2.0.4"
-    ol-mapbox-style "9.1.0"
+    ol-mapbox-style "^8.0.5"
     pbf "3.2.1"
     rbush "^3.0.1"
 
@@ -8556,16 +8528,16 @@ rc-animate@2.x:
     rc-util "^4.15.3"
     react-lifecycles-compat "^3.0.4"
 
-rc-cascader@3.7.0:
-  version "3.7.0"
-  resolved "https://registry.yarnpkg.com/rc-cascader/-/rc-cascader-3.7.0.tgz#98134df578ce1cca22be8fb4319b04df4f3dca36"
-  integrity sha512-SFtGpwmYN7RaWEAGTS4Rkc62ZV/qmQGg/tajr/7mfIkleuu8ro9Hlk6J+aA0x1YS4zlaZBtTcSaXM01QMiEV/A==
+rc-cascader@3.6.1:
+  version "3.6.1"
+  resolved "https://registry.yarnpkg.com/rc-cascader/-/rc-cascader-3.6.1.tgz#2e94fb3ed770ffd71d87ebcf17a9b44a6442e76f"
+  integrity sha512-+GmN2Z0IybKT45t0Z94jkjmsOHGxAliobR2tzt05/Gw0AKBYLHX5bdvsVXR7abPnarYyYzZ/cWe8CoFgDjAFNw==
   dependencies:
     "@babel/runtime" "^7.12.5"
     array-tree-filter "^2.1.0"
     classnames "^2.3.1"
     rc-select "~14.1.0"
-    rc-tree "~5.7.0"
+    rc-tree "~5.6.3"
     rc-util "^5.6.1"
 
 rc-drawer@4.4.3:
@@ -8651,10 +8623,10 @@ rc-tooltip@^5.0.1:
     classnames "^2.3.1"
     rc-trigger "^5.0.0"
 
-rc-tree@~5.7.0:
-  version "5.7.0"
-  resolved "https://registry.yarnpkg.com/rc-tree/-/rc-tree-5.7.0.tgz#d0e316eeeac2ba4a1c36b2b2201d84884f1c76a1"
-  integrity sha512-F+Ewkv/UcutshnVBMISP+lPdHDlcsL+YH/MQDVWbk+QdkfID7vXiwrHMEZn31+2Rbbm21z/HPceGS8PXGMmnQg==
+rc-tree@~5.6.3:
+  version "5.6.9"
+  resolved "https://registry.yarnpkg.com/rc-tree/-/rc-tree-5.6.9.tgz#b73290a6dcad65e4ed5d8dc21cb198b30316404b"
+  integrity sha512-si8aGuWQ2/sh2Ibk+WdUdDeAxoviT/+kDY+NLtJ+RhqfySqPFqWM5uHTwgFRrWUvKCqEeE/PjCYuuhHrK7Y7+A==
   dependencies:
     "@babel/runtime" "^7.10.1"
     classnames "2.x"
@@ -8728,20 +8700,20 @@ react-beautiful-dnd@13.1.0:
     redux "^4.0.4"
     use-memo-one "^1.1.1"
 
-react-calendar@3.9.0:
-  version "3.9.0"
-  resolved "https://registry.yarnpkg.com/react-calendar/-/react-calendar-3.9.0.tgz#4dfe342ef61574c0e819e49847981076c7af58ea"
-  integrity sha512-g6RJCEaPovHTiV2bMhBUfm0a1YoMj4bOUpL8hQSLmR1Glhc7lgRLtZBd4mcC4jkoGsb+hv9uA/QH4pZcm5l9lQ==
+react-calendar@3.7.0:
+  version "3.7.0"
+  resolved "https://registry.yarnpkg.com/react-calendar/-/react-calendar-3.7.0.tgz#951d56e91afb33b1c1e019cb790349fbffcc6894"
+  integrity sha512-zkK95zWLWLC6w3O7p3SHx/FJXEyyD2UMd4jr3CrKD+G73N+G5vEwrXxYQCNivIPoFNBjqoyYYGlkHA+TBDPLCw==
   dependencies:
     "@wojtekmaj/date-utils" "^1.0.2"
     get-user-locale "^1.2.0"
     merge-class-names "^1.1.1"
     prop-types "^15.6.0"
 
-react-colorful@5.6.1:
-  version "5.6.1"
-  resolved "https://registry.yarnpkg.com/react-colorful/-/react-colorful-5.6.1.tgz#7dc2aed2d7c72fac89694e834d179e32f3da563b"
-  integrity sha512-1exovf0uGTGyq5mXQT0zgQ80uvj2PCwvF8zY1RN9/vbJVSjSo3fsB/4L3ObbF7u70NduSiK4xu4Y6q1MHoUGEw==
+react-colorful@5.5.1:
+  version "5.5.1"
+  resolved "https://registry.yarnpkg.com/react-colorful/-/react-colorful-5.5.1.tgz#29d9c4e496f2ca784dd2bb5053a3a4340cfaf784"
+  integrity sha512-M1TJH2X3RXEt12sWkpa6hLc/bbYS0H6F4rIqjQZ+RxNBstpY67d9TrFXtqdZwhpmBXcCwEi7stKqFue3ZRkiOg==
 
 react-custom-scrollbars-2@4.5.0:
   version "4.5.0"
@@ -8835,14 +8807,6 @@ react-hook-form@7.5.3:
   version "7.5.3"
   resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.5.3.tgz#9a624fa14ec153b154891c5ebddae02ec5c2e40f"
   integrity sha512-5T0mfJ4kCPKljd7t3Rgp7lML4Y2+kaZIeMdN6Zo/J7gBQ+WkrDBHOftdOtz4X+7/eqHGak5yL5evNpYdA9abVA==
-
-react-i18next@^11.18.6:
-  version "11.18.6"
-  resolved "https://registry.yarnpkg.com/react-i18next/-/react-i18next-11.18.6.tgz#e159c2960c718c1314f1e8fcaa282d1c8b167887"
-  integrity sha512-yHb2F9BiT0lqoQDt8loZ5gWP331GwctHz9tYQ8A2EIEUu+CcEdjBLQWli1USG3RdWQt3W+jqQLg/d4rrQR96LA==
-  dependencies:
-    "@babel/runtime" "^7.14.5"
-    html-parse-stringify "^3.0.1"
 
 react-immutable-proptypes@^2.1.0:
   version "2.2.0"
@@ -10393,11 +10357,6 @@ value-equal@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/value-equal/-/value-equal-1.0.1.tgz#1e0b794c734c5c0cade179c437d356d931a34d6c"
   integrity sha512-NOJ6JZCAWr0zlxZt+xqCHNTEKOsrks2HQd4MqhP1qy4z1SkbEP467eNx6TgDKXMvUOb+OENfJCZwM+16n7fRfw==
-
-void-elements@3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
-  integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 w3c-hr-time@^1.0.2:
   version "1.0.2"
