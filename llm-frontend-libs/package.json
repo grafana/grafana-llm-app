@@ -5,7 +5,7 @@
   "main": "index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "watch 'npm run bundle' ./src",
+    "dev": "yarn bundle -w",
     "build": "yarn clean && yarn typecheck && yarn bundle",
     "bundle": "rollup -c rollup.config.ts",
     "clean": "rimraf ./dist ./compiled",
