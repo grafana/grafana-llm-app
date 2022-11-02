@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.0.2
+
+- Make EditorField tooltip selectable via keyboard
+
 ## v1.0.1
 
 - Specify Grafana packages as dev- and peer dependencies
