@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.1.0
+
+- EditorList now accepts a ref to the Button for adding items
+
 ## v1.0.2
 
 - Make EditorField tooltip selectable via keyboard
