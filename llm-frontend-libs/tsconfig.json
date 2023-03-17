@@ -1,12 +1,12 @@
 {
-  "extends": "@grafana/tsconfig/base.json",
-  "include": ["src", "index.js"],
-  "compilerOptions": { 
-    "rootDir": "./src",
-    "baseUrl": "./src",
-    "typeRoots": ["./node_modules/@types"],
-    "declaration": true,
-    "target": "es5",
-    "outDir": "dist",
+  "extends": "@grafana/tsconfig",
+  "include": ["src/**/*.ts*"],
+  "exclude": ["dist/**/*", "src/QueryEditor/InputGroup.story.internal.tsx"],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "declarationDir": "./compiled",
+    "emitDeclarationOnly": true,
+    "isolatedModules": true,
+    "rootDirs": ["."]
   }
 }
