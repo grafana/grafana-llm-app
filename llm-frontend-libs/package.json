@@ -41,6 +41,7 @@
     "@testing-library/jest-dom": "^5.11.10",
     "@testing-library/react": "^11.2.5",
     "@testing-library/react-hooks": "^5.1.0",
+    "@testing-library/user-event": "^14.4.3",
     "@types/node": "10.14.1",
     "@types/react": "16.8.16",
     "@types/react-test-renderer": "^17.0.1",
