@@ -5,4 +5,5 @@ const config = standard.jestConfig();
 module.exports = {
   ...config,
   watchPathIgnorePatterns: ['<rootDir>/node_modules/'],
+  setupFilesAfterEnv: ['@testing-library/jest-dom/extend-expect'],
 };
