@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.3.0
+
+- Add Auth component
+
 ## v1.2.0
 
 - Add new ConfigSection, ConfigSubSection and DataSourceDescription components
