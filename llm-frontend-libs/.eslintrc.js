@@ -1,3 +1,7 @@
 module.exports = {
-  ...require('@grafana/toolkit/src/config/eslint.plugin.js'),
+  extends: ['@grafana/eslint-config'],
+  root: true,
+  rules: {
+    'react/prop-types': 'off',
+  },
 };
