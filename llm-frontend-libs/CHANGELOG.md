@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.0
+
+- `DataSourceDescription` config editor component: added possibility to pass `className` + minor styling changes
+
 ## v1.3.0
 
 - Add Auth component
