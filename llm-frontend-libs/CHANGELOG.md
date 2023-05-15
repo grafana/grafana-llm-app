@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.0
+
+- Introduce treeshaking by rewriting rollup build configs to include both cjs and esm builds
+
 ## v1.4.3
 
 - `Auth` and `DataSourceDescription` components: change asterisk color (for marking required fields) from red to default
