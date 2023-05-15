@@ -1,6 +1,6 @@
 {
   "name": "@grafana/experimental",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Experimental Grafana components and APIs",
   "main": "index.js",
   "types": "dist/index.d.ts",
