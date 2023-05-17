@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.3
+
+- `Auth` and `DataSourceDescription` components: change asterisk color (for marking required fields) from red to default
+
 ## v1.4.2
 
 - Update `GenericConfigSection` component type for prop `description` to `ReactNode`
