@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: '16'
           cache: 'yarn'
-      - run: yarn
+      - run: yarn install --immutable --prefer-offline
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn jest
