@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
@@ -19,6 +20,7 @@ func newOpenAIProxy() http.Handler {
 			r.SetURL(u)
 			r.Out.Header.Set("Authorization", "Bearer "+apiKey)
 			r.Out.URL.Path = strings.TrimPrefix(r.In.URL.Path, "/openai")
+			log.DefaultLogger.Info("proxying to url", "url", r.Out.URL.String())
 		},
 	}
 }
