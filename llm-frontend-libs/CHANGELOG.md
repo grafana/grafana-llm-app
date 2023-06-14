@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.1
+
+- Fix Auth component to prevent it from failing when it is used in Grafana 8
+
 ## v1.5.0
 
 - Introduce treeshaking by rewriting rollup build configs to include both cjs and esm builds
