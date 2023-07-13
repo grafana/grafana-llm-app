@@ -123,7 +123,7 @@ const updatePluginAndReload = async (pluginId: string, data: Partial<PluginMeta<
 };
 
 export const updatePlugin = async (pluginId: string, data: Partial<PluginMeta>) => {
-  const response = await getBackendSrv().fetch({
+  const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/settings`,
     method: 'POST',
     data,

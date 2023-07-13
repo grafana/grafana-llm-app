@@ -3,9 +3,10 @@ package plugin
 import (
 	"bytes"
 	"context"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"net/http"
 	"testing"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 // mockCallResourceResponseSender implements backend.CallResourceResponseSender
