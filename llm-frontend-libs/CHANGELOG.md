@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.1
+
+- Fix type changes in EditorList
+
 ## v1.6.0
 
 - Add new `ConnectionSettings` and `AdvancedHttpSettings` components to simplify migration from `DataSourceHttpSettings` component.
