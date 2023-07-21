@@ -11,3 +11,9 @@ For a component to be ready to move to the grafana/ui package, the following cri
 - Each component needs type definitions.
 - Requires good test coverage. Some of the grafana/experimental components don't currently have comprehensive tests.
 - It needs to have a low probability of a breaking change in the short/medium future. For instance, if it needs a new feature that will likely require a breaking change, it may be preferable to delay it being added to grafana/ui.
+
+# CONTRIBUTING
+
+As we are planning to get this repository to a more stable state please please write tests for your components.
+
+If you want to use your local development version in another repo run `yarn add link:"/yar/path/to/grafana-experimental"`
