@@ -11,6 +11,7 @@ It is responsible for:
 
 Future functionality will include:
 
+- support for multiple LLM providers, including the ability to choose your own at runtime
 - rate limiting of requests to LLMs, for cost control
 - token and cost estimation
 - RBAC to only allow certain users to use LLM functionality
