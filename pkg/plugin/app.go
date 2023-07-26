@@ -33,7 +33,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	}
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
-	settings.openAIKey = appSettings.DecryptedSecureJSONData["apiKey"]
+	settings.openAIKey = appSettings.DecryptedSecureJSONData["openAIKey"]
 	return settings
 }
 
