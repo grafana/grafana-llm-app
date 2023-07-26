@@ -63,7 +63,7 @@ export const streamChatCompletions = ({ model, systemPrompt, userPrompt }: ChatC
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
     namespace: pluginJson.id,
-    path: `/v1/chat/completions`,
+    path: `/openai/v1/chat/completions`,
     data: {
       model,
       messages: [

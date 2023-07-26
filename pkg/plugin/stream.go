@@ -12,6 +12,8 @@ import (
 	"github.com/launchdarkly/eventsource"
 )
 
+const openAIChatCompletionsPath = "/openai/v1/chat/completions"
+
 type chatCompletionsMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -27,14 +29,15 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
 
 	resp := &backend.SubscribeStreamResponse{
-		Status: backend.SubscribeStreamStatusOK,
+		Status: backend.SubscribeStreamStatusNotFound,
+	}
+	if req.Path == openAIChatCompletionsPath {
+		resp.Status = backend.SubscribeStreamStatusOK
 	}
 	return resp, nil
 }
 
-func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	log.DefaultLogger.Debug(fmt.Sprintf("RunStream: %s", req.Path), "data", string(req.Data))
-
+func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	// Deserialize request data.
 	incomingBody := chatCompletionsRequest{Stream: true}
 	err := json.Unmarshal(req.Data, &incomingBody)
@@ -116,6 +119,14 @@ func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, send
 			return err
 		}
 	}
+}
+
+func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	log.DefaultLogger.Debug(fmt.Sprintf("RunStream: %s", req.Path), "data", string(req.Data))
+	if req.Path == openAIChatCompletionsPath {
+		return a.runOpenAIChatCompletionsStream(ctx, req, sender)
+	}
+	return fmt.Errorf("unknown stream path: %s", req.Path)
 }
 
 func (a *App) PublishStream(context.Context, *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
