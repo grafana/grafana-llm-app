@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -53,7 +54,8 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	if err != nil {
 		return err
 	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAIURL+req.Path, bytes.NewReader(outgoingBody))
+	path := strings.TrimPrefix(req.Path, "/openai")
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAIURL+path, bytes.NewReader(outgoingBody))
 	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.openAIKey))
 	httpReq.Header.Set("Content-Type", "application/json")
 	lastEventID := "" // no last event id
@@ -72,6 +74,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		case <-ctx.Done():
 			return nil
 		case event := <-eventStream.Events:
+			var body map[string]interface{}
 			eventData := event.Data()
 			// If the event data is "[DONE]", then we're done.
 			if eventData == "[DONE]" {
@@ -80,7 +83,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 				return nil
 			}
 			// Make sure we can unmarshal the data.
-			err = json.Unmarshal([]byte(event.Data()), &eventData)
+			err = json.Unmarshal([]byte(eventData), &body)
 			if err != nil {
 				err = fmt.Errorf("proxy: stream: error unmarshalling event data %s: %w", eventData, err)
 				log.DefaultLogger.Error(err.Error())
@@ -88,7 +91,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 			}
 			err = sender.SendJSON([]byte(event.Data()))
 			if err != nil {
-				err = fmt.Errorf("proxy: stream: error unmarshalling event data: %w", err)
+				err = fmt.Errorf("proxy: stream: error sending event data: %w", err)
 				log.DefaultLogger.Error(err.Error())
 				return err
 			}
