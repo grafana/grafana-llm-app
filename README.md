@@ -1,10 +1,4 @@
-# Grafana app plugin template
-
-This template is a starting point for building an app plugin for Grafana.
-
-## What are Grafana app plugins?
-
-App plugins can let you create a custom out-of-the-box monitoring experience by custom pages, nested datasources and panel plugins.
+# Grafana LLM app
 
 ## Getting started
 
