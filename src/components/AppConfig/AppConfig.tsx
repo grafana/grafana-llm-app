@@ -87,7 +87,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                 secureJsonData: state.isOpenAIKeySet
                   ? undefined
                   : {
-                      apiKey: state.openAIKey,
+                      openAIKey: state.openAIKey,
                     },
               })
             }
