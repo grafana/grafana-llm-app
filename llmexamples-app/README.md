@@ -25,7 +25,7 @@ You'll need to clone and link the `grafana/grafana-experimental` repository unti
     cd ..
     git clone --branch llm-openai git@github.com:grafana/grafana-experimental
     cd grafana-experimental
-    npm install
+    yarn
     npm link  # make this local checkout available for other repositories to link to
     cd ../grafana-llmexamples-app
     npm link @grafana/experimental
