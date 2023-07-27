@@ -188,8 +188,8 @@ const isDoneMessage = (message: any): message is DoneMessage => {
 }
 
 /**
-  * Make a request to OpenAI's chat-completions API via the Grafana LLM plugin proxy.
-  */
+ * Make a request to OpenAI's chat-completions API via the Grafana LLM plugin proxy.
+ */
 export async function chatCompletions(request: ChatCompletionsRequest): Promise<string> {
   const response = await getBackendSrv().post<ChatCompletionsResponse>('/api/plugins/grafana-llm-app/resources/openai/v1/chat/completions', request, {
     headers: { 'Content-Type': 'application/json' }
@@ -198,11 +198,11 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
 }
 
 /**
-  * Make a streaming request to OpenAI's chat-completions API via the Grafana LLM plugin proxy.
-  *
-  * A stream of tokens will be returned as an `Observable<string>`. Use rxjs' `scan` if you want
-  * to produce a new stream containing the concatenated tokens so far.
-  */
+ * Make a streaming request to OpenAI's chat-completions API via the Grafana LLM plugin proxy.
+ *
+ * A stream of tokens will be returned as an `Observable<string>`. Use rxjs' `scan` if you want
+ * to produce a new stream containing the concatenated tokens so far.
+ */
 export function streamChatCompletions(request: ChatCompletionsRequest): Observable<string> {
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
