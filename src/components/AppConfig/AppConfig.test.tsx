@@ -32,6 +32,7 @@ describe('Components/AppConfig', () => {
 
     expect(screen.queryByRole('group', { name: /openai settings/i })).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.openAIKey)).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.openAIOrganizationID)).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.openAIUrl)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save api settings/i })).toBeInTheDocument();
   });

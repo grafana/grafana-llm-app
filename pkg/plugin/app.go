@@ -22,7 +22,8 @@ var (
 )
 
 type Settings struct {
-	OpenAIURL string `json:"openAIUrl"`
+	OpenAIURL            string `json:"openAIUrl"`
+	OpenAIOrganizationID string `json:"openAIOrganizationId"`
 
 	openAIKey string
 }

@@ -57,6 +57,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	path := strings.TrimPrefix(req.Path, "/openai")
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAIURL+path, bytes.NewReader(outgoingBody))
 	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.openAIKey))
+	httpReq.Header.Set("OpenAI-Organization", settings.OpenAIOrganizationID)
 	httpReq.Header.Set("Content-Type", "application/json")
 	lastEventID := "" // no last event id
 	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)
