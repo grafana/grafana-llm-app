@@ -8,11 +8,14 @@ import { testIds } from '../testIds';
 
 export type AppPluginSettings = {
   openAIUrl?: string;
+  openAIOrganizationID?: string;
 };
 
 type State = {
   // The URL to reach our custom API.
   openAIUrl: string;
+  // The Organization ID for our custom API.
+  openAIOrganizationID: string;
   // Tells us if the API key secret is set.
   isOpenAIKeySet: boolean;
   // A secret key for our custom API.
@@ -26,6 +29,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const { enabled, pinned, jsonData, secureJsonFields } = plugin.meta;
   const [state, setState] = useState<State>({
     openAIUrl: jsonData?.openAIUrl || 'https://api.openai.com',
+    openAIOrganizationID: jsonData?.openAIOrganizationID || '',
     openAIKey: '',
     isOpenAIKeySet: Boolean(secureJsonFields?.openAIKey),
   });
@@ -34,6 +38,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     setState({
       ...state,
       openAIKey: '',
+      openAIOrganizationID: '',
       isOpenAIKeySet: false,
     });
 
@@ -54,6 +59,17 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             data-testid={testIds.appConfig.openAIUrl}
             value={state.openAIUrl}
             placeholder={`https://api.openai.com`}
+            onChange={onChange}
+          />
+        </Field>
+
+        <Field label="OpenAI API Organization ID" description="Your OpenAI API Organization ID">
+          <Input
+            width={60}
+            name="openAIOrganizationID"
+            data-testid={testIds.appConfig.openAIOrganizationID}
+            value={state.openAIOrganizationID}
+            placeholder={'org-...'}
             onChange={onChange}
           />
         </Field>
@@ -81,6 +97,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                 pinned,
                 jsonData: {
                   openAIUrl: state.openAIUrl,
+                  openAIOrganizationID: state.openAIOrganizationID,
                 },
                 // This cannot be queried later by the frontend.
                 // We don't want to override it in case it was set previously and left untouched now.
@@ -91,7 +108,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                     },
               })
             }
-            disabled={Boolean(!state.openAIUrl || (!state.isOpenAIKeySet && !state.openAIKey))}
+            disabled={Boolean(
+              !state.openAIUrl || !state.openAIOrganizationID || (!state.isOpenAIKeySet && !state.openAIKey)
+            )}
           >
             Save API settings
           </Button>
