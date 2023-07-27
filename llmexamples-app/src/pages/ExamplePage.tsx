@@ -52,6 +52,5 @@ export function ExamplePage() {
       <div>{loading ? <Spinner /> : reply}</div>
     </PluginPage>
   );
-
 }
 
