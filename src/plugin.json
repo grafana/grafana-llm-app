@@ -23,16 +23,7 @@
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
-  "includes": [
-    {
-      "type": "page",
-      "icon": "cog",
-      "name": "Configuration",
-      "path": "/plugins/%PLUGIN_ID%",
-      "role": "Admin",
-      "addToNav": true
-    }
-  ],
+  "includes": [],
   "dependencies": {
     "grafanaDependency": ">=9.5.2",
     "plugins": []
