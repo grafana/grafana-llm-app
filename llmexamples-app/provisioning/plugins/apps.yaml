@@ -3,3 +3,9 @@ apiVersion: 1
 apps:
   - type: 'grafana-llmexamples-app'
     disabled: false
+  - type: 'grafana-llm-app'
+    disabled: false
+    jsonData:
+      openAIUrl: https://api.openai.com
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
