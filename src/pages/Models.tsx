@@ -21,7 +21,7 @@ export function Models() {
   if (error || !value) {
     return (
       <div data-testid={testIds.models.container}>
-        <span>Error: {error?.message}</span>
+        <span>Error loading models: {error?.message}</span>
       </div>
     );
   }
@@ -31,7 +31,7 @@ export function Models() {
       <div data-testid={testIds.models.container}>
         <h1>Available Models</h1>
         <pre>
-        {JSON.stringify(value, null, 2)}
+          {JSON.stringify(value, null, 2)}
         </pre>
       </div>
     </PluginPage>

@@ -5,9 +5,9 @@ import { Models } from '../../pages';
 
 export function App(props: AppRootProps) {
   return (
-      <Switch>
-        {/* Default page */}
-        <Route component={Models} />
-      </Switch>
+    <Switch>
+      {/* Default page */}
+      <Route component={Models} />
+    </Switch>
   );
 }

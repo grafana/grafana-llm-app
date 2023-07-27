@@ -21,6 +21,8 @@ var (
 	_ backend.StreamHandler         = (*App)(nil)
 )
 
+const openAIKey = "openAIKey"
+
 type Settings struct {
 	OpenAIURL            string `json:"openAIUrl"`
 	OpenAIOrganizationID string `json:"openAIOrganizationId"`
@@ -34,7 +36,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	}
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
-	settings.openAIKey = appSettings.DecryptedSecureJSONData["openAIKey"]
+	settings.openAIKey = appSettings.DecryptedSecureJSONData[openAIKey]
 	return settings
 }
 
