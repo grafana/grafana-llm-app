@@ -7,5 +7,6 @@ apps:
     disabled: false
     jsonData:
       openAIUrl: https://api.openai.com
+      openAIOrganizationID: $OPENAI_ORGANIZATION_ID
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
