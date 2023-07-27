@@ -202,6 +202,12 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  *
  * A stream of tokens will be returned as an `Observable<string>`. Use rxjs' `scan` if you want
  * to produce a new stream containing the concatenated tokens so far.
+ *
+ * @example <caption>Example of accumulating tokens in a stream.</caption>
+ * const stream = streamChatCompletions({ model: 'gpt-3.5-turbo', messages: [
+ *   { role: 'system', content: 'You are a great bot.' },
+ *   { role: 'user', content: 'Hello, bot.' },
+ * ]}).pipe(scan((acc, delta) => acc + delta, ''));
  */
 export function streamChatCompletions(request: ChatCompletionsRequest): Observable<string> {
   const channel: LiveChannelAddress = {
