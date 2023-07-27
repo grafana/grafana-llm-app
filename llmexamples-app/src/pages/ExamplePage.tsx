@@ -1,42 +1,57 @@
-import React from 'react';
-import { testIds } from '../components/testIds';
+import React, { useState } from 'react';
+import { useAsync } from 'react-use';
+import { scan } from 'rxjs/operators';
+
+import { llms } from '@grafana/experimental';
 import { PluginPage } from '@grafana/runtime';
 
-import { useLLM } from 'hooks/useLLM';
-import LLMChat from 'components/LLMChat';
+import { Button, Input, Spinner } from '@grafana/ui';
 
 export function ExamplePage() {
+  const [input, setInput] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const [reply, setReply] = useState('');
 
-  const { llm, isLoading } = useLLM();
-  const [lastMessage, setLastMessage] = React.useState('');
+  const { loading, error } = useAsync(async () => {
+    const enabled = await llms.openai.enabled();
+    if (!enabled) {
+      return false;
+    }
+    if (message === '') {
+      return;
+    }
+    // Stream the completions. Each element is the next stream chunk.
+    const stream = llms.openai.streamChatCompletions({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are a cynical assistant.' },
+        { role: 'user', content: message },
+      ],
+    }).pipe(
+      // Accumulate the stream chunks into a single string.
+      scan((acc, delta) => acc + delta, '')
+    );
+    // Subscribe to the stream and update the state for each returned value.
+    return stream.subscribe(setReply);
+  }, [message]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (error) {
+    // TODO: handle errors.
+    return null;
   }
-  if (!llm) {
-    return <div>LLMs are not available.</div>;
-  }
-
   return (
     <PluginPage>
-      <div data-testid={testIds.pageTwo.container}>
-        {llm.models.filter((_, i) => i < 5).map((model) => (
-          <p key={model.id}>{model.id}</p>
-        ))}
-      </div>
-
-      <LLMChat
-        modelId="gpt-3.5-turbo"
-        systemPrompt="You are a cynical assistant."
-        callback={(text) => {
-          console.log(text);
-          setLastMessage(text);
-        }}
+      <Input
+        value={input}
+        onChange={(e) => setInput(e.currentTarget.value)}
+        placeholder="Enter a message"
       />
-      <div>
-        {lastMessage}
-      </div>
+      <br />
+      <Button type="submit" onClick={() => setMessage(input)}>Submit</Button>
+      <br />
+      <div>{loading ? <Spinner /> : reply}</div>
     </PluginPage>
   );
+
 }
 
