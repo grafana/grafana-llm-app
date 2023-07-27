@@ -16,24 +16,6 @@ Then run the following:
 
 You should then be able to access Grafana on http://localhost:3000.
 
----
-
-**Temporary step**
-
-You'll need to clone and link the `grafana/grafana-experimental` repository until there's a new release of that package (for some reason, git dependencies aren't working properly):
-
-    cd ..
-    git clone --branch llm-openai git@github.com:grafana/grafana-experimental
-    cd grafana-experimental
-    yarn
-    npm link  # make this local checkout available for other repositories to link to
-    cd ../grafana-llmexamples-app
-    npm link @grafana/experimental
-
-**End temporary step**
-
----
-
 Next you'll need to build this plugin:
 
     npm install
