@@ -9,7 +9,7 @@
  */
 
 import { isLiveChannelMessageEvent, LiveChannelAddress, LiveChannelMessageEvent, LiveChannelScope } from "@grafana/data";
-import { getBackendSrv, getGrafanaLiveSrv } from "@grafana/runtime";
+import { getBackendSrv, getGrafanaLiveSrv, logDebug } from "@grafana/runtime";
 
 import { Observable } from "rxjs";
 import { filter, map, takeWhile } from "rxjs/operators";
@@ -227,6 +227,8 @@ export function streamChatCompletions(request: ChatCompletionsRequest): Observab
   );
 }
 
+let loggedWarning = false;
+
 /**
  * Check if the OpenAI API is enabled via the LLM plugin.
  */
@@ -236,7 +238,12 @@ export const enabled = async () => {
       showSuccessAlert: false, showErrorAlert: false,
     });
     return settings.enabled && (settings?.secureJsonFields?.openAIKey ?? false);
-  } catch (_e) {
+  } catch (e) {
+    if (!loggedWarning) {
+      logDebug(String(e));
+      logDebug('Failed to check if OpenAI is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.');
+      loggedWarning = true;
+    }
     return false;
   }
 }
