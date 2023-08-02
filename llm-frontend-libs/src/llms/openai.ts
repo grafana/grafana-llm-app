@@ -262,7 +262,7 @@ export function extractContent(): UnaryFunction<Observable<ChatCompletionsRespon
  * ]}).pipe(accumulateContent());
  * stream.subscribe(console.log);
  * // Output:
- * // ['Hello', 'Hello! ', 'Hello! How ', 'Hello! How are ', 'Hello! How are you ', 'Hello! How are you', 'Hello! How are you?']
+ * // ['Hello', 'Hello! ', 'Hello! How ', 'Hello! How are ', 'Hello! How are you', 'Hello! How are you?']
  */
 export function accumulateContent(): UnaryFunction<Observable<ChatCompletionsResponse<ChatCompletionsChunk>>, Observable<string>> {
   return pipe(
@@ -306,7 +306,7 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  * ]}).pipe(accumulateContent());
  * stream.subscribe(console.log);
  * // Output:
- * // ['Hello', 'Hello! ', 'Hello! How ', 'Hello! How are ', 'Hello! How are you ', 'Hello! How are you', 'Hello! How are you?']
+ * // ['Hello', 'Hello! ', 'Hello! How ', 'Hello! How are ', 'Hello! How are you', 'Hello! How are you?']
  */
 export function streamChatCompletions(request: ChatCompletionsRequest): Observable<ChatCompletionsResponse<ChatCompletionsChunk>> {
   const channel: LiveChannelAddress = {
