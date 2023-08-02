@@ -10,16 +10,16 @@ To get started you'll need a few things:
   - this should be made available as the `OPENAI_API_KEY` environment variable
 - Docker
 
-Then run the following:
-
-    docker-compose up
-
-You should then be able to access Grafana on http://localhost:3000.
-
-Next you'll need to build this plugin:
+Then run the following to build the plugin:
 
     npm install
     npm run dev
+
+Finally, use docker compose to run a Grafana instance with access to the plugin:
+
+    docker compose up
+
+You should then be able to access Grafana on http://localhost:3000.
 
 Head to the [LLM Examples](http://localhost:3000/a/grafana-llmexamples-app) plugin page to see some use of the LLMs in action!
 
