@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useAsync } from 'react-use';
-import { scan } from 'rxjs/operators';
 
 import { llms } from '@grafana/experimental';
 import { PluginPage } from '@grafana/runtime';
-
 import { Button, Input, Spinner } from '@grafana/ui';
 
 export function ExamplePage() {
@@ -28,8 +26,9 @@ export function ExamplePage() {
         { role: 'user', content: message },
       ],
     }).pipe(
-      // Accumulate the stream chunks into a single string.
-      scan((acc, delta) => acc + delta, '')
+      // Accumulate the stream content into a stream of strings, where each
+      // element contains the accumulated message so far.
+      llms.openai.accumulateContent()
     );
     // Subscribe to the stream and update the state for each returned value.
     return stream.subscribe(setReply);

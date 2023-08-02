@@ -23,7 +23,7 @@
     {
       "type": "page",
       "name": "Examples",
-      "path": "/a/%PLUGIN_ID%",
+      "path": "/a/grafana-llmexamples-app",
       "addToNav": true,
       "defaultNav": true
     }
