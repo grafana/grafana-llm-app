@@ -33,5 +33,16 @@ Take a look at `src/pages/ExamplePage.tsx` to see how to make requests and use r
 
 You can also toggle the value of `disabled` for the `grafana-llm-app` plugin in `provisioning/plugins/apps.yaml` to see what happens when the LLM plugin is unavailable.
 
+## Adapting your own plugin
+
+To add LLM functionality to your own plugin you'll need to do the following:
+
+- add a dependency on `@grafana/experimental>=1.7.0` and make use of the `llms` module
+- ensure the `grafana-llm-app` plugin is installed and configured in the Grafana instance
+  - install by setting the `GF_INSTALL_PLUGINS` environment variable at startup time - see `docker-compose.yaml` for an example
+  - configure either:
+    - using provisioning (see provisioning/plugins/apps.yaml), or
+    - within the app settings screen (e.g. http://localhost:3000/plugins/grafana-llm-app)
+
 [getting-started-doc]: https://docs.google.com/document/d/1H9bo0QOrVbmjioTleqFsknpGszZ-py75YX2aWRcCNGE/edit#heading=h.180bjy5a5l0k
 [`grafana-llm-app`]: https://github.com/grafana/grafana-llm-app
