@@ -46,7 +46,7 @@ First, add the correct version of `@grafana/experimental` to your dependencies i
 ```json
 {
   "dependencies": {
-    "@grafana/experimental": "grafana/grafana-experimental#9de681c72f48721847f287c933f2e75649640b57"
+    "@grafana/experimental": "grafana/grafana-experimental#44c73c843136cea876b620c127d6d5c76bdcde59"
   }
 }
 ```
