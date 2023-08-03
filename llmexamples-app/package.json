@@ -59,7 +59,7 @@
   "dependencies": {
     "@emotion/css": "^11.1.3",
     "@grafana/data": "^10.0.0",
-    "@grafana/experimental": "grafana/grafana-experimental#664c67d1070e50e7c176036b2b93df2ea7ca987f",
+    "@grafana/experimental": "grafana/grafana-experimental#44c73c843136cea876b620c127d6d5c76bdcde59",
     "@grafana/runtime": "^10.0.0",
     "@grafana/ui": "^10.0.0",
     "react": "17.0.2",
