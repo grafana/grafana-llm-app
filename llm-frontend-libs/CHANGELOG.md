@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.7.0
+
+- Add experimental LLM support
+
 ## v1.6.2
 
 - #Feature: Allow customizing the list of built-in authentication methods
