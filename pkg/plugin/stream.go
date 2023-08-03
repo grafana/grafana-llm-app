@@ -13,7 +13,7 @@ import (
 	"github.com/launchdarkly/eventsource"
 )
 
-const openAIChatCompletionsPath = "/openai/v1/chat/completions"
+const openAIChatCompletionsPath = "openai/v1/chat/completions"
 
 type chatCompletionsMessage struct {
 	Role    string `json:"role"`
