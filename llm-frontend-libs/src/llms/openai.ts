@@ -16,6 +16,7 @@ import { filter, map, scan, takeWhile } from "rxjs/operators";
 
 const LLM_PLUGIN_ID = 'grafana-llm-app';
 const LLM_PLUGIN_ROUTE = `/api/plugins/${LLM_PLUGIN_ID}`;
+const OPENAI_CHAT_COMPLETIONS_PATH = 'openai/v1/chat/completions';
 
 /** The role of a message's author. */
 export type Role = 'system' | 'user' | 'assistant' | 'function';
@@ -312,7 +313,7 @@ export function streamChatCompletions(request: ChatCompletionsRequest): Observab
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
     namespace: LLM_PLUGIN_ID,
-    path: `/openai/v1/chat/completions`,
+    path: OPENAI_CHAT_COMPLETIONS_PATH,
     data: request,
   };
   const messages = getGrafanaLiveSrv()
