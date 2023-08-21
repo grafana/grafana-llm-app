@@ -15,7 +15,7 @@ export function ExamplePage() {
   const [reply, setReply] = useState('');
 
   const [started, setStarted] = useState(false);
-  const [finished, setFinished] = useState(false)
+  const [finished, setFinished] = useState(true);
 
   const { loading, error, value } = useAsync(async () => {
     // Check if the LLM plugin is enabled and configured.
