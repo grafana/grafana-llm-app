@@ -8,9 +8,9 @@ import { finalize } from 'rxjs';
 
 export function ExamplePage() {
   // The current input value.
-  const [input, setInput] = React.useState('');
+  const [input, setInput] = useState('');
   // The final message to send to the LLM, updated when the button is clicked.
-  const [message, setMessage] = React.useState('');
+  const [message, setMessage] = useState('');
   // The latest reply from the LLM.
   const [reply, setReply] = useState('');
 
@@ -41,6 +41,11 @@ export function ExamplePage() {
       // Accumulate the stream content into a stream of strings, where each
       // element contains the accumulated message so far.
       llms.openai.accumulateContent(),
+      // The stream is just a regular Observable, so we can use standard rxjs
+      // functionality to update state, e.g. recording when the stream
+      // has completed.
+      // The operator decision tree on the rxjs website is a useful resource:
+      // https://rxjs.dev/operator-decision-tree.
       finalize(() => {
         setStarted(false);
         setFinished(true);
