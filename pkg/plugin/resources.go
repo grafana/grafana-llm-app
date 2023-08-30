@@ -9,6 +9,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/grafana/llm/pkg/plugin/vector/store"
 )
 
 // /api/plugins/app-with-backend/resources/ping
@@ -62,9 +63,37 @@ func newOpenAIProxy() http.Handler {
 	}
 }
 
+type vectorSearchRequest struct {
+	Text       string `json:"text"`
+	Collection string `json:"collection"`
+}
+
+type vectorSearchResponse struct {
+	Results []store.SearchResult `json:"results"`
+}
+
+func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
+	body := vectorSearchRequest{}
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	results, err := app.vectorService.Search(req.Context(), body.Collection, body.Text)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	resp := vectorSearchResponse{Results: results}
+	bodyJSON, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	w.Write(bodyJSON)
+}
+
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/ping", a.handlePing)
 	mux.HandleFunc("/echo", a.handleEcho)
 	mux.Handle("/openai/", newOpenAIProxy())
+	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 }

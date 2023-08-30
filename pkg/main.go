@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	log.DefaultLogger.Info("Starting plugin process")
 	// Start listening to requests sent from Grafana. This call is blocking so
 	// it won't finish until Grafana shuts down the process or the plugin choose
 	// to exit by itself using os.Exit. Manage automatically manages life cycle

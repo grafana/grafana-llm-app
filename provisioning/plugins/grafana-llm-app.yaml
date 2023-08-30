@@ -1,0 +1,17 @@
+apiVersion: 1
+
+apps:
+  - type: grafana-llm-app
+    jsonData:
+      openAIUrl: https://api.openai.com
+      embeddings:
+        type: openai
+        openai:
+          url: http://localhost:8889
+      vectorStore:
+        type: grafana/vectorapi
+        grafanaVectorAPI:
+          url: http://localhost:8889
+
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
