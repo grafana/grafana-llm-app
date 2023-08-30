@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	qdrant "github.com/qdrant/go-client/qdrant"
@@ -29,7 +30,7 @@ type qdrantStore struct {
 	pointsClient      qdrant.PointsClient
 }
 
-func newQdrantStore(s qdrantSettings, secrets map[string]string) (ReadVectorStore, func(), error) {
+func newQdrantStore(s qdrantSettings, secrets map[string]string) (VectorStore, func(), error) {
 	var md *metadata.MD
 	dialOptions := []grpc.DialOption{}
 	if s.Secure {
@@ -241,4 +242,135 @@ func fromQdrantValue(in *qdrant.Value) any {
 		return out
 	}
 	return nil
+}
+
+func toQdrantValue(v reflect.Value) *qdrant.Value {
+	out := &qdrant.Value{}
+	switch v.Kind() {
+
+	// Atoms
+	case reflect.Invalid:
+		out.Kind = &qdrant.Value_NullValue{NullValue: qdrant.NullValue_NULL_VALUE}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		out.Kind = &qdrant.Value_IntegerValue{IntegerValue: int64(v.Uint())}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		out.Kind = &qdrant.Value_IntegerValue{IntegerValue: v.Int()}
+	case reflect.Float32, reflect.Float64:
+		out.Kind = &qdrant.Value_DoubleValue{DoubleValue: v.Float()}
+	case reflect.Bool:
+		out.Kind = &qdrant.Value_BoolValue{BoolValue: v.Bool()}
+	case reflect.String:
+		out.Kind = &qdrant.Value_StringValue{StringValue: v.String()}
+
+	// Slices and arrays
+	case reflect.Slice, reflect.Array:
+		values := make([]*qdrant.Value, 0, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			values = append(values, toQdrantValue(v.Index(i)))
+		}
+		out.Kind = &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{Values: values}}
+
+	// Maps and structs
+	case reflect.Map:
+		keys := v.MapKeys()
+		fields := make(map[string]*qdrant.Value, len(keys))
+		for _, key := range keys {
+			if key.Kind() == reflect.String {
+				fields[key.String()] = toQdrantValue(v.MapIndex(key))
+			} else {
+				log.DefaultLogger.Warn("unsupported map key type", "type", key.Kind())
+			}
+		}
+		out.Kind = &qdrant.Value_StructValue{StructValue: &qdrant.Struct{Fields: fields}}
+	case reflect.Struct:
+		fields := make(map[string]*qdrant.Value, v.NumField())
+		for i := 0; i < v.NumField(); i++ {
+			fields[v.Type().Field(i).Name] = toQdrantValue(v.Field(i))
+		}
+		out.Kind = &qdrant.Value_StructValue{StructValue: &qdrant.Struct{Fields: fields}}
+
+		// Pointers and interfaces
+	case reflect.Ptr:
+		if v.IsNil() {
+			out.Kind = &qdrant.Value_NullValue{NullValue: qdrant.NullValue_NULL_VALUE}
+		} else {
+			out = toQdrantValue(v.Elem())
+		}
+	case reflect.Interface:
+		if v.IsNil() {
+			out.Kind = &qdrant.Value_NullValue{NullValue: qdrant.NullValue_NULL_VALUE}
+		} else {
+			out = toQdrantValue(v.Elem())
+		}
+	}
+	return out
+}
+
+func (q *qdrantStore) CreateCollection(ctx context.Context, collection string, size uint64) error {
+	_, err := q.collectionsClient.Create(ctx, &qdrant.CreateCollection{
+		CollectionName: collection,
+		VectorsConfig: &qdrant.VectorsConfig{
+			Config: &qdrant.VectorsConfig_Params{
+				Params: &qdrant.VectorParams{
+					Size: size,
+					// TODO: make this customizable
+					Distance: qdrant.Distance_Cosine,
+				},
+			},
+		},
+	})
+	return err
+}
+
+func (q *qdrantStore) PointExists(ctx context.Context, collection string, id uint64) (bool, error) {
+	point, err := q.pointsClient.Get(ctx, &qdrant.GetPoints{
+		CollectionName: collection,
+		Ids: []*qdrant.PointId{
+			{PointIdOptions: &qdrant.PointId_Num{Num: id}},
+		},
+	}, grpc.WaitForReady(true))
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			return false, err
+			// Error was not a status error
+		}
+		if st.Code() == codes.NotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	if point.Result == nil {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (q *qdrantStore) UpsertColumnar(ctx context.Context, collection string, ids []uint64, embeddings [][]float32, payloads []Payload) error {
+	waitUpsert := false
+	upsertPoints := make([]*qdrant.PointStruct, 0, len(ids))
+	for i, id := range ids {
+		payload := make(map[string]*qdrant.Value, len(payloads[i]))
+		for k, v := range payloads[i] {
+			if newV := toQdrantValue(reflect.ValueOf(v)); newV != nil {
+				payload[k] = newV
+			} else {
+				log.DefaultLogger.Warn("unsupported payload value type", "key", k, "value", v)
+			}
+		}
+		point := &qdrant.PointStruct{
+			Id: &qdrant.PointId{
+				PointIdOptions: &qdrant.PointId_Num{Num: id},
+			},
+			Vectors: &qdrant.Vectors{VectorsOptions: &qdrant.Vectors_Vector{Vector: &qdrant.Vector{Data: embeddings[i]}}},
+			Payload: payload,
+		}
+		upsertPoints = append(upsertPoints, point)
+	}
+	_, err := q.pointsClient.Upsert(ctx, &qdrant.UpsertPoints{
+		CollectionName: collection,
+		Points:         upsertPoints,
+		Wait:           &waitUpsert,
+	}, grpc.WaitForReady(true))
+	return err
 }

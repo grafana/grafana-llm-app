@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -50,13 +51,17 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	app.registerRoutes(mux, app.settings)
 	app.CallResourceHandler = httpadapter.New(mux)
 
-	var err error
-
 	if app.settings.Vector.Enabled {
 		log.DefaultLogger.Debug("Creating vector service")
+		httpOpts, err := appSettings.HTTPClientOptions(ctx)
+		if err != nil {
+			log.DefaultLogger.Error("Invalid HTTP settings", "err", err)
+			return nil, fmt.Errorf("invalid http settings: %w", err)
+		}
 		app.vectorService, err = vector.NewService(
 			app.settings.Vector,
 			appSettings.DecryptedSecureJSONData,
+			httpOpts,
 		)
 		if err != nil {
 			log.DefaultLogger.Error("Error creating vector service", "err", err)

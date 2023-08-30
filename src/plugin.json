@@ -29,8 +29,26 @@
     "updated": "%TODAY%"
   },
   "includes": [],
+  "externalServiceRegistration": {
+    "self": {
+      "permissions": [
+        {
+          "action": "dashboards:read",
+          "scope": "dashboards:*"
+        },
+        {
+          "action": "dashboards:read",
+          "scope": "folders:*"
+        },
+        {
+          "action": "folders:read",
+          "scope": "folders:*"
+        }
+      ]
+    }
+  },
   "dependencies": {
-    "grafanaDependency": ">=9.5.2",
+    "grafanaDependency": ">=10.1.0",
     "plugins": []
   }
 }

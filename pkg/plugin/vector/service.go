@@ -5,33 +5,55 @@ package vector
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
 
+	gapi "github.com/grafana/grafana-api-golang-client"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/oauthtokenretriever"
 )
 
 type Service interface {
 	Search(ctx context.Context, collection string, query string, topK uint64, filter map[string]interface{}) ([]store.SearchResult, error)
 	Health(ctx context.Context) error
+	StartSync()
 	Cancel()
 }
 
 type VectorSettings struct {
-	Enabled bool           `json:"enabled"`
-	Model   string         `json:"model"`
-	Embed   embed.Settings `json:"embed"`
-	Store   store.Settings `json:"store"`
+	Enabled   bool           `json:"enabled"`
+	Model     string         `json:"model"`
+	Dimension uint64         `json:"dimension"`
+	Embed     embed.Settings `json:"embed"`
+	Store     store.Settings `json:"store"`
 }
 
 type vectorService struct {
-	embedder embed.Embedder
-	model    string
-	store    store.ReadVectorStore
-	cancel   context.CancelFunc
+	embedder  embed.Embedder
+	model     string
+	dimension uint64
+	store     store.VectorStore
+	// cancel is a function to cancel the context used by the vector service
+	// and/or the underlying vector store.
+	cancel context.CancelFunc
+
+	// httpClient is the http client used to make requests to the Grafana API.
+	httpClient *http.Client
+	// grafanaAppURL is the URL of the Grafana app. It is obtained from the
+	// `GF_APP_URL` environment variable.
+	grafanaAppURL string
+	// tokenRetriever is used to obtain OAuth2 tokens for the vector sync process.
+	tokenRetriever oauthtokenretriever.TokenRetriever
+	// ctx is the context used by the vector service. It is used to obtain
+	// OAuth2 tokens for the vector sync process.
+	ctx context.Context
 }
 
-func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
+func NewService(s VectorSettings, secrets map[string]string, httpOpts httpclient.Options) (Service, error) {
 	log.DefaultLogger.Debug("Creating embedder")
 	em, err := embed.NewEmbedder(s.Embed, secrets)
 	if err != nil {
@@ -42,7 +64,7 @@ func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 		return nil, nil
 	}
 	log.DefaultLogger.Info("Creating vector store")
-	st, cancel, err := store.NewReadVectorStore(s.Store, secrets)
+	st, cancel, err := store.NewVectorStore(s.Store, secrets)
 	if err != nil {
 		return nil, fmt.Errorf("new vector store: %w", err)
 	}
@@ -50,12 +72,53 @@ func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 		log.DefaultLogger.Warn("No vector store configured")
 		return nil, nil
 	}
-	return &vectorService{
-		embedder: em,
-		store:    st,
-		model:    s.Model,
-		cancel:   cancel,
-	}, nil
+	v := &vectorService{
+		embedder:  em,
+		store:     st,
+		model:     s.Model,
+		dimension: s.Dimension,
+		cancel:    cancel,
+	}
+
+	v.ctx = context.Background()
+	v.tokenRetriever, err = oauthtokenretriever.New()
+	if err != nil {
+		log.DefaultLogger.Warn("Error creating token retriever, vector sync will not run", "error", err)
+		return v, nil
+	}
+
+	// The Grafana URL is required to obtain tokens later on
+	v.grafanaAppURL = strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
+	if v.grafanaAppURL == "" {
+		// For debugging purposes only
+		v.grafanaAppURL = "http://localhost:3000"
+	}
+
+	v.httpClient, err = httpclient.New(httpOpts)
+	if err != nil {
+		return nil, fmt.Errorf("httpclient new: %w", err)
+	}
+
+	v.StartSync()
+
+	return v, nil
+}
+
+func (v *vectorService) grafanaClient(ctx context.Context) (*gapi.Client, error) {
+	token, err := v.tokenRetriever.Self(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get OAuth token for Grafana: %w", err)
+	}
+	g, err := gapi.New(v.grafanaAppURL, gapi.Config{
+		APIKey: token,
+		Client: v.httpClient,
+		// OrgID must be '1' for now.
+		OrgID: 1,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create Grafana client: %w", err)
+	}
+	return g, nil
 }
 
 func (v *vectorService) Search(ctx context.Context, collection string, query string, topK uint64, filter map[string]interface{}) ([]store.SearchResult, error) {
@@ -91,7 +154,7 @@ func (v *vectorService) Health(ctx context.Context) error {
 	return v.store.Health(ctx)
 }
 
-func (v vectorService) Cancel() {
+func (v *vectorService) Cancel() {
 	if v.cancel != nil {
 		v.cancel()
 	}

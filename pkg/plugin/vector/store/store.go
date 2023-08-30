@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
@@ -13,9 +14,15 @@ const (
 	VectorStoreTypeGrafanaVectorAPI VectorStoreType = "grafana/vectorapi"
 )
 
+type Collection struct {
+	Name string `json:"name"`
+}
+
+type Payload map[string]any
+
 type SearchResult struct {
-	Payload map[string]any `json:"payload"`
-	Score   float64        `json:"score"`
+	Payload Payload `json:"payload"`
+	Score   float64 `json:"score"`
 }
 
 type ReadVectorStore interface {
@@ -25,10 +32,9 @@ type ReadVectorStore interface {
 }
 
 type WriteVectorStore interface {
-	Collections(ctx context.Context) ([]string, error)
 	CreateCollection(ctx context.Context, collection string, size uint64) error
 	PointExists(ctx context.Context, collection string, id uint64) (bool, error)
-	UpsertColumnar(ctx context.Context, collection string, ids []uint64, embeddings [][]float32, payloadJSONs []string) error
+	UpsertColumnar(ctx context.Context, collection string, ids []uint64, embeddings [][]float32, payloads []Payload) error
 }
 
 type VectorStore interface {
@@ -56,7 +62,14 @@ func NewReadVectorStore(s Settings, secrets map[string]string) (ReadVectorStore,
 	return nil, nil, nil
 }
 
-func NewVectorStore(s Settings) (VectorStore, error) {
-	// TODO: Implement write vector store.
-	return nil, nil
+func NewVectorStore(s Settings, secrets map[string]string) (VectorStore, context.CancelFunc, error) {
+	switch VectorStoreType(s.Type) {
+	case VectorStoreTypeGrafanaVectorAPI:
+		log.DefaultLogger.Debug("Grafana Vector API can not yet be used for vector sync")
+		return nil, nil, fmt.Errorf("unimplemented")
+	case VectorStoreTypeQdrant:
+		log.DefaultLogger.Debug("Creating Qdrant store")
+		return newQdrantStore(s.Qdrant, secrets)
+	}
+	return nil, nil, nil
 }
