@@ -19,7 +19,12 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "screenshots": [],
+    "screenshots": [
+      {
+        "name": "Configuration",
+        "path": "img/screenshot-configuration.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
