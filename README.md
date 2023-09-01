@@ -1,7 +1,11 @@
-# Grafana LLM app
+# Grafana LLM App (Experimental)
 
 A Grafana plugin designed to centralise access to LLMs, providing authentication, rate limiting, and more.
 Installing this plugin will enable various pieces of LLM-based functionality throughout Grafana.
+
+Note: This plugin is **experimental**, and may change significantly between
+versions, or deprecated completely in favor of a different approach based on
+user feedback.
 
 ## Installing this plugin
 
@@ -46,12 +50,10 @@ First, add the correct version of `@grafana/experimental` to your dependencies i
 ```json
 {
   "dependencies": {
-    "@grafana/experimental": "grafana/grafana-experimental#44c73c843136cea876b620c127d6d5c76bdcde59"
+    "@grafana/experimental": "1.7.0"
   }
 }
 ```
-
-(note we use a git commit hash for now until https://github.com/grafana/grafana-experimental/pull/72 is merged and released).
 
 Then in your components you can use the `llm` object from `@grafana/experimental` like so:
 
