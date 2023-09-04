@@ -3,12 +3,11 @@ module github.com/grafana/llm
 go 1.19
 
 require (
-	github.com/grafana/grafana-plugin-sdk-go v0.173.0
+	github.com/grafana/grafana-plugin-sdk-go v0.174.0
 	github.com/launchdarkly/eventsource v1.7.1
 )
 
 require (
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
