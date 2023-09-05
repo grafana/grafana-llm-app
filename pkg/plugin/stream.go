@@ -56,6 +56,9 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	}
 	path := strings.TrimPrefix(req.Path, "openai")
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAIURL+path, bytes.NewReader(outgoingBody))
+	if err != nil {
+		return fmt.Errorf("proxy: stream: error creating request: %w", err)
+	}
 	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.openAIKey))
 	httpReq.Header.Set("OpenAI-Organization", settings.OpenAIOrganizationID)
 	httpReq.Header.Set("Content-Type", "application/json")
@@ -80,6 +83,11 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 			// If the event data is "[DONE]", then we're done.
 			if eventData == "[DONE]" {
 				err = sender.SendJSON([]byte(`{"choices": [{"delta": {"done": true}}]}`))
+				if err != nil {
+					err = fmt.Errorf("proxy: stream: error sending done: %w", err)
+					log.DefaultLogger.Error(err.Error())
+					return err
+				}
 				log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: done==true, ending (in happy branch): %s", req.Path))
 				return nil
 			}
