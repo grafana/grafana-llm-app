@@ -6,10 +6,14 @@ import { filter, map, takeWhile } from "rxjs/operators";
 
 import pluginJson from '../plugin.json';
 
+export interface Message {
+  role: string,
+  content: string,
+}
+
 export interface ChatCompletionsProps {
   model: string;
-  systemPrompt: string;
-  userPrompt: string;
+  messages: Message[];
 }
 
 interface Choice {
@@ -22,13 +26,10 @@ interface ChatCompletionsResponse<T = Choice> {
   choices: T[];
 }
 
-export const chatCompletions = async ({ model, systemPrompt, userPrompt }: ChatCompletionsProps): Promise<string> => {
+export const chatCompletions = async ({ model, messages }: ChatCompletionsProps): Promise<string> => {
   const response = await getBackendSrv().post<ChatCompletionsResponse>('/api/plugins/grafana-llm-app/resources/openai/v1/chat/completions', {
     model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
+    messages,
   }, { headers: { 'Content-Type': 'application/json' } });
   return response.choices[0].message.content;
 }
@@ -59,23 +60,20 @@ const isDoneMessage = (message: any): message is DoneMessage => {
   return message.done !== undefined;
 }
 
-export const streamChatCompletions = ({ model, systemPrompt, userPrompt }: ChatCompletionsProps): Observable<string> => {
+export const streamChatCompletions = ({ model, messages }: ChatCompletionsProps): Observable<string> => {
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
     namespace: pluginJson.id,
     path: `/openai/v1/chat/completions`,
     data: {
       model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      messages,
     },
   };
-  const messages = getGrafanaLiveSrv()
+  const responses = getGrafanaLiveSrv()
     .getStream(channel)
     .pipe(filter((event) => isLiveChannelMessageEvent(event))) as Observable<LiveChannelMessageEvent<ChatCompletionsResponse<ChatCompletionsChunk>>>
-  return messages.pipe(
+  return responses.pipe(
     takeWhile((event) => !isDoneMessage(event.message.choices[0].delta)),
     map((event) => event.message.choices[0].delta),
     filter((delta) => isContentMessage(delta)),
