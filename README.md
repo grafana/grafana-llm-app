@@ -1,6 +1,6 @@
 # Grafana LLM App (Experimental)
 
-A Grafana plugin designed to centralise access to LLMs, providing authentication, rate limiting, and more.
+A Grafana plugin designed to centralize access to LLMs, providing authentication, rate limiting, and more.
 Installing this plugin will enable various pieces of LLM-based functionality throughout Grafana.
 
 Note: This plugin is **experimental**, and may change significantly between
