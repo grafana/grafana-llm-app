@@ -143,7 +143,7 @@ const MyComponent = (): JSX.Element => {
 1. Install dependencies
 
    ```bash
-   npm run install
+   npm install
    ```
 
 2. Build plugin in development mode and run in watch mode
