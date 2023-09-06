@@ -3,6 +3,7 @@ module github.com/grafana/llm
 go 1.19
 
 require (
+	github.com/grafana/grafana-api-golang-client v0.23.0
 	github.com/grafana/grafana-plugin-sdk-go v0.174.0
 	github.com/launchdarkly/eventsource v1.7.1
 )
@@ -31,7 +32,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/grafana/grafana-api-golang-client v0.23.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.2 // indirect
