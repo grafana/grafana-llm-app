@@ -7,11 +7,11 @@ apps:
       embeddings:
         type: openai
         openai:
-          url: http://localhost:8889
+          url: http://vectorapi:8889
       vectorStore:
         type: grafana/vectorapi
         grafanaVectorAPI:
-          url: http://localhost:8889
+          url: http://vectorapi:8889
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY

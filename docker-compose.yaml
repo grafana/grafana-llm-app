@@ -15,3 +15,9 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-llm-app
       - ./provisioning:/etc/grafana/provisioning
+  vectorapi:
+    image: vectorapi:latest
+    environment:
+      PORT: 8889
+    ports:
+      - 8889:8889
