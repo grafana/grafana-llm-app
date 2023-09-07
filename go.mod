@@ -1,4 +1,4 @@
-module github.com/grafana/llm
+module github.com/grafana/grafana-llm-app
 
 go 1.19
 
