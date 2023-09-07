@@ -6,9 +6,13 @@ import { getBackendSrv } from '@grafana/runtime';
 import { Button, Field, FieldSet, Input, SecretInput, useStyles2 } from '@grafana/ui';
 import { testIds } from '../testIds';
 
+type OpenAISettings = {
+  url?: string;
+  organizationId?: string;
+}
+
 export type AppPluginSettings = {
-  openAIUrl?: string;
-  openAIOrganizationID?: string;
+  openAI?: OpenAISettings;
 };
 
 type State = {
@@ -22,14 +26,14 @@ type State = {
   openAIKey: string;
 };
 
-export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> {}
+export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> { }
 
 export const AppConfig = ({ plugin }: AppConfigProps) => {
   const s = useStyles2(getStyles);
   const { enabled, pinned, jsonData, secureJsonFields } = plugin.meta;
   const [state, setState] = useState<State>({
-    openAIUrl: jsonData?.openAIUrl || 'https://api.openai.com',
-    openAIOrganizationID: jsonData?.openAIOrganizationID || '',
+    openAIUrl: jsonData?.openAI?.url || 'https://api.openai.com',
+    openAIOrganizationID: jsonData?.openAI?.organizationId || '',
     openAIKey: '',
     isOpenAIKeySet: Boolean(secureJsonFields?.openAIKey),
   });
@@ -96,16 +100,18 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                 enabled,
                 pinned,
                 jsonData: {
-                  openAIUrl: state.openAIUrl,
-                  openAIOrganizationID: state.openAIOrganizationID,
+                  openAI: {
+                    url: state.openAIUrl,
+                    organizationId: state.openAIOrganizationID,
+                  },
                 },
                 // This cannot be queried later by the frontend.
                 // We don't want to override it in case it was set previously and left untouched now.
                 secureJsonData: state.isOpenAIKeySet
                   ? undefined
                   : {
-                      openAIKey: state.openAIKey,
-                    },
+                    openAIKey: state.openAIKey,
+                  },
               })
             }
             disabled={Boolean(

@@ -40,7 +40,8 @@ apps:
   - type: 'grafana-llm-app'
     disabled: false
     jsonData:
-      openAIUrl: https://api.openai.com
+      openAI:
+        url: https://api.openai.com
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
 ```
