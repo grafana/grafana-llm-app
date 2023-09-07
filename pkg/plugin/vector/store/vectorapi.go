@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 type grafanaVectorAPISettings struct {
@@ -58,6 +60,11 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 	if err != nil {
 		return nil, fmt.Errorf("post collections: %w", err)
 	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.DefaultLogger.Warn("failed to close response body", "err", err)
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("post collections: %s", resp.Status)
 	}

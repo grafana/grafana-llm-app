@@ -87,6 +87,7 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	//nolint:errcheck // Just do our best to write.
 	w.Write(bodyJSON)
 }
 
