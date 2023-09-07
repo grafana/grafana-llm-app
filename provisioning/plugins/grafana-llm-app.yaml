@@ -14,7 +14,7 @@ apps:
           url: http://vectorapi:8889
         collections:
           - name: grafana:core:dashboards
-            model: BAAI/bge-small-en
+            model: BAAI/bge-base-en
             dimension: 768
 
     secureJsonData:
