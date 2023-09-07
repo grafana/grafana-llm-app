@@ -23,20 +23,25 @@ var (
 
 const openAIKey = "openAIKey"
 
-type Settings struct {
-	OpenAIURL            string `json:"openAIUrl"`
-	OpenAIOrganizationID string `json:"openAIOrganizationId"`
+type OpenAISettings struct {
+	URL            string `json:"url"`
+	OrganizationID string `json:"organizationId"`
+	apiKey         string
+}
 
-	openAIKey string
+type Settings struct {
+	OpenAI OpenAISettings `json:"openAI"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	settings := Settings{
-		OpenAIURL: "https://api.openai.com",
+		OpenAI: OpenAISettings{
+			URL: "https://api.openai.com",
+		},
 	}
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
-	settings.openAIKey = appSettings.DecryptedSecureJSONData[openAIKey]
+	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
 	return settings
 }
 

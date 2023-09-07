@@ -51,10 +51,10 @@ func newOpenAIProxy() http.Handler {
 		Rewrite: func(r *httputil.ProxyRequest) {
 			config := httpadapter.PluginConfigFromContext(r.In.Context())
 			settings := loadSettings(*config.AppInstanceSettings)
-			u, _ := url.Parse(settings.OpenAIURL)
+			u, _ := url.Parse(settings.OpenAI.URL)
 			r.SetURL(u)
-			r.Out.Header.Set("Authorization", "Bearer "+settings.openAIKey)
-			organizationID := settings.OpenAIOrganizationID
+			r.Out.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
+			organizationID := settings.OpenAI.OrganizationID
 			r.Out.Header.Set("OpenAI-Organization", organizationID)
 			r.Out.URL.Path = strings.TrimPrefix(r.In.URL.Path, "/openai")
 			log.DefaultLogger.Info("proxying to url", "url", r.Out.URL.String())
