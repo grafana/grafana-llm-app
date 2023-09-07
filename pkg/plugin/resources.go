@@ -66,6 +66,7 @@ func newOpenAIProxy() http.Handler {
 type vectorSearchRequest struct {
 	Text       string `json:"text"`
 	Collection string `json:"collection"`
+	Limit      uint64 `json:"limit"`
 }
 
 type vectorSearchResponse struct {
@@ -86,7 +87,10 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	results, err := app.vectorService.Search(req.Context(), body.Collection, body.Text)
+	if body.Limit == 0 {
+		body.Limit = 10
+	}
+	results, err := app.vectorService.Search(req.Context(), body.Collection, body.Text, body.Limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

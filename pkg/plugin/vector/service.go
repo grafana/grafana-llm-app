@@ -11,20 +11,14 @@ import (
 	"github.com/grafana/llm/pkg/plugin/vector/store"
 )
 
-type Collection struct {
-	Name      string `json:"name"`
-	Dimension int    `json:"dimension"`
-	Model     string `json:"model"`
-}
-
 type Service interface {
-	Search(ctx context.Context, collection string, query string) ([]store.SearchResult, error)
+	Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error)
 }
 
 type vectorService struct {
-	embedder         embed.Embedder
-	store            store.ReadVectorStore
-	collectionConfig map[string]Collection
+	embedder    embed.Embedder
+	store       store.ReadVectorStore
+	collections map[string]store.Collection
 }
 
 func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Service, error) {
@@ -46,27 +40,34 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 		log.DefaultLogger.Warn("No vector store configured")
 		return nil, nil
 	}
+	collections := make(map[string]store.Collection, len(storeSettings.Collections))
+	for _, c := range storeSettings.Collections {
+		collections[c.Name] = c
+	}
 	return &vectorService{
-		embedder: em,
-		store:    st,
+		embedder:    em,
+		store:       st,
+		collections: collections,
 	}, nil
 }
 
-func (g vectorService) Search(ctx context.Context, collection string, query string) ([]store.SearchResult, error) {
+func (g vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
 	// Determine which model was used to embed this collection.
-	c := g.collectionConfig[collection]
+	c := g.collections[collection]
 	if c.Name == "" {
 		return nil, fmt.Errorf("unknown collection %s", collection)
 	}
 
+	log.DefaultLogger.Info("Embedding", "model", c.Model, "query", query)
 	// Get the embedding for the search query.
 	e, err := g.embedder.Embed(ctx, c.Model, query)
 	if err != nil {
 		return nil, fmt.Errorf("embed query: %w", err)
 	}
 
+	log.DefaultLogger.Info("Searching", "collection", collection, "query", query)
 	// Search the vector store for similar vectors.
-	results, err := g.store.Search(ctx, collection, e, 10)
+	results, err := g.store.Search(ctx, collection, e, limit)
 	if err != nil {
 		return nil, fmt.Errorf("vector store search: %w", err)
 	}

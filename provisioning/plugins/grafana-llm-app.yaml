@@ -12,6 +12,10 @@ apps:
         type: grafana/vectorapi
         grafanaVectorAPI:
           url: http://vectorapi:8889
+        collections:
+          - name: grafana:core:dashboards
+            model: BAAI/bge-small-en
+            dimension: 768
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY

@@ -12,6 +12,12 @@ const (
 	VectorStoreTypeGrafanaVectorAPI VectorStoreType = "grafana/vectorapi"
 )
 
+type Collection struct {
+	Name      string `json:"name"`
+	Dimension int    `json:"dimension"`
+	Model     string `json:"model"`
+}
+
 type SearchResult struct {
 	Payload map[string]any `json:"payload"`
 	Score   float64        `json:"score"`
@@ -39,6 +45,8 @@ type Settings struct {
 	Type string `json:"type"`
 
 	GrafanaVectorAPI grafanaVectorAPISettings `json:"grafanaVectorAPI"`
+
+	Collections []Collection `json:"collections"`
 }
 
 func NewReadVectorStore(s Settings) (ReadVectorStore, error) {

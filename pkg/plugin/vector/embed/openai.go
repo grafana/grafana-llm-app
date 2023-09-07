@@ -57,7 +57,9 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	if o.apiKey == "" {
+		req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	}
 	resp, err := o.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
@@ -78,6 +80,9 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 	err = json.Unmarshal(respBody, &body)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal response body: %w", err)
+	}
+	if len(body.Data) == 0 {
+		return nil, fmt.Errorf("no embeddings returned")
 	}
 	return body.Data[0].Embedding, nil
 }
