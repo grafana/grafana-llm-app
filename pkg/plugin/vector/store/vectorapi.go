@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -65,23 +66,30 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 			log.DefaultLogger.Warn("failed to close response body", "err", err)
 		}
 	}()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("post collections: %s", resp.Status)
 	}
-	type queryPointResult struct {
+	type queryPointPayload struct {
 		ID        string         `json:"id"`
 		Embedding []float32      `json:"embedding"`
 		Metadata  map[string]any `json:"metadata"`
-		Score     float64        `json:"score"`
+	}
+	type queryPointResult struct {
+		Payload queryPointPayload `json:"payload"`
+		Score   float64           `json:"score"`
 	}
 	queryResult := []queryPointResult{}
-	if err := json.NewDecoder(resp.Body).Decode(&queryResult); err != nil {
+	if err := json.Unmarshal(body, &queryResult); err != nil {
 		return nil, fmt.Errorf("decode collections: %w", err)
 	}
 	results := make([]SearchResult, 0, len(queryResult))
 	for _, r := range queryResult {
 		results = append(results, SearchResult{
-			Payload: r.Metadata,
+			Payload: r.Payload.Metadata,
 			Score:   r.Score,
 		})
 	}
