@@ -27,6 +27,7 @@
     "AIURL",
     "datasource",
     "datasources",
+    "embedder",
     "eventsource",
     "grafana",
     "httpadapter",
@@ -35,6 +36,8 @@
     "openai",
     "proxying",
     "testid",
-    "unmarshalling"
+    "unmarshalling",
+    "Upsert",
+    "vectorapi"
   ]
 }
