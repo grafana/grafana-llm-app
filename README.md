@@ -4,7 +4,7 @@ A Grafana plugin designed to centralize access to LLMs, providing authentication
 Installing this plugin will enable various pieces of LLM-based functionality throughout Grafana.
 
 Note: This plugin is **experimental**, and may change significantly between
-versions, or deprecated completely in favor of a different approach based on
+versions, or be deprecated completely in favor of a different approach based on
 user feedback.
 
 ## Installing this plugin
@@ -143,6 +143,7 @@ const MyComponent = (): JSX.Element => {
    ```bash
    mage -l
    ```
+
 ### Frontend
 
 1. Install dependencies
@@ -198,11 +199,3 @@ const MyComponent = (): JSX.Element => {
 
    npm run lint:fix
    ```
-
-## Distributing
-
-For now this plugin is only distributed as a signed zip file on GCS. To upload a new version, ensure the `GRAFANA_API_KEY` variable is set to a valid Grafana API key, then use the `upload.sh` script:
-
-    ./upload.sh
-
-This will just overwrite the grafana-llm-app-0.1.0.zip file on GCS for now. Eventually we'll release it via the plugin catalogue instead.
