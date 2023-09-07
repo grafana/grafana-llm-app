@@ -1,5 +1,5 @@
 # Changelog
 
-## 1.0.0 (Unreleased)
+## 0.1.0
 
-Initial release.
+* Support proxying LLM requests from Grafana to OpenAI
