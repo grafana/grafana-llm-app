@@ -21,3 +21,8 @@ services:
       PORT: 8889
     ports:
       - 8889:8889
+    volumes:
+      - sentence-transformers:/app/.sentence_transfomers
+
+volumes:
+  sentence-transformers:
