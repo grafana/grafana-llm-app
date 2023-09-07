@@ -1,6 +1,10 @@
 package store
 
-import "context"
+import (
+	"context"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+)
 
 type VectorStoreType string
 
@@ -40,6 +44,7 @@ type Settings struct {
 func NewReadVectorStore(s Settings) (ReadVectorStore, error) {
 	switch VectorStoreType(s.Type) {
 	case VectorStoreTypeGrafanaVectorAPI:
+		log.DefaultLogger.Debug("Creating Grafana Vector API store")
 		return newGrafanaVectorAPI(s.GrafanaVectorAPI), nil
 	}
 	return nil, nil

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/llm/pkg/plugin/vector/embed"
 	"github.com/grafana/llm/pkg/plugin/vector/store"
 )
@@ -27,18 +28,22 @@ type vectorService struct {
 }
 
 func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Service, error) {
+	log.DefaultLogger.Debug("Creating embedder")
 	em, err := embed.NewEmbedder(embedSettings)
 	if err != nil {
 		return nil, fmt.Errorf("new embedder: %w", err)
 	}
 	if em == nil {
+		log.DefaultLogger.Warn("No embedder configured")
 		return nil, nil
 	}
+	log.DefaultLogger.Info("Creating vector store")
 	st, err := store.NewReadVectorStore(storeSettings)
 	if err != nil {
 		return nil, fmt.Errorf("new vector store: %w", err)
 	}
 	if st == nil {
+		log.DefaultLogger.Warn("No vector store configured")
 		return nil, nil
 	}
 	return &vectorService{

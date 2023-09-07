@@ -73,6 +73,14 @@ type vectorSearchResponse struct {
 }
 
 func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
+	if app.vectorService == nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	if req.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	body := vectorSearchRequest{}
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -81,11 +89,13 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 	results, err := app.vectorService.Search(req.Context(), body.Collection, body.Text)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	resp := vectorSearchResponse{Results: results}
 	bodyJSON, err := json.Marshal(resp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	//nolint:errcheck // Just do our best to write.
 	w.Write(bodyJSON)

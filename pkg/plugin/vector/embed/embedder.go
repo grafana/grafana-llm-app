@@ -1,6 +1,10 @@
 package embed
 
-import "context"
+import (
+	"context"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+)
 
 type EmbedderType string
 
@@ -22,6 +26,7 @@ type Settings struct {
 func NewEmbedder(s Settings) (Embedder, error) {
 	switch EmbedderType(s.Type) {
 	case EmbedderOpenAI:
+		log.DefaultLogger.Debug("Creating OpenAI embedder")
 		return newOpenAIEmbedder(s.OpenAI), nil
 	}
 	return nil, nil

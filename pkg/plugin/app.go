@@ -31,7 +31,7 @@ type App struct {
 
 // NewApp creates a new example *App instance.
 func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
-	log.DefaultLogger.Info("Creating new app instance")
+	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
@@ -41,13 +41,18 @@ func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, err
 	app.registerRoutes(mux)
 	app.CallResourceHandler = httpadapter.New(mux)
 
+	log.DefaultLogger.Debug("Loading settings")
 	settings := loadSettings(appSettings)
 	var err error
+
+	log.DefaultLogger.Debug("Creating vector service")
 	app.vectorService, err = vector.NewService(settings.EmbeddingSettings, settings.VectorStoreSettings)
 	if err != nil {
+		log.DefaultLogger.Error("Error creating vector service", "err", err)
 		return nil, err
 	}
 
+	log.DefaultLogger.Debug("App instance created")
 	return &app, nil
 }
 
