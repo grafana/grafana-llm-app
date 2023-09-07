@@ -20,7 +20,7 @@ type grafanaVectorAPI struct {
 }
 
 func (g *grafanaVectorAPI) Collections(ctx context.Context) ([]string, error) {
-	resp, err := g.client.Get(g.url + "/collections")
+	resp, err := g.client.Get(g.url + "/v1/collections")
 	if err != nil {
 		return nil, fmt.Errorf("get collections: %w", err)
 	}
@@ -56,7 +56,7 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
-	resp, err := g.client.Post(g.url+"/collections/"+collection+"/query", "application/json", bytes.NewReader(reqJSON))
+	resp, err := g.client.Post(g.url+"/v1/collections/"+collection+"/query", "application/json", bytes.NewReader(reqJSON))
 	if err != nil {
 		return nil, fmt.Errorf("post collections: %w", err)
 	}
