@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
-	"github.com/grafana/llm/pkg/plugin/vector"
 )
 
 // Make sure App implements required interfaces. This is important to do

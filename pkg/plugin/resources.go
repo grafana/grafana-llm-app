@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
-	"github.com/grafana/llm/pkg/plugin/vector/store"
 )
 
 // /api/plugins/app-with-backend/resources/ping

@@ -6,9 +6,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/llm/pkg/plugin/vector/embed"
-	"github.com/grafana/llm/pkg/plugin/vector/store"
 )
 
 type Service interface {
