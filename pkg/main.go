@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/grafana/grafana-llm-app/pkg/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/app"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/llm/pkg/plugin"
 )
 
 func main() {

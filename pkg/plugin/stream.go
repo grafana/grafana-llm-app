@@ -55,12 +55,12 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		return err
 	}
 	path := strings.TrimPrefix(req.Path, "openai")
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAIURL+path, bytes.NewReader(outgoingBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAI.URL+path, bytes.NewReader(outgoingBody))
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.openAIKey))
-	httpReq.Header.Set("OpenAI-Organization", settings.OpenAIOrganizationID)
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.OpenAI.apiKey))
+	httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
 	httpReq.Header.Set("Content-Type", "application/json")
 	lastEventID := "" // no last event id
 	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)

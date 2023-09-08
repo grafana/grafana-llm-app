@@ -10,9 +10,14 @@ import (
 
 const openAIKey = "openAIKey"
 
+type OpenAISettings struct {
+	URL            string `json:"url"`
+	OrganizationID string `json:"organizationId"`
+	apiKey         string
+}
+
 type Settings struct {
-	OpenAIURL            string `json:"openAIUrl"`
-	OpenAIOrganizationID string `json:"openAIOrganizationId"`
+	OpenAI OpenAISettings `json:"openAI"`
 
 	openAIKey string
 
@@ -22,7 +27,9 @@ type Settings struct {
 
 func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	settings := Settings{
-		OpenAIURL: "https://api.openai.com",
+		OpenAI: OpenAISettings{
+			URL: "https://api.openai.com",
+		},
 	}
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
