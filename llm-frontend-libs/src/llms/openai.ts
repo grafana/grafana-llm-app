@@ -14,8 +14,8 @@ import { getBackendSrv, getGrafanaLiveSrv, logDebug } from "@grafana/runtime";
 import { pipe, Observable, UnaryFunction } from "rxjs";
 import { filter, map, scan, takeWhile } from "rxjs/operators";
 
-const LLM_PLUGIN_ID = 'grafana-llm-app';
-const LLM_PLUGIN_ROUTE = `/api/plugins/${LLM_PLUGIN_ID}`;
+import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from "./constants";
+
 const OPENAI_CHAT_COMPLETIONS_PATH = 'openai/v1/chat/completions';
 
 /** The role of a message's author. */
