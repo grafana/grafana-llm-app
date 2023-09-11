@@ -3,7 +3,7 @@ module github.com/grafana/grafana-llm-app
 go 1.19
 
 require (
-	github.com/grafana/grafana-plugin-sdk-go v0.174.0
+	github.com/grafana/grafana-plugin-sdk-go v0.175.0
 	github.com/launchdarkly/eventsource v1.7.1
 )
 
