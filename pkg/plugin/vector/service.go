@@ -51,23 +51,38 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 	}, nil
 }
 
-func (g vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
+func (v vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
 	// Determine which model was used to embed this collection.
-	c := g.collections[collection]
+	c := v.collections[collection]
 	if c.Name == "" {
 		return nil, fmt.Errorf("unknown collection %s", collection)
 	}
 
+	storeCollections, err := v.store.Collections(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("vector store collections: %w", err)
+	}
+	found := false
+	for _, c := range storeCollections {
+		if c == collection {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("collection %s not found in store", collection)
+	}
+
 	log.DefaultLogger.Info("Embedding", "model", c.Model, "query", query)
 	// Get the embedding for the search query.
-	e, err := g.embedder.Embed(ctx, c.Model, query)
+	e, err := v.embedder.Embed(ctx, c.Model, query)
 	if err != nil {
 		return nil, fmt.Errorf("embed query: %w", err)
 	}
 
 	log.DefaultLogger.Info("Searching", "collection", collection, "query", query)
 	// Search the vector store for similar vectors.
-	results, err := g.store.Search(ctx, collection, e, limit)
+	results, err := v.store.Search(ctx, collection, e, limit)
 	if err != nil {
 		return nil, fmt.Errorf("vector store search: %w", err)
 	}
