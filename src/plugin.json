@@ -32,23 +32,5 @@
   "dependencies": {
     "grafanaDependency": ">=9.5.2",
     "plugins": []
-  },
-  "externalServiceRegistration": {
-    "self": {
-      "permissions": [
-        {
-          "action": "dashboards:read",
-          "scope": "dashboards:*"
-        },
-        {
-          "action": "dashboards:read",
-          "scope": "folders:*"
-        },
-        {
-          "action": "folders:read",
-          "scope": "folders:*"
-        }
-      ]
-    }
   }
 }
