@@ -51,7 +51,7 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 	}, nil
 }
 
-func (v vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
+func (v *vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
 	// Determine which model was used to embed this collection.
 	c := v.collections[collection]
 	if c.Name == "" {
