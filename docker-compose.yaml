@@ -8,7 +8,6 @@ services:
       args:
         grafana_version: ${GRAFANA_VERSION:-10.1.0}
     environment:
-      GF_FEATURE_TOGGLES_ENABLE: 'externalServiceAuth'
       OPENAI_API_KEY: $OPENAI_API_KEY
     ports:
       - 3000:3000/tcp
