@@ -37,6 +37,7 @@
     "nolint",
     "openai",
     "proxying",
+    "qdrant",
     "testid",
     "unmarshalling",
     "Upsert",

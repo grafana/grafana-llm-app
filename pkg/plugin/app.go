@@ -58,7 +58,11 @@ func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, err
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created.
-func (a *App) Dispose() {}
+func (a *App) Dispose() {
+	if a.vectorService != nil {
+		a.vectorService.Cancel()
+	}
+}
 
 // CheckHealth handles health checks sent from Grafana to the plugin.
 func (a *App) CheckHealth(_ context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
