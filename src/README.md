@@ -1,4 +1,4 @@
-# Grafana LLM app
+# Grafana LLM app (experimental)
 
 This is a Grafana application plugin which centralizes access to LLMs across Grafana.
 
@@ -16,6 +16,10 @@ Future functionality will include:
 - token and cost estimation
 - RBAC to only allow certain users to use LLM functionality
 
+Note: This plugin is **experimental**, and may change significantly between
+versions, or deprecated completely in favor of a different approach based on
+user feedback.
+
 ## For users
 
 Install and configure this plugin to enable various LLM-related functionality across Grafana.
@@ -27,6 +31,78 @@ used and rate limited appropriately.
 
 ## For plugin developers
 
-This plugin is not designed to be directly interacted with; instead, we will provide convenience
-functions in the [`@grafana/experimental`][experimental] package which will communicate with this
-plugin, if installed. See the [`grafana-llm-examples`] repository for examples of how this works.
+This plugin is not designed to be directly interacted with; instead, use the
+convenience functions in the
+[`@grafana/experimental`](https://www.npmjs.com/package/@grafana/experimental)
+package which will communicate with this plugin, if installed.
+
+First, add the correct version of `@grafana/experimental` to your dependencies in package.json:
+
+```json
+{
+  "dependencies": {
+    "@grafana/experimental": "1.7.0"
+  }
+}
+```
+
+Then in your components you can use the `llm` object from `@grafana/experimental` like so:
+
+```typescript
+import React, { useState } from 'react';
+import { useAsync } from 'react-use';
+import { scan } from 'rxjs/operators';
+
+import { llms } from '@grafana/experimental';
+import { PluginPage } from '@grafana/runtime';
+
+import { Button, Input, Spinner } from '@grafana/ui';
+
+const MyComponent = (): JSX.Element => {
+  const [input, setInput] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const [reply, setReply] = useState('');
+
+  const { loading, error } = useAsync(async () => {
+    const enabled = await llms.openai.enabled();
+    if (!enabled) {
+      return false;
+    }
+    if (message === '') {
+      return;
+    }
+    // Stream the completions. Each element is the next stream chunk.
+    const stream = llms.openai.streamChatCompletions({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are a cynical assistant.' },
+        { role: 'user', content: message },
+      ],
+    }).pipe(
+      // Accumulate the stream chunks into a single string.
+      scan((acc, delta) => acc + delta, '')
+    );
+    // Subscribe to the stream and update the state for each returned value.
+    return stream.subscribe(setReply);
+  }, [message]);
+
+  if (error) {
+    // TODO: handle errors.
+    return null;
+  }
+
+  return (
+    <div>
+      <Input
+        value={input}
+        onChange={(e) => setInput(e.currentTarget.value)}
+        placeholder="Enter a message"
+      />
+      <br />
+      <Button type="submit" onClick={() => setMessage(input)}>Submit</Button>
+      <br />
+      <div>{loading ? <Spinner /> : reply}</div>
+    </div>
+  );
+}
+```
