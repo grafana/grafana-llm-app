@@ -2,25 +2,47 @@ package store
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	qdrant "github.com/qdrant/go-client/qdrant"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type qdrantSettings struct {
-	Address string
+	// The address of the Qdrant gRPC server, e.g. localhost:6334.
+	Address string `json:"address"`
+	// Whether to use a secure connection.
+	Secure bool `json:"secure"`
+	// The API key to use for authentication. Only used when secure is true.
+	APIKey string `json:"apiKey"`
 }
 
 type qdrantStore struct {
 	conn              *grpc.ClientConn
+	md                *metadata.MD
 	collectionsClient qdrant.CollectionsClient
 	pointsClient      qdrant.PointsClient
 }
 
 func newQdrantStore(s qdrantSettings) (ReadVectorStore, func(), error) {
-	conn, err := grpc.DialContext(context.Background(), s.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var md *metadata.MD
+	dialOptions := []grpc.DialOption{}
+	if s.Secure {
+		config := &tls.Config{}
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(config)))
+		// Only include API key if using a secure connection.
+		if s.APIKey != "" {
+			meta := metadata.New(map[string]string{"api-key": s.APIKey})
+			md = &meta
+		}
+	} else {
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+	conn, err := grpc.DialContext(context.Background(), s.Address, dialOptions...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -33,12 +55,16 @@ func newQdrantStore(s qdrantSettings) (ReadVectorStore, func(), error) {
 	}
 	return &qdrantStore{
 		conn:              conn,
+		md:                md,
 		collectionsClient: qdrant.NewCollectionsClient(conn),
 		pointsClient:      qdrant.NewPointsClient(conn),
 	}, cancel, nil
 }
 
 func (q *qdrantStore) Collections(ctx context.Context) ([]string, error) {
+	if q.md != nil {
+		ctx = metadata.NewOutgoingContext(ctx, *q.md)
+	}
 	collections, err := q.collectionsClient.List(ctx, &qdrant.ListCollectionsRequest{})
 	if err != nil {
 		return nil, err
@@ -51,6 +77,9 @@ func (q *qdrantStore) Collections(ctx context.Context) ([]string, error) {
 }
 
 func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, limit uint64) ([]SearchResult, error) {
+	if q.md != nil {
+		ctx = metadata.NewOutgoingContext(ctx, *q.md)
+	}
 	result, err := q.pointsClient.Search(ctx, &qdrant.SearchPoints{
 		CollectionName: collection,
 		Vector:         vector,
