@@ -95,7 +95,7 @@ func (q *qdrantStore) Search(ctx context.Context, collection string, vector []fl
 	for _, v := range result.GetResult() {
 		payload := make(map[string]any, len(v.Payload))
 		for k, v := range v.Payload {
-			payload[k] = v
+			payload[k] = fromQdrantValue(v)
 		}
 		// TODO: handle non-strings, in case they get there
 		results = append(results, SearchResult{
@@ -104,4 +104,32 @@ func (q *qdrantStore) Search(ctx context.Context, collection string, vector []fl
 		})
 	}
 	return results, nil
+}
+
+func fromQdrantValue(in *qdrant.Value) any {
+	switch v := in.Kind.(type) {
+	case *qdrant.Value_NullValue:
+		return nil
+	case *qdrant.Value_BoolValue:
+		return v.BoolValue
+	case *qdrant.Value_StringValue:
+		return v.StringValue
+	case *qdrant.Value_IntegerValue:
+		return v.IntegerValue
+	case *qdrant.Value_DoubleValue:
+		return v.DoubleValue
+	case *qdrant.Value_ListValue:
+		out := make([]any, 0, len(v.ListValue.Values))
+		for _, innerV := range v.ListValue.Values {
+			out = append(out, fromQdrantValue(innerV))
+		}
+		return out
+	case *qdrant.Value_StructValue:
+		out := make(map[string]any, len(v.StructValue.Fields))
+		for innerK, innerV := range v.StructValue.Fields {
+			out[innerK] = fromQdrantValue(innerV)
+		}
+		return out
+	}
+	return nil
 }
