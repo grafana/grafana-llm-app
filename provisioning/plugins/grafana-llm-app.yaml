@@ -13,7 +13,7 @@ apps:
         qdrant:
           address: qdrant:6334
         collections:
-          - name: grafana:core:dashboards
+          - name: grafana.core.dashboards
             model: text-embedding-ada-002
             dimension: 1536
 
