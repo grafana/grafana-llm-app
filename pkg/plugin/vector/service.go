@@ -13,12 +13,14 @@ import (
 
 type Service interface {
 	Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error)
+	Cancel()
 }
 
 type vectorService struct {
 	embedder    embed.Embedder
 	store       store.ReadVectorStore
 	collections map[string]store.Collection
+	cancel      context.CancelFunc
 }
 
 func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Service, error) {
@@ -32,7 +34,7 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 		return nil, nil
 	}
 	log.DefaultLogger.Info("Creating vector store")
-	st, err := store.NewReadVectorStore(storeSettings)
+	st, cancel, err := store.NewReadVectorStore(storeSettings)
 	if err != nil {
 		return nil, fmt.Errorf("new vector store: %w", err)
 	}
@@ -48,6 +50,7 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 		embedder:    em,
 		store:       st,
 		collections: collections,
+		cancel:      cancel,
 	}, nil
 }
 
@@ -88,4 +91,10 @@ func (v *vectorService) Search(ctx context.Context, collection string, query str
 	}
 
 	return results, nil
+}
+
+func (v vectorService) Cancel() {
+	if v.cancel != nil {
+		v.cancel()
+	}
 }

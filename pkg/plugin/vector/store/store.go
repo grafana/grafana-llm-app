@@ -9,6 +9,7 @@ import (
 type VectorStoreType string
 
 const (
+	VectorStoreTypeQdrant           VectorStoreType = "qdrant"
 	VectorStoreTypeGrafanaVectorAPI VectorStoreType = "grafana/vectorapi"
 )
 
@@ -46,16 +47,21 @@ type Settings struct {
 
 	GrafanaVectorAPI grafanaVectorAPISettings `json:"grafanaVectorAPI"`
 
+	Qdrant qdrantSettings `json:"qdrant"`
+
 	Collections []Collection `json:"collections"`
 }
 
-func NewReadVectorStore(s Settings) (ReadVectorStore, error) {
+func NewReadVectorStore(s Settings) (ReadVectorStore, context.CancelFunc, error) {
 	switch VectorStoreType(s.Type) {
 	case VectorStoreTypeGrafanaVectorAPI:
 		log.DefaultLogger.Debug("Creating Grafana Vector API store")
-		return newGrafanaVectorAPI(s.GrafanaVectorAPI), nil
+		return newGrafanaVectorAPI(s.GrafanaVectorAPI), func() {}, nil
+	case VectorStoreTypeQdrant:
+		log.DefaultLogger.Debug("Creating Qdrant store")
+		return newQdrantStore(s.Qdrant)
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func NewVectorStore(s Settings) (VectorStore, error) {

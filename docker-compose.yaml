@@ -14,14 +14,21 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-llm-app
       - ./provisioning:/etc/grafana/provisioning
-  vectorapi:
-    image: vectorapi:latest
-    environment:
-      PORT: 8889
-    ports:
-      - 8889:8889
+
+  qdrant:
+    image: qdrant/qdrant
     volumes:
-      - sentence-transformers:/app/.sentence_transfomers
+      - qdrant-storage:/qdrant/storage
+
+  # vectorapi:
+  #   image: vectorapi:latest
+  #   environment:
+  #     PORT: 8889
+  #   ports:
+  #     - 8889:8889
+  #   volumes:
+  #     - sentence-transformers:/app/.sentence_transfomers
 
 volumes:
-  sentence-transformers:
+  # sentence-transformers:
+  qdrant-storage:

@@ -5,6 +5,8 @@ go 1.19
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.174.0
 	github.com/launchdarkly/eventsource v1.7.1
+	github.com/qdrant/go-client v1.5.0
+	google.golang.org/grpc v1.57.0
 )
 
 require (
@@ -80,7 +82,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230731193218-e0aa005b6bdf // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230731193218-e0aa005b6bdf // indirect
-	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
