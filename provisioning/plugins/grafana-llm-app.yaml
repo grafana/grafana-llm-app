@@ -3,19 +3,14 @@ apiVersion: 1
 apps:
   - type: grafana-llm-app
     jsonData:
-      openAIUrl: https://api.openai.com
-      embeddings:
-        type: openai
-        openai:
-          apiKey: $OPENAI_API_KEY
-      vectorStore:
-        type: qdrant
-        qdrant:
-          address: qdrant:6334
-        collections:
-          - name: grafana.core.dashboards
-            model: text-embedding-ada-002
-            dimension: 1536
+      vector:
+        model: text-embedding-ada-002
+        embed:
+          type: openai
+        store:
+          type: qdrant
+          qdrant:
+            address: qdrant:6334
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY

@@ -23,11 +23,11 @@ type Settings struct {
 }
 
 // NewEmbedder creates a new embedder.
-func NewEmbedder(s Settings) (Embedder, error) {
+func NewEmbedder(s Settings, secrets map[string]string) (Embedder, error) {
 	switch EmbedderType(s.Type) {
 	case EmbedderOpenAI:
 		log.DefaultLogger.Debug("Creating OpenAI embedder")
-		return newOpenAIEmbedder(s.OpenAI), nil
+		return newOpenAIEmbedder(s.OpenAI, secrets), nil
 	}
 	return nil, nil
 }

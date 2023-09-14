@@ -16,16 +16,22 @@ type Service interface {
 	Cancel()
 }
 
-type vectorService struct {
-	embedder    embed.Embedder
-	store       store.ReadVectorStore
-	collections map[string]store.Collection
-	cancel      context.CancelFunc
+type VectorSettings struct {
+	Model string         `json:"model"`
+	Embed embed.Settings `json:"embed"`
+	Store store.Settings `json:"store"`
 }
 
-func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Service, error) {
+type vectorService struct {
+	embedder embed.Embedder
+	model    string
+	store    store.ReadVectorStore
+	cancel   context.CancelFunc
+}
+
+func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 	log.DefaultLogger.Debug("Creating embedder")
-	em, err := embed.NewEmbedder(embedSettings)
+	em, err := embed.NewEmbedder(s.Embed, secrets)
 	if err != nil {
 		return nil, fmt.Errorf("new embedder: %w", err)
 	}
@@ -34,7 +40,7 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 		return nil, nil
 	}
 	log.DefaultLogger.Info("Creating vector store")
-	st, cancel, err := store.NewReadVectorStore(storeSettings)
+	st, cancel, err := store.NewReadVectorStore(s.Store, secrets)
 	if err != nil {
 		return nil, fmt.Errorf("new vector store: %w", err)
 	}
@@ -42,43 +48,26 @@ func NewService(embedSettings embed.Settings, storeSettings store.Settings) (Ser
 		log.DefaultLogger.Warn("No vector store configured")
 		return nil, nil
 	}
-	collections := make(map[string]store.Collection, len(storeSettings.Collections))
-	for _, c := range storeSettings.Collections {
-		collections[c.Name] = c
-	}
 	return &vectorService{
-		embedder:    em,
-		store:       st,
-		collections: collections,
-		cancel:      cancel,
+		embedder: em,
+		store:    st,
+		model:    s.Model,
+		cancel:   cancel,
 	}, nil
 }
 
 func (v *vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
-	// Determine which model was used to embed this collection.
-	c := v.collections[collection]
-	if c.Name == "" {
-		return nil, fmt.Errorf("unknown collection %s", collection)
-	}
-
-	storeCollections, err := v.store.Collections(ctx)
+	exists, err := v.store.CollectionExists(ctx, collection)
 	if err != nil {
 		return nil, fmt.Errorf("vector store collections: %w", err)
 	}
-	found := false
-	for _, c := range storeCollections {
-		if c == collection {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if !exists {
 		return nil, fmt.Errorf("collection %s not found in store", collection)
 	}
 
-	log.DefaultLogger.Info("Embedding", "model", c.Model, "query", query)
+	log.DefaultLogger.Info("Embedding", "model", v.model, "query", query)
 	// Get the embedding for the search query.
-	e, err := v.embedder.Embed(ctx, c.Model, query)
+	e, err := v.embedder.Embed(ctx, v.model, query)
 	if err != nil {
 		return nil, fmt.Errorf("embed query: %w", err)
 	}

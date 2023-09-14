@@ -46,7 +46,7 @@ func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, err
 	var err error
 
 	log.DefaultLogger.Debug("Creating vector service")
-	app.vectorService, err = vector.NewService(settings.EmbeddingSettings, settings.VectorStoreSettings)
+	app.vectorService, err = vector.NewService(settings.Vector, appSettings.DecryptedSecureJSONData)
 	if err != nil {
 		log.DefaultLogger.Error("Error creating vector service", "err", err)
 		return nil, err

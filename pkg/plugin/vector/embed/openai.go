@@ -13,8 +13,7 @@ import (
 )
 
 type openAISettings struct {
-	URL    string `json:"url"`
-	APIKey string `json:"apiKey"`
+	URL string `json:"url"`
 }
 
 type openAIClient struct {
@@ -88,11 +87,11 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 }
 
 // newOpenAIEmbedder creates a new Embedder using OpenAI's API.
-func newOpenAIEmbedder(settings openAISettings) Embedder {
+func newOpenAIEmbedder(settings openAISettings, secrets map[string]string) Embedder {
 	impl := openAIClient{
 		client: &http.Client{},
 		url:    settings.URL,
-		apiKey: settings.APIKey,
+		apiKey: secrets["openAIKey"],
 	}
 	return &impl
 }

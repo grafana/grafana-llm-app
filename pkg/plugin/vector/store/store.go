@@ -13,25 +13,18 @@ const (
 	VectorStoreTypeGrafanaVectorAPI VectorStoreType = "grafana/vectorapi"
 )
 
-type Collection struct {
-	Name      string `json:"name"`
-	Dimension int    `json:"dimension"`
-	Model     string `json:"model"`
-}
-
 type SearchResult struct {
 	Payload map[string]any `json:"payload"`
 	Score   float64        `json:"score"`
 }
 
 type ReadVectorStore interface {
-	Collections(ctx context.Context) ([]string, error)
+	CollectionExists(ctx context.Context, collection string) (bool, error)
 	Search(ctx context.Context, collection string, vector []float32, limit uint64) ([]SearchResult, error)
 }
 
 type WriteVectorStore interface {
 	Collections(ctx context.Context) ([]string, error)
-	CollectionExists(ctx context.Context, collection string) (bool, error)
 	CreateCollection(ctx context.Context, collection string, size uint64) error
 	PointExists(ctx context.Context, collection string, id uint64) (bool, error)
 	UpsertColumnar(ctx context.Context, collection string, ids []uint64, embeddings [][]float32, payloadJSONs []string) error
@@ -48,18 +41,16 @@ type Settings struct {
 	GrafanaVectorAPI grafanaVectorAPISettings `json:"grafanaVectorAPI"`
 
 	Qdrant qdrantSettings `json:"qdrant"`
-
-	Collections []Collection `json:"collections"`
 }
 
-func NewReadVectorStore(s Settings) (ReadVectorStore, context.CancelFunc, error) {
+func NewReadVectorStore(s Settings, secrets map[string]string) (ReadVectorStore, context.CancelFunc, error) {
 	switch VectorStoreType(s.Type) {
 	case VectorStoreTypeGrafanaVectorAPI:
 		log.DefaultLogger.Debug("Creating Grafana Vector API store")
-		return newGrafanaVectorAPI(s.GrafanaVectorAPI), func() {}, nil
+		return newGrafanaVectorAPI(s.GrafanaVectorAPI, secrets), func() {}, nil
 	case VectorStoreTypeQdrant:
 		log.DefaultLogger.Debug("Creating Qdrant store")
-		return newQdrantStore(s.Qdrant)
+		return newQdrantStore(s.Qdrant, secrets)
 	}
 	return nil, nil, nil
 }

@@ -3,8 +3,7 @@ package plugin
 import (
 	"encoding/json"
 
-	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
-	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -21,8 +20,7 @@ type Settings struct {
 
 	openAIKey string
 
-	EmbeddingSettings   embed.Settings `json:"embeddings"`
-	VectorStoreSettings store.Settings `json:"vectorStore"`
+	Vector vector.VectorSettings `json:"vector"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) Settings {
@@ -34,6 +32,5 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
 	settings.openAIKey = appSettings.DecryptedSecureJSONData[openAIKey]
-	settings.EmbeddingSettings.OpenAI.APIKey = settings.openAIKey
 	return settings
 }

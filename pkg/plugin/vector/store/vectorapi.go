@@ -20,28 +20,15 @@ type grafanaVectorAPI struct {
 	url    string
 }
 
-func (g *grafanaVectorAPI) Collections(ctx context.Context) ([]string, error) {
-	resp, err := g.client.Get(g.url + "/v1/collections")
+func (g *grafanaVectorAPI) CollectionExists(ctx context.Context, collection string) (bool, error) {
+	resp, err := g.client.Get(g.url + "/v1/collections/" + collection)
 	if err != nil {
-		return nil, fmt.Errorf("get collections: %w", err)
+		return false, fmt.Errorf("get collection: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get collections: %s", resp.Status)
+		return false, fmt.Errorf("get collections: %s", resp.Status)
 	}
-
-	type collectionResponse struct {
-		Name      string `json:"name"`
-		Dimension int    `json:"dimension"`
-	}
-	collections := []collectionResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&collections); err != nil {
-		return nil, fmt.Errorf("decode collections: %w", err)
-	}
-	names := make([]string, 0, len(collections))
-	for _, c := range collections {
-		names = append(names, c.Name)
-	}
-	return names, nil
+	return true, nil
 }
 
 func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector []float32, limit uint64) ([]SearchResult, error) {
@@ -96,7 +83,7 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 	return results, nil
 }
 
-func newGrafanaVectorAPI(s grafanaVectorAPISettings) ReadVectorStore {
+func newGrafanaVectorAPI(s grafanaVectorAPISettings, secrets map[string]string) ReadVectorStore {
 	return &grafanaVectorAPI{
 		client: &http.Client{},
 		url:    s.URL,

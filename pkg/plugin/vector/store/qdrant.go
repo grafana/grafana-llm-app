@@ -7,9 +7,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	qdrant "github.com/qdrant/go-client/qdrant"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 type qdrantSettings struct {
@@ -17,8 +19,6 @@ type qdrantSettings struct {
 	Address string `json:"address"`
 	// Whether to use a secure connection.
 	Secure bool `json:"secure"`
-	// The API key to use for authentication. Only used when secure is true.
-	APIKey string `json:"apiKey"`
 }
 
 type qdrantStore struct {
@@ -28,15 +28,15 @@ type qdrantStore struct {
 	pointsClient      qdrant.PointsClient
 }
 
-func newQdrantStore(s qdrantSettings) (ReadVectorStore, func(), error) {
+func newQdrantStore(s qdrantSettings, secrets map[string]string) (ReadVectorStore, func(), error) {
 	var md *metadata.MD
 	dialOptions := []grpc.DialOption{}
 	if s.Secure {
 		config := &tls.Config{}
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(config)))
 		// Only include API key if using a secure connection.
-		if s.APIKey != "" {
-			meta := metadata.New(map[string]string{"api-key": s.APIKey})
+		if key := secrets["qdrantApiKey"]; key != "" {
+			meta := metadata.New(map[string]string{"api-key": key})
 			md = &meta
 		}
 	} else {
@@ -61,19 +61,25 @@ func newQdrantStore(s qdrantSettings) (ReadVectorStore, func(), error) {
 	}, cancel, nil
 }
 
-func (q *qdrantStore) Collections(ctx context.Context) ([]string, error) {
+func (q *qdrantStore) CollectionExists(ctx context.Context, collection string) (bool, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
 	}
-	collections, err := q.collectionsClient.List(ctx, &qdrant.ListCollectionsRequest{})
+	_, err := q.collectionsClient.Get(ctx, &qdrant.GetCollectionInfoRequest{
+		CollectionName: collection,
+	}, grpc.WaitForReady(true))
 	if err != nil {
-		return nil, err
+		st, ok := status.FromError(err)
+		if !ok {
+			return false, err
+			// Error was not a status error
+		}
+		if st.Code() == codes.NotFound {
+			return false, nil
+		}
+		return false, err
 	}
-	names := make([]string, 0, len(collections.Collections))
-	for _, c := range collections.Collections {
-		names = append(names, c.Name)
-	}
-	return names, nil
+	return true, nil
 }
 
 func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, limit uint64) ([]SearchResult, error) {
