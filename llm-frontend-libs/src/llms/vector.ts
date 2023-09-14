@@ -103,7 +103,9 @@ export const enabled = async () => {
   // Finally, check if the vector search API is available.
   try {
     await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/resources/vector/search`, undefined, undefined, {
-      showSuccessAlert: false, showErrorAlert: false,
+      responseType: "text",
+      showSuccessAlert: false,
+      showErrorAlert: false,
     });
     return true;
   } catch (e: unknown) {
@@ -124,6 +126,11 @@ export const enabled = async () => {
         logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings. Configure the grafana-llm-app plugin to enable vector search.');
         loggedWarning = true;
       }
+    }
+    // If the backend returns 405 Method Not Allowed then we've made it through to the
+    // handler, and it must be enabled.
+    if ((e as FetchError).status === 405) {
+      return true;
     }
     return false;
   }
