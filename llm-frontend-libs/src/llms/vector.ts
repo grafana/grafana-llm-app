@@ -26,11 +26,11 @@ export interface SearchRequest {
   query: string;
 
   /**
-   * The maximum number of results to return.
+   * Limit the number of results returned to the top `topK` results.
    * 
    * Defaults to 10.
    **/
-  limit?: number;
+  topK?: number;
 }
 
 /**
