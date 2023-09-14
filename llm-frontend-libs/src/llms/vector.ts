@@ -97,7 +97,7 @@ export const enabled = async () => {
     (jsonData.vector.store.type ?? false)
   );
   if (!enabledInSettings) {
-    logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings.');
+    logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings. Configure the grafana-llm-app plugin to enable vector search.');
     return false;
   }
   // Finally, check if the vector search API is available.
@@ -113,7 +113,7 @@ export const enabled = async () => {
     if ((e as FetchError).status === 404) {
       if (!loggedWarning) {
         logDebug(String(e));
-        logDebug('Vector service is enabled, but the Grafana LLM plugin is not up-to-date.');
+        logDebug('Vector service is enabled, but the Grafana LLM plugin is not up-to-date. Update the grafana-llm-app plugin to enable vector search.');
         loggedWarning = true;
       }
     }
@@ -121,7 +121,7 @@ export const enabled = async () => {
     if ((e as FetchError).status === 503) {
       if (!loggedWarning) {
         logDebug(String(e));
-        logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings.');
+        logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings. Configure the grafana-llm-app plugin to enable vector search.');
         loggedWarning = true;
       }
     }
