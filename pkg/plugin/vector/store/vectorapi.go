@@ -31,14 +31,14 @@ func (g *grafanaVectorAPI) CollectionExists(ctx context.Context, collection stri
 	return true, nil
 }
 
-func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector []float32, limit uint64) ([]SearchResult, error) {
+func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector []float32, topK uint64) ([]SearchResult, error) {
 	type queryPointsRequest struct {
 		Query []float32 `json:"query"`
 		TopK  uint64    `json:"top_k"`
 	}
 	reqBody := queryPointsRequest{
 		Query: vector,
-		TopK:  limit,
+		TopK:  topK,
 	}
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {

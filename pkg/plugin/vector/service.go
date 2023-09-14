@@ -12,7 +12,7 @@ import (
 )
 
 type Service interface {
-	Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error)
+	Search(ctx context.Context, collection string, query string, topK uint64) ([]store.SearchResult, error)
 	Cancel()
 }
 
@@ -57,7 +57,7 @@ func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 	}, nil
 }
 
-func (v *vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
+func (v *vectorService) Search(ctx context.Context, collection string, query string, topK uint64) ([]store.SearchResult, error) {
 	if query == "" {
 		return nil, fmt.Errorf("query cannot be empty")
 	}
@@ -78,7 +78,7 @@ func (v *vectorService) Search(ctx context.Context, collection string, query str
 
 	log.DefaultLogger.Info("Searching", "collection", collection, "query", query)
 	// Search the vector store for similar vectors.
-	results, err := v.store.Search(ctx, collection, e, limit)
+	results, err := v.store.Search(ctx, collection, e, topK)
 	if err != nil {
 		return nil, fmt.Errorf("vector store search: %w", err)
 	}
