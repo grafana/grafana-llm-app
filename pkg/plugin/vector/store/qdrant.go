@@ -82,14 +82,14 @@ func (q *qdrantStore) CollectionExists(ctx context.Context, collection string) (
 	return true, nil
 }
 
-func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, limit uint64) ([]SearchResult, error) {
+func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64) ([]SearchResult, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
 	}
 	result, err := q.pointsClient.Search(ctx, &qdrant.SearchPoints{
 		CollectionName: collection,
 		Vector:         vector,
-		Limit:          limit,
+		Limit:          topK,
 		// Include all payloads in the search result
 		WithVectors: &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
 		WithPayload: &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
