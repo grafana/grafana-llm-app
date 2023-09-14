@@ -5,13 +5,15 @@ apps:
     jsonData:
       vector:
         enabled: true
-        model: text-embedding-ada-002
+        model: BAAI/bge-base-en
         embed:
           type: openai
+          openai:
+            url: http://vectorapi:8889
         store:
-          type: qdrant
-          qdrant:
-            address: qdrant:6334
+          type: grafana/vectorapi
+          grafanaVectorAPI:
+            url: http://vectorapi:8889
       # openAI:
         # provider: azure
         # url: https://<resource>.openai.azure.com

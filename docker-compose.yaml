@@ -18,20 +18,39 @@ services:
       - ./dist:/var/lib/grafana/plugins/grafana-llm-app
       - ./provisioning:/etc/grafana/provisioning
 
-  qdrant:
-    image: qdrant/qdrant
-    volumes:
-      - qdrant-storage:/qdrant/storage
-
-  # vectorapi:
-  #   image: vectorapi:latest
-  #   environment:
-  #     PORT: 8889
-  #   ports:
-  #     - 8889:8889
+  # qdrant:
+  #   image: qdrant/qdrant
   #   volumes:
-  #     - sentence-transformers:/app/.sentence_transfomers
+  #     - qdrant-storage:/qdrant/storage
+  db:
+    image: ankane/pgvector
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+  vectorapi:
+    build:
+      dockerfile: Dockerfile
+      context: ../vectorapi
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      VECTORAPI_STORE_SCHEMA: vector
+      VECTORAPI_STORE_CLIENT: pgvector
+      PORT: 8889
+    ports:
+      - 8889:8889
+    volumes:
+      - sentence-transformers:/app/.sentence_transfomers
+    depends_on:
+      - db
 
 volumes:
-  # sentence-transformers:
+  sentence-transformers:
   qdrant-storage:
