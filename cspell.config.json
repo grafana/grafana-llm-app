@@ -27,14 +27,20 @@
     "AIURL",
     "datasource",
     "datasources",
+    "embedder",
+    "errcheck",
     "eventsource",
     "grafana",
     "httpadapter",
     "instancemgmt",
     "llms",
+    "nolint",
     "openai",
     "proxying",
+    "qdrant",
     "testid",
-    "unmarshalling"
+    "unmarshalling",
+    "Upsert",
+    "vectorapi"
   ]
 }

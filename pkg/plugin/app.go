@@ -2,11 +2,12 @@ package plugin
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
@@ -21,37 +22,16 @@ var (
 	_ backend.StreamHandler         = (*App)(nil)
 )
 
-const openAIKey = "openAIKey"
-
-type OpenAISettings struct {
-	URL            string `json:"url"`
-	OrganizationID string `json:"organizationId"`
-	apiKey         string
-}
-
-type Settings struct {
-	OpenAI OpenAISettings `json:"openAI"`
-}
-
-func loadSettings(appSettings backend.AppInstanceSettings) Settings {
-	settings := Settings{
-		OpenAI: OpenAISettings{
-			URL: "https://api.openai.com",
-		},
-	}
-	_ = json.Unmarshal(appSettings.JSONData, &settings)
-
-	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
-	return settings
-}
-
 // App is an example app backend plugin which can respond to data queries.
 type App struct {
 	backend.CallResourceHandler
+
+	vectorService vector.Service
 }
 
 // NewApp creates a new example *App instance.
 func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
+	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
@@ -61,17 +41,36 @@ func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, err
 	app.registerRoutes(mux)
 	app.CallResourceHandler = httpadapter.New(mux)
 
+	log.DefaultLogger.Debug("Loading settings")
+	settings := loadSettings(appSettings)
+	var err error
+
+	if settings.Vector.Enabled {
+		log.DefaultLogger.Debug("Creating vector service")
+		app.vectorService, err = vector.NewService(
+			settings.Vector,
+			appSettings.DecryptedSecureJSONData,
+		)
+		if err != nil {
+			log.DefaultLogger.Error("Error creating vector service", "err", err)
+			return nil, err
+		}
+	}
+
 	return &app, nil
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created.
 func (a *App) Dispose() {
-	// cleanup
+	if a.vectorService != nil {
+		a.vectorService.Cancel()
+	}
 }
 
 // CheckHealth handles health checks sent from Grafana to the plugin.
 func (a *App) CheckHealth(_ context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	log.DefaultLogger.Info("check health")
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "ok",
