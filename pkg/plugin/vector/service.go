@@ -25,18 +25,16 @@ type Service interface {
 }
 
 type VectorSettings struct {
-	Enabled   bool           `json:"enabled"`
-	Model     string         `json:"model"`
-	Dimension uint64         `json:"dimension"`
-	Embed     embed.Settings `json:"embed"`
-	Store     store.Settings `json:"store"`
+	Enabled bool           `json:"enabled"`
+	Model   string         `json:"model"`
+	Embed   embed.Settings `json:"embed"`
+	Store   store.Settings `json:"store"`
 }
 
 type vectorService struct {
-	embedder  embed.Embedder
-	model     string
-	dimension uint64
-	store     store.VectorStore
+	embedder embed.Embedder
+	model    string
+	store    store.VectorStore
 	// cancel is a function to cancel the context used by the vector service
 	// and/or the underlying vector store.
 	cancel context.CancelFunc
@@ -73,11 +71,10 @@ func NewService(s VectorSettings, secrets map[string]string, httpOpts httpclient
 		return nil, nil
 	}
 	v := &vectorService{
-		embedder:  em,
-		store:     st,
-		model:     s.Model,
-		dimension: s.Dimension,
-		cancel:    cancel,
+		embedder: em,
+		store:    st,
+		model:    s.Model,
+		cancel:   cancel,
 	}
 
 	v.ctx = context.Background()

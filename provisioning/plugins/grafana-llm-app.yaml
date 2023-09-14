@@ -6,7 +6,6 @@ apps:
       vector:
         enabled: true
         model: text-embedding-ada-002
-        dimension: 1536
         embed:
           type: openai
         store:

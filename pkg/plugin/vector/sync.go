@@ -61,11 +61,16 @@ func (v *vectorService) syncDashboardsToVectorStore(ctx context.Context) error {
 	log.DefaultLogger.Info("Syncing dashboards to vector store")
 
 	if exists, err := v.store.CollectionExists(ctx, GrafanaDashboardsCollection); err == nil && !exists {
+		vec, err := v.embedder.Embed(ctx, v.model, "test")
+		if err != nil {
+			return fmt.Errorf("embed test vector to determine dimension: %w", err)
+		}
+		dimension := uint64(len(vec))
 		log.DefaultLogger.Info(
 			"Creating dashboard collection",
 			"collection", GrafanaDashboardsCollection,
-			"dimensions", v.dimension)
-		err = v.store.CreateCollection(ctx, GrafanaDashboardsCollection, v.dimension)
+			"dimensions", dimension)
+		err = v.store.CreateCollection(ctx, GrafanaDashboardsCollection, dimension)
 		if err != nil {
 			return fmt.Errorf("create dashboard collection: %w", err)
 		}
