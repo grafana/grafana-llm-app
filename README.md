@@ -12,13 +12,13 @@ user feedback.
 To install this plugin, use the `GF_INSTALL_PLUGINS` environment variable when running Grafana:
 
 ```sh
-GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-llm-app/main/latest/grafana-llm-app-0.1.0.zip; grafana-llm-app
+GF_INSTALL_PLUGINS=grafana-llm-app
 ```
 
 or alternatively install using the Grafana CLI:
 
 ```sh
-grafana cli --pluginUrl=https://storage.googleapis.com/integration-artifacts/grafana-llm-app/main/latest/grafana-llm-app-0.1.0.zip plugins install grafana-llm-app
+grafana cli plugins install grafana-llm-app
 ```
 
 The plugin can then be configured either in the UI or using provisioning, as shown below.
