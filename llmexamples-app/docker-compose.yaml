@@ -8,10 +8,18 @@ services:
       args:
         grafana_version: ${GRAFANA_VERSION:-10.0.3}
     environment:
-      GF_INSTALL_PLUGINS: https://storage.googleapis.com/grafana-llm-app/grafana-llm-app-0.1.0.zip; grafana-llm-app
+      GF_INSTALL_PLUGINS: grafana-llm-app
       OPENAI_API_KEY: $OPENAI_API_KEY
     ports:
       - 3000:3000/tcp
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-llmexamples-app
       - ./provisioning:/etc/grafana/provisioning
+
+  qdrant:
+    image: qdrant/qdrant
+    volumes:
+      - qdrant-storage:/qdrant/storage
+
+volumes:
+  qdrant-storage:
