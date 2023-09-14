@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.7.1
+
+- Add vector search support for LLM integration
+
 ## v1.7.0
 
 - Add experimental LLM support
