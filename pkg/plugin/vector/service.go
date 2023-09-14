@@ -58,6 +58,9 @@ func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 }
 
 func (v *vectorService) Search(ctx context.Context, collection string, query string, limit uint64) ([]store.SearchResult, error) {
+	if query == "" {
+		return nil, fmt.Errorf("query cannot be empty")
+	}
 	exists, err := v.store.CollectionExists(ctx, collection)
 	if err != nil {
 		return nil, fmt.Errorf("vector store collections: %w", err)
