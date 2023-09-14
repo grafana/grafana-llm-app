@@ -18,8 +18,6 @@ type OpenAISettings struct {
 type Settings struct {
 	OpenAI OpenAISettings `json:"openAI"`
 
-	openAIKey string
-
 	Vector vector.VectorSettings `json:"vector"`
 }
 
@@ -31,6 +29,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	}
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
-	settings.openAIKey = appSettings.DecryptedSecureJSONData[openAIKey]
+	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
 	return settings
 }
