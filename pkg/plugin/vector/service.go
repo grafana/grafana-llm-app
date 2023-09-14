@@ -17,9 +17,10 @@ type Service interface {
 }
 
 type VectorSettings struct {
-	Model string         `json:"model"`
-	Embed embed.Settings `json:"embed"`
-	Store store.Settings `json:"store"`
+	Enabled bool           `json:"enabled"`
+	Model   string         `json:"model"`
+	Embed   embed.Settings `json:"embed"`
+	Store   store.Settings `json:"store"`
 }
 
 type vectorService struct {
