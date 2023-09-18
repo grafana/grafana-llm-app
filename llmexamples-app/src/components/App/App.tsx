@@ -1,7 +1,16 @@
 import React from 'react';
+import { Route, Switch } from 'react-router-dom';
+
 import { AppRootProps } from '@grafana/data';
-import { ExamplePage } from '../../pages';
+
+import { ExamplePage, VectorSearch } from '../../pages';
 
 export function App(props: AppRootProps) {
-  return <ExamplePage />;
+  return (
+    <Switch>
+      <Route exact component={VectorSearch} path="/a/grafana-llmexamples-app/vector-search" />
+      {/* Default page */}
+      <Route component={ExamplePage} />
+    </Switch>
+  );
 }

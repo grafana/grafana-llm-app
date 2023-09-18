@@ -27,6 +27,13 @@
       "path": "/a/grafana-llmexamples-app",
       "addToNav": true,
       "defaultNav": true
+    },
+    {
+      "type": "page",
+      "name": "Vector search",
+      "path": "/a/grafana-llmexamples-app/vector-search",
+      "addToNav": true,
+      "defaultNav": false
     }
   ],
   "dependencies": {
