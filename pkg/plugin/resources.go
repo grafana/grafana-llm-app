@@ -1,7 +1,10 @@
 package plugin
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -63,6 +66,31 @@ func newOpenAIProxy() http.Handler {
 	}
 }
 
+func newAzureOpenAIProxy() http.Handler {
+	director := func(req *http.Request) {
+		config := httpadapter.PluginConfigFromContext(req.Context())
+		settings := loadSettings(*config.AppInstanceSettings)
+
+		bodyBytes, _ := ioutil.ReadAll(req.Body)
+		var requestBody map[string]interface{}
+		json.Unmarshal(bodyBytes, &requestBody)
+
+		req.URL.Scheme = "https"
+		req.URL.Host = fmt.Sprintf("%s.openai.azure.com", requestBody["resource"])
+		req.URL.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", requestBody["deployment"])
+		req.Header.Add("api-key", settings.OpenAI.apiKey)
+
+		// Remove extra fields
+		delete(requestBody, "resource")
+		delete(requestBody, "deployment")
+
+		newBodyBytes, _ := json.Marshal(requestBody)
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyBytes))
+		req.ContentLength = int64(len(newBodyBytes))
+	}
+	return &httputil.ReverseProxy{Director: director}
+}
+
 type vectorSearchRequest struct {
 	Query      string `json:"query"`
 	Collection string `json:"collection"`
@@ -110,5 +138,6 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/ping", a.handlePing)
 	mux.HandleFunc("/echo", a.handleEcho)
 	mux.Handle("/openai/", newOpenAIProxy())
+	mux.Handle("/azure/", newAzureOpenAIProxy())
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 }
