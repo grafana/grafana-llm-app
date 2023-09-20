@@ -78,6 +78,7 @@ func newAzureOpenAIProxy() http.Handler {
 		req.URL.Scheme = "https"
 		req.URL.Host = fmt.Sprintf("%s.openai.azure.com", requestBody["resource"])
 		req.URL.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", requestBody["deployment"])
+		req.URL.RawQuery = "api-version=2023-03-15-preview"
 		req.Header.Add("api-key", settings.OpenAI.apiKey)
 
 		// Remove extra fields
