@@ -8,6 +8,7 @@ import (
 )
 
 const openAIKey = "openAIKey"
+const azureOpenAIKey = "azureOpenAIKey"
 
 type OpenAISettings struct {
 	URL            string `json:"url"`
@@ -15,8 +16,14 @@ type OpenAISettings struct {
 	apiKey         string
 }
 
+type AzureOpenAISettings struct {
+	ResourceName string `json:"resource"`
+	apiKey       string
+}
+
 type Settings struct {
-	OpenAI OpenAISettings `json:"openAI"`
+	OpenAI      OpenAISettings      `json:"openAI"`
+	AzureOpenAI AzureOpenAISettings `json:"azureOpenAI"`
 
 	Vector vector.VectorSettings `json:"vector"`
 }
@@ -30,5 +37,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
 	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
+	settings.AzureOpenAI.apiKey = appSettings.DecryptedSecureJSONData[azureOpenAIKey]
 	return settings
 }
