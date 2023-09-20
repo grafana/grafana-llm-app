@@ -13,7 +13,7 @@ apps:
           qdrant:
             address: qdrant:6334
       azureopenai:
-        url: https://api.openai.com
+        resource: grafana-machine-learning-dev
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
