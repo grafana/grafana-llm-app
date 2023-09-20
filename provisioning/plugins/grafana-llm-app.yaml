@@ -17,3 +17,4 @@ apps:
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
+      azureOpenAIKey: $AZURE_OPENAI_API_KEY
