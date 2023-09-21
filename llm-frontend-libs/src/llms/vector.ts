@@ -8,8 +8,9 @@
  * The {@link enabled} function can be used to check if the plugin is enabled and configured.
  */
 
-import { FetchError, getBackendSrv, logDebug } from "@grafana/runtime";
+import { getBackendSrv, logDebug } from "@grafana/runtime";
 import { LLM_PLUGIN_ROUTE } from "./constants";
+import { LLMAppHealthCheck } from "./types";
 
 interface SearchResultPayload extends Record<string, any> { }
 
@@ -74,10 +75,10 @@ let loggedWarning = false;
 
 /** Check if the vector API is enabled and configured via the LLM plugin. */
 export const enabled = async () => {
-  // Start by checking settings. If the plugin is not installed then this will fail.
-  let settings;
+  // Run a health check to see if the plugin is installed.
+  let response: LLMAppHealthCheck;
   try {
-    settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
+    response = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/health`, undefined, undefined, {
       showSuccessAlert: false, showErrorAlert: false,
     });
   } catch (e) {
@@ -88,50 +89,7 @@ export const enabled = async () => {
     }
     return false;
   }
-  // If the plugin is installed then check if it is enabled and configured.
-  const { enabled, jsonData } = settings;
-  const enabledInSettings: boolean = (
-    enabled &&
-    (jsonData.vector?.enabled ?? false) &&
-    (jsonData.vector?.embed?.type ?? false) &&
-    (jsonData.vector.store.type ?? false)
-  );
-  if (!enabledInSettings) {
-    logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings. Configure the grafana-llm-app plugin to enable vector search.');
-    return false;
-  }
-  // Finally, check if the vector search API is available.
-  try {
-    await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/resources/vector/search`, undefined, undefined, {
-      responseType: "text",
-      showSuccessAlert: false,
-      showErrorAlert: false,
-    });
-    return true;
-  } catch (e: unknown) {
-    // If we've got this far then the call to /settings has succeeded, so the plugin is definitely
-    // installed. A 404 then means that the plugin version is not recent enough to have the
-    // vector search API.
-    if ((e as FetchError).status === 404) {
-      if (!loggedWarning) {
-        logDebug(String(e));
-        logDebug('Vector service is enabled, but the Grafana LLM plugin is not up-to-date. Update the grafana-llm-app plugin to enable vector search.');
-        loggedWarning = true;
-      }
-    }
-    // Backend sends 503 Service Unavailable if vector is not enabled or configured properly.
-    if ((e as FetchError).status === 503) {
-      if (!loggedWarning) {
-        logDebug(String(e));
-        logDebug('Vector service is not enabled, or not configured, in Grafana LLM plugin settings. Configure the grafana-llm-app plugin to enable vector search.');
-        loggedWarning = true;
-      }
-    }
-    // If the backend returns 405 Method Not Allowed then we've made it through to the
-    // handler, and it must be enabled.
-    if ((e as FetchError).status === 405) {
-      return true;
-    }
-    return false;
-  }
+  // If the plugin is installed then check if it is configured.
+  const { details } = response;
+  return details.vectorEnabled ?? false;
 };
