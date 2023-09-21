@@ -1,7 +1,6 @@
 package plugin
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -66,13 +65,4 @@ func (a *App) Dispose() {
 	if a.vectorService != nil {
 		a.vectorService.Cancel()
 	}
-}
-
-// CheckHealth handles health checks sent from Grafana to the plugin.
-func (a *App) CheckHealth(_ context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	log.DefaultLogger.Info("check health")
-	return &backend.CheckHealthResult{
-		Status:  backend.HealthStatusOk,
-		Message: "ok",
-	}, nil
 }
