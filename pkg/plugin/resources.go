@@ -66,27 +66,39 @@ func newOpenAIProxy() http.Handler {
 	}
 }
 
-func newAzureOpenAIProxy() http.Handler {
+func newOpenAIProxy2() http.Handler {
 	director := func(req *http.Request) {
 		config := httpadapter.PluginConfigFromContext(req.Context())
 		settings := loadSettings(*config.AppInstanceSettings)
 
-		bodyBytes, _ := ioutil.ReadAll(req.Body)
-		var requestBody map[string]interface{}
-		json.Unmarshal(bodyBytes, &requestBody)
+		u, _ := url.Parse(settings.OpenAI.URL)
+		req.URL.Scheme = u.Scheme
+		req.URL.Host = u.Host
 
-		req.URL.Scheme = "https"
-		req.URL.Host = fmt.Sprintf("%s.openai.azure.com", settings.AzureOpenAI.ResourceName)
-		req.URL.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", requestBody["deployment"])
-		req.URL.RawQuery = "api-version=2023-03-15-preview"
-		req.Header.Add("api-key", settings.AzureOpenAI.apiKey)
+		if settings.OpenAI.UseAzure {
+			// Map model to deployment
+			bodyBytes, _ := ioutil.ReadAll(req.Body)
+			var requestBody map[string]interface{}
+			json.Unmarshal(bodyBytes, &requestBody)
 
-		// Remove extra fields
-		delete(requestBody, "deployment")
+			deployment := settings.OpenAI.AzureMapping[requestBody["model"].(string)]
 
-		newBodyBytes, _ := json.Marshal(requestBody)
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyBytes))
-		req.ContentLength = int64(len(newBodyBytes))
+			req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/azure"))
+			req.Header.Add("api-key", settings.OpenAI.apiKey)
+			req.URL.RawQuery = "api-version=2023-03-15-preview"
+
+			// Remove extra fields
+			delete(requestBody, "model")
+
+			newBodyBytes, _ := json.Marshal(requestBody)
+			req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyBytes))
+			req.ContentLength = int64(len(newBodyBytes))
+		} else {
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
+			req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
+			req.Header.Add("OpenAI-Organization", settings.OpenAI.OrganizationID)
+
+		}
 	}
 	return &httputil.ReverseProxy{Director: director}
 }
@@ -138,6 +150,5 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/ping", a.handlePing)
 	mux.HandleFunc("/echo", a.handleEcho)
 	mux.Handle("/openai/", newOpenAIProxy())
-	mux.Handle("/azure/", newAzureOpenAIProxy())
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 }
