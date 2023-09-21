@@ -6,6 +6,7 @@ require (
 	github.com/grafana/grafana-plugin-sdk-go v0.176.0
 	github.com/launchdarkly/eventsource v1.7.1
 	github.com/qdrant/go-client v1.5.0
+	github.com/sashabaranov/go-openai v1.15.3
 	google.golang.org/grpc v1.58.1
 )
 
