@@ -8,6 +8,7 @@ services:
       args:
         grafana_version: ${GRAFANA_VERSION:-10.1.0}
     environment:
+      OPENAI_ORGANIZATION_ID: $OPENAI_ORGANIZATION_ID
       OPENAI_API_KEY: $OPENAI_API_KEY
     ports:
       - 3000:3000/tcp
