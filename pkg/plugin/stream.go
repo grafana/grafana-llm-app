@@ -32,7 +32,7 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 	resp := &backend.SubscribeStreamResponse{
 		Status: backend.SubscribeStreamStatusNotFound,
 	}
-	if req.Path == openAIChatCompletionsPath {
+	if strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
 		resp.Status = backend.SubscribeStreamStatusOK
 	}
 	return resp, nil
@@ -54,8 +54,8 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	if err != nil {
 		return err
 	}
-	path := strings.TrimPrefix(req.Path, "openai")
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAI.URL+path, bytes.NewReader(outgoingBody))
+	httpPath := strings.TrimPrefix(req.Path, "openai")
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAI.URL+httpPath, bytes.NewReader(outgoingBody))
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}
@@ -135,7 +135,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	log.DefaultLogger.Debug(fmt.Sprintf("RunStream: %s", req.Path), "data", string(req.Data))
-	if req.Path == openAIChatCompletionsPath {
+	if strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
 		return a.runOpenAIChatCompletionsStream(ctx, req, sender)
 	}
 	return fmt.Errorf("unknown stream path: %s", req.Path)
