@@ -313,7 +313,7 @@ export function streamChatCompletions(request: ChatCompletionsRequest): Observab
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
     namespace: LLM_PLUGIN_ID,
-    path: OPENAI_CHAT_COMPLETIONS_PATH + self.crypto.randomUUID(),
+    path: OPENAI_CHAT_COMPLETIONS_PATH + '/' + self.crypto.randomUUID(),
     data: request,
   };
   const messages = getGrafanaLiveSrv()
