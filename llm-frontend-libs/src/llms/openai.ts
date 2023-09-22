@@ -14,7 +14,7 @@ import { getBackendSrv, getGrafanaLiveSrv, logDebug } from "@grafana/runtime";
 import { pipe, Observable, UnaryFunction } from "rxjs";
 import { filter, map, scan, takeWhile } from "rxjs/operators";
 
-import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from "./constants";
+import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE, setLLMPluginVersion } from "./constants";
 import { LLMAppHealthCheck } from "./types";
 
 const OPENAI_CHAT_COMPLETIONS_PATH = 'openai/v1/chat/completions';
@@ -344,7 +344,12 @@ export const enabled = async () => {
     }
     return false;
   }
-  // If the plugin is installed then check if it is configured.
+
   const { details } = response;
+  // Update the version if it's present on the response.
+  if (details.version !== undefined) {
+    setLLMPluginVersion(details.version);
+  }
+  // If the plugin is installed then check if it is configured.
   return details?.openAIEnabled ?? false;
 }
