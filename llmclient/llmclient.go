@@ -43,8 +43,10 @@ func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Clie
 }
 
 type healthCheckResponse struct {
-	OpenAIEnabled bool `json:"openAI"`
-	VectorEnabled bool `json:"vector"`
+	Details struct {
+		OpenAIEnabled bool `json:"openAI"`
+		VectorEnabled bool `json:"vector"`
+	} `json:"details"`
 }
 
 func (o *openAI) Enabled(ctx context.Context) (bool, error) {
@@ -60,11 +62,11 @@ func (o *openAI) Enabled(ctx context.Context) (bool, error) {
 	if resp.StatusCode != http.StatusOK {
 		return false, nil
 	}
-	var details healthCheckResponse
-	if err := json.NewDecoder(resp.Body).Decode(&details); err != nil {
+	var response healthCheckResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return false, fmt.Errorf("unmarshal response: %w", err)
 	}
-	return details.OpenAIEnabled, nil
+	return response.Details.OpenAIEnabled, nil
 }
 
 func (o *openAI) ChatCompletions(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
