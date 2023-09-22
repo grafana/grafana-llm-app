@@ -9,7 +9,7 @@
  */
 
 import { getBackendSrv, logDebug } from "@grafana/runtime";
-import { LLM_PLUGIN_ROUTE } from "./constants";
+import { LLM_PLUGIN_ROUTE, setLLMPluginVersion } from "./constants";
 import { LLMAppHealthCheck } from "./types";
 
 interface SearchResultPayload extends Record<string, any> { }
@@ -89,7 +89,11 @@ export const enabled = async () => {
     }
     return false;
   }
-  // If the plugin is installed then check if it is configured.
   const { details } = response;
+  // Update the version if it's present on the response.
+  if (details.version !== undefined) {
+    setLLMPluginVersion(details.version);
+  }
+  // If the plugin is installed then check if it is configured.
   return details.vectorEnabled ?? false;
 };
