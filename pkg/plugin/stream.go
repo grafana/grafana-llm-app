@@ -54,7 +54,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	if err != nil {
 		return err
 	}
-	httpPath := strings.TrimPrefix(req.Path, "openai")
+	httpPath := strings.TrimPrefix(openAIChatCompletionsPath, "openai")
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAI.URL+httpPath, bytes.NewReader(outgoingBody))
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
