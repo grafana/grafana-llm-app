@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -20,11 +21,11 @@ type chatCompletionsMessage struct {
 	Content string `json:"content"`
 }
 
-type chatCompletionsRequest struct {
-	Model    string                   `json:"model"`
-	Messages []chatCompletionsMessage `json:"messages"`
-	Stream   bool                     `json:"stream"`
-}
+// type chatCompletionsRequest struct {
+// 	Model    string                   `json:"model"`
+// 	Messages []chatCompletionsMessage `json:"messages"`
+// 	Stream   bool                     `json:"stream"`
+// }
 
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
@@ -39,29 +40,51 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 }
 
 func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	// Deserialize request data.
-	incomingBody := chatCompletionsRequest{Stream: true}
-	err := json.Unmarshal(req.Data, &incomingBody)
-	if err != nil {
-		return err
-	}
 
-	// Load app settings.
 	settings := loadSettings(*req.PluginContext.AppInstanceSettings)
+	var requestBody map[string]interface{}
+	json.Unmarshal(req.Data, &requestBody)
 
-	// Create and send OpenAI request.
-	outgoingBody, err := json.Marshal(incomingBody)
-	if err != nil {
-		return err
+	// set stream to true
+	requestBody["stream"] = true
+
+	u, _ := url.Parse(settings.OpenAI.URL)
+
+	var outgoingBody []byte
+	var err error
+
+	if settings.OpenAI.UseAzure {
+		// Map model to deployment
+
+		settings.OpenAI.AzureMapping = map[string]string{
+			"gpt-3.5-turbo": "gpt-35-turbo",
+		}
+
+		deployment := settings.OpenAI.AzureMapping[requestBody["model"].(string)]
+
+		apiPath := strings.TrimPrefix(req.Path, "openai/v1/")
+
+		u.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, apiPath)
+		u.RawQuery = "api-version=2023-03-15-preview"
+
+		// Remove extra fields
+		delete(requestBody, "model")
+
+	} else {
+		u.Path = strings.TrimPrefix(req.Path, "openai")
+
 	}
-	path := strings.TrimPrefix(req.Path, "openai")
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAI.URL+path, bytes.NewReader(outgoingBody))
-	if err != nil {
-		return fmt.Errorf("proxy: stream: error creating request: %w", err)
+
+	outgoingBody, err = json.Marshal(requestBody)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(outgoingBody))
+
+	if settings.OpenAI.UseAzure {
+		httpReq.Header.Set("api-key", settings.OpenAI.apiKey)
+	} else {
+		httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
+		httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
 	}
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.OpenAI.apiKey))
-	httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
-	httpReq.Header.Set("Content-Type", "application/json")
+
 	lastEventID := "" // no last event id
 	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)
 	if err != nil {
