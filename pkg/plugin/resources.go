@@ -65,11 +65,18 @@ func newOpenAIProxy() http.Handler {
 			var requestBody map[string]interface{}
 			json.Unmarshal(bodyBytes, &requestBody)
 
-			settings.OpenAI.AzureMapping = map[string]string{
-				"gpt-3.5-turbo": "gpt-35-turbo",
+			var deployment string = ""
+			for _, v := range settings.OpenAI.AzureMapping {
+				if val, ok := requestBody["model"].(string); ok && val == v[0] {
+					deployment = v[1]
+					break
+				}
 			}
 
-			deployment := settings.OpenAI.AzureMapping[requestBody["model"].(string)]
+			if deployment == "" {
+				log.DefaultLogger.Error(fmt.Sprintf("No deployment found for model: %s", requestBody["model"]))
+				deployment = "DEPLOYMENT_IS_MISSING"
+			}
 
 			req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/openai/v1"))
 			req.Header.Add("api-key", settings.OpenAI.apiKey)

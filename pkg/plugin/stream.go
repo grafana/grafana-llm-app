@@ -56,11 +56,18 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	if settings.OpenAI.UseAzure {
 		// Map model to deployment
 
-		settings.OpenAI.AzureMapping = map[string]string{
-			"gpt-3.5-turbo": "gpt-35-turbo",
+		var deployment string = ""
+		for _, v := range settings.OpenAI.AzureMapping {
+			if val, ok := requestBody["model"].(string); ok && val == v[0] {
+				deployment = v[1]
+				break
+			}
 		}
 
-		deployment := settings.OpenAI.AzureMapping[requestBody["model"].(string)]
+		if deployment == "" {
+			log.DefaultLogger.Error(fmt.Sprintf("No deployment found for model: %s", requestBody["model"]))
+			deployment = "DEPLOYMENT_IS_MISSING"
+		}
 
 		apiPath := strings.TrimPrefix(req.Path, "openai/v1/")
 
@@ -72,7 +79,6 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 	} else {
 		u.Path = strings.TrimPrefix(req.Path, "openai")
-
 	}
 
 	outgoingBody, err = json.Marshal(requestBody)
