@@ -26,6 +26,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: false,
 				VectorEnabled: false,
+				Version:       "unknown",
 			},
 		},
 		{
@@ -36,6 +37,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: true,
 				VectorEnabled: false,
+				Version:       "unknown",
 			},
 		},
 		{
@@ -63,6 +65,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: false,
 				VectorEnabled: true,
+				Version:       "unknown",
 			},
 		},
 		{
@@ -87,6 +90,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: true,
 				VectorEnabled: true,
+				Version:       "unknown",
 			},
 		},
 	} {
