@@ -3,12 +3,13 @@ import { lastValueFrom } from 'rxjs';
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, PluginConfigPageProps, PluginMeta } from '@grafana/data';
 import { getBackendSrv } from '@grafana/runtime';
-import { Button, Field, FieldSet, Input, SecretInput, useStyles2 } from '@grafana/ui';
+import { Button, Field, FieldSet, Input, SecretInput, useStyles2, Switch } from '@grafana/ui';
 import { testIds } from '../testIds';
 
 type OpenAISettings = {
   url?: string;
   organizationId?: string;
+  useAzure?: boolean;
 }
 
 export type AppPluginSettings = {
@@ -24,6 +25,10 @@ type State = {
   isOpenAIKeySet: boolean;
   // A secret key for our custom API.
   openAIKey: string;
+  // A flag to tell us if we should use Azure OpenAI.
+  useAzureOpenAI: boolean;
+  // A flag to tell us if state was updated
+  updated: boolean;
 };
 
 export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> { }
@@ -36,33 +41,48 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     openAIOrganizationID: jsonData?.openAI?.organizationId || '',
     openAIKey: '',
     isOpenAIKeySet: Boolean(secureJsonFields?.openAIKey),
+    useAzureOpenAI: jsonData?.openAI?.useAzure || false,
+    updated: false,
   });
 
   const onResetApiKey = () =>
     setState({
       ...state,
+      openAIUrl: '',
       openAIKey: '',
       openAIOrganizationID: '',
       isOpenAIKeySet: false,
+      useAzureOpenAI: state.useAzureOpenAI,
+      updated: true,
     });
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     setState({
       ...state,
-      [event.target.name]: event.target.value.trim(),
+      [event.target.name]: (event.target.type === 'checkbox' ? event.target.checked : event.target.value.trim()),
+      updated: true,
     });
   };
 
   return (
     <div data-testid={testIds.appConfig.container}>
       <FieldSet label="OpenAI Settings">
+        <Field label="Use Azure OpenAI">
+          <Switch
+            name="useAzureOpenAI"
+            data-testid={testIds.appConfig.useAzureOpenAI}
+            defaultChecked={state.useAzureOpenAI}
+            checked={state.useAzureOpenAI}
+            onChange={onChange}
+          />
+        </Field>
         <Field label="OpenAI API Url" description="" className={s.marginTop}>
           <Input
             width={60}
             name="openAIUrl"
             data-testid={testIds.appConfig.openAIUrl}
             value={state.openAIUrl}
-            placeholder={`https://api.openai.com`}
+            placeholder={state.useAzureOpenAI ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`}
             onChange={onChange}
           />
         </Field>
@@ -73,8 +93,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             name="openAIOrganizationID"
             data-testid={testIds.appConfig.openAIOrganizationID}
             value={state.openAIOrganizationID}
-            placeholder={'org-...'}
+            placeholder={state.useAzureOpenAI ? '' : 'org-...'}
             onChange={onChange}
+            disabled={state.useAzureOpenAI}
           />
         </Field>
 
@@ -85,7 +106,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             name="openAIKey"
             value={state.openAIKey}
             isConfigured={state.isOpenAIKeySet}
-            placeholder={'sk-...'}
+            placeholder={state.useAzureOpenAI ? '' : 'sk-...'}
             onChange={onChange}
             onReset={onResetApiKey}
           />
@@ -103,6 +124,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                   openAI: {
                     url: state.openAIUrl,
                     organizationId: state.openAIOrganizationID,
+                    useAzure: state.useAzureOpenAI,
                   },
                 },
                 // This cannot be queried later by the frontend.
@@ -114,9 +136,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                   },
               })
             }
-            disabled={Boolean(
-              !state.openAIUrl || !state.openAIOrganizationID || (!state.isOpenAIKeySet && !state.openAIKey)
-            )}
+            disabled={!state.updated}
           >
             Save API settings
           </Button>
