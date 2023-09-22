@@ -12,7 +12,7 @@ const openAIKey = "openAIKey"
 type OpenAISettings struct {
 	URL            string            `json:"url"`
 	OrganizationID string            `json:"organizationId"`
-	UseAzure       bool              `json:"azureOpenAI"`
+	UseAzure       bool              `json:"useAzure"`
 	AzureMapping   map[string]string `json:"azureOpenAIModelMapping"`
 	apiKey         string
 }
