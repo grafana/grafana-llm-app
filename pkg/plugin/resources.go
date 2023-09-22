@@ -51,22 +51,6 @@ func (a *App) handleEcho(w http.ResponseWriter, req *http.Request) {
 }
 
 func newOpenAIProxy() http.Handler {
-	return &httputil.ReverseProxy{
-		Rewrite: func(r *httputil.ProxyRequest) {
-			config := httpadapter.PluginConfigFromContext(r.In.Context())
-			settings := loadSettings(*config.AppInstanceSettings)
-			u, _ := url.Parse(settings.OpenAI.URL)
-			r.SetURL(u)
-			r.Out.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
-			organizationID := settings.OpenAI.OrganizationID
-			r.Out.Header.Set("OpenAI-Organization", organizationID)
-			r.Out.URL.Path = strings.TrimPrefix(r.In.URL.Path, "/openai")
-			log.DefaultLogger.Info("proxying to url", "url", r.Out.URL.String())
-		},
-	}
-}
-
-func newOpenAIProxy2() http.Handler {
 	director := func(req *http.Request) {
 		config := httpadapter.PluginConfigFromContext(req.Context())
 		settings := loadSettings(*config.AppInstanceSettings)
@@ -81,9 +65,13 @@ func newOpenAIProxy2() http.Handler {
 			var requestBody map[string]interface{}
 			json.Unmarshal(bodyBytes, &requestBody)
 
+			settings.OpenAI.AzureMapping = map[string]string{
+				"gpt-3.5-turbo": "gpt-35-turbo",
+			}
+
 			deployment := settings.OpenAI.AzureMapping[requestBody["model"].(string)]
 
-			req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/azure"))
+			req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/openai/v1"))
 			req.Header.Add("api-key", settings.OpenAI.apiKey)
 			req.URL.RawQuery = "api-version=2023-03-15-preview"
 
@@ -97,8 +85,8 @@ func newOpenAIProxy2() http.Handler {
 			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
 			req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
 			req.Header.Add("OpenAI-Organization", settings.OpenAI.OrganizationID)
-
 		}
+		log.DefaultLogger.Info(fmt.Sprintf("UUUUUUURL: %+v", req.URL))
 	}
 	return &httputil.ReverseProxy{Director: director}
 }
