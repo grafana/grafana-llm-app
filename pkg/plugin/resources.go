@@ -93,7 +93,6 @@ func newOpenAIProxy() http.Handler {
 			req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
 			req.Header.Add("OpenAI-Organization", settings.OpenAI.OrganizationID)
 		}
-		log.DefaultLogger.Info(fmt.Sprintf("UUUUUUURL: %+v", req.URL))
 	}
 	return &httputil.ReverseProxy{Director: director}
 }
