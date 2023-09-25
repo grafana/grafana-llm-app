@@ -16,17 +16,6 @@ import (
 
 const openAIChatCompletionsPath = "openai/v1/chat/completions"
 
-type chatCompletionsMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-// type chatCompletionsRequest struct {
-// 	Model    string                   `json:"model"`
-// 	Messages []chatCompletionsMessage `json:"messages"`
-// 	Stream   bool                     `json:"stream"`
-// }
-
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
 
