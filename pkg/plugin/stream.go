@@ -34,7 +34,6 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	requestBody := map[string]interface{}{}
 	var err error
 	err = json.Unmarshal(req.Data, &requestBody)
-
 	if err != nil {
 		return fmt.Errorf("Unable to unmarshal request body: %w", err)
 	}
@@ -43,7 +42,6 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	requestBody["stream"] = true
 
 	u, err := url.Parse(settings.OpenAI.URL)
-
 	if err != nil {
 		return fmt.Errorf("Unable to parse OpenAI URL: %w", err)
 	}
@@ -76,6 +74,9 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	}
 
 	outgoingBody, err = json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal new request body: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(outgoingBody))
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
