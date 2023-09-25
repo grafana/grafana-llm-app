@@ -26,6 +26,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: false,
 				VectorEnabled: false,
+				Version:       "unknown",
 			},
 		},
 		{
@@ -36,6 +37,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: true,
 				VectorEnabled: false,
+				Version:       "unknown",
 			},
 		},
 		{
@@ -63,6 +65,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: false,
 				VectorEnabled: true,
+				Version:       "unknown",
 			},
 		},
 		{
@@ -87,12 +90,14 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckResponse{
 				OpenAIEnabled: true,
 				VectorEnabled: true,
+				Version:       "unknown",
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			// Initialize app
-			inst, err := NewApp(tc.settings)
+			inst, err := NewApp(ctx, tc.settings)
 			if err != nil {
 				t.Fatalf("new app: %s", err)
 			}
@@ -104,7 +109,7 @@ func TestCheckHealth(t *testing.T) {
 				t.Fatal("inst must be of type *App")
 			}
 			// Request by calling CheckHealth.
-			resp, err := app.CheckHealth(context.Background(), &backend.CheckHealthRequest{
+			resp, err := app.CheckHealth(ctx, &backend.CheckHealthRequest{
 				PluginContext: backend.PluginContext{
 					AppInstanceSettings: &tc.settings,
 				},

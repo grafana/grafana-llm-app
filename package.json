@@ -1,6 +1,6 @@
 {
   "name": "llm",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Plugin to easily allow llm based extensions to grafana",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -19,7 +19,7 @@
   "author": "Grafana",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@babel/core": "^7.21.4",
+    "@babel/core": "^7.22.20",
     "@grafana/e2e": "10.1.1",
     "@grafana/e2e-selectors": "10.1.1",
     "@grafana/eslint-config": "^6.0.1",
@@ -38,7 +38,7 @@
     "css-loader": "^6.7.3",
     "eslint-webpack-plugin": "^4.0.1",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
-    "glob": "^10.1.0",
+    "glob": "^10.3.7",
     "identity-obj-proxy": "3.0.0",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.7.0",
@@ -46,7 +46,7 @@
     "replace-in-file-webpack-plugin": "^1.0.6",
     "sass": "1.62.1",
     "sass-loader": "13.3.2",
-    "style-loader": "3.3.2",
+    "style-loader": "3.3.3",
     "swc-loader": "^0.2.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
