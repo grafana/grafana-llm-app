@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -26,7 +26,7 @@ func newOpenAIProxy() http.Handler {
 
 		if settings.OpenAI.UseAzure {
 			// Map model to deployment
-			bodyBytes, _ := ioutil.ReadAll(req.Body)
+			bodyBytes, _ := io.ReadAll(req.Body)
 			var requestBody map[string]interface{}
 			json.Unmarshal(bodyBytes, &requestBody)
 
@@ -51,7 +51,7 @@ func newOpenAIProxy() http.Handler {
 			delete(requestBody, "model")
 
 			newBodyBytes, _ := json.Marshal(requestBody)
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(newBodyBytes))
+			req.Body = io.NopCloser(bytes.NewBuffer(newBodyBytes))
 			req.ContentLength = int64(len(newBodyBytes))
 		} else {
 			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
