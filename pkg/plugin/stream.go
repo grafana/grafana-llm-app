@@ -46,7 +46,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 	if err != nil {
 		return fmt.Errorf("Unable to parse OpenAI URL: %w", err)
-	
+	}
 
 	var outgoingBody []byte
 
