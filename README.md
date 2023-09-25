@@ -202,7 +202,7 @@ const MyComponent = (): JSX.Element => {
 
 ## Release process
 - Bump version in package.json (e.g., 0.2.0 to 0.2.1)
-- Add notes to changelog describing changes since last r elease
+- Add notes to changelog describing changes since last release
 - Merge PR for a branch containing those changes into main
 - Go to drone [here](https://drone.grafana.net/grafana/grafana-llm-app) and identify the build corresponding to the merge into main
 - Promote to target 'publish'
