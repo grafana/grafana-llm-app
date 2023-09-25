@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -29,7 +30,7 @@ type App struct {
 }
 
 // NewApp creates a new example *App instance.
-func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
+func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
 
