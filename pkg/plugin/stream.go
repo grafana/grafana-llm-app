@@ -70,7 +70,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		delete(requestBody, "model")
 
 	} else {
-		u.Path = strings.TrimPrefix(req.Path, "openai")
+		u.Path = "/v1/chat/completions"
 	}
 
 	outgoingBody, err = json.Marshal(requestBody)
