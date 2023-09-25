@@ -24,8 +24,9 @@ func (s *mockCallResourceResponseSender) Send(response *backend.CallResourceResp
 // TestCallResource tests CallResource calls, using backend.CallResourceRequest and backend.CallResourceResponse.
 // This ensures the httpadapter for CallResource works correctly.
 func TestCallResource(t *testing.T) {
+	ctx := context.Background()
 	// Initialize app
-	inst, err := NewApp(backend.AppInstanceSettings{})
+	inst, err := NewApp(ctx, backend.AppInstanceSettings{})
 	if err != nil {
 		t.Fatalf("new app: %s", err)
 	}
@@ -58,7 +59,7 @@ func TestCallResource(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Request by calling CallResource. This tests the httpadapter.
 			var r mockCallResourceResponseSender
-			err = app.CallResource(context.Background(), &backend.CallResourceRequest{
+			err = app.CallResource(ctx, &backend.CallResourceRequest{
 				Method: tc.method,
 				Path:   tc.path,
 				Body:   tc.body,
