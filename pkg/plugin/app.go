@@ -30,7 +30,7 @@ type App struct {
 }
 
 // NewApp creates a new example *App instance.
-func NewApp(appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
+func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
 
@@ -66,13 +66,4 @@ func (a *App) Dispose() {
 	if a.vectorService != nil {
 		a.vectorService.Cancel()
 	}
-}
-
-// CheckHealth handles health checks sent from Grafana to the plugin.
-func (a *App) CheckHealth(_ context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	log.DefaultLogger.Info("check health")
-	return &backend.CheckHealthResult{
-		Status:  backend.HealthStatusOk,
-		Message: "ok",
-	}, nil
 }
