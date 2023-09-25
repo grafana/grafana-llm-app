@@ -69,8 +69,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		}
 
 		if deployment == "" {
-			log.DefaultLogger.Error(fmt.Sprintf("No deployment found for model: %s", requestBody["model"]))
-			deployment = "DEPLOYMENT_IS_MISSING"
+			return fmt.Errorf("No deployment found for model: %s", requestBody["model"])
 		}
 
 		u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completion", deployment)

@@ -15,48 +15,73 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
+func mapAzureOpenAIRequest(req *http.Request, settings Settings) error {
+	bodyBytes, _ := io.ReadAll(req.Body)
+	var requestBody map[string]interface{}
+	err := json.Unmarshal(bodyBytes, &requestBody)
+	if err != nil {
+		return fmt.Errorf("Unable to unmarshal request body: %w", err)
+	}
+
+	var deployment string = ""
+	for _, v := range settings.OpenAI.AzureMapping {
+		if val, ok := requestBody["model"].(string); ok && val == v[0] {
+			deployment = v[1]
+			break
+		}
+	}
+
+	if deployment == "" {
+		return fmt.Errorf("No deployment found for model: %s", requestBody["model"])
+	}
+
+	req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/openai/v1"))
+	req.Header.Add("api-key", settings.OpenAI.apiKey)
+	req.URL.RawQuery = "api-version=2023-03-15-preview"
+
+	// Remove extra fields
+	delete(requestBody, "model")
+
+	newBodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("Unable to unmarshal request body: %w", err)
+	}
+	req.Body = io.NopCloser(bytes.NewBuffer(newBodyBytes))
+	req.ContentLength = int64(len(newBodyBytes))
+
+	return nil
+}
+
 func newOpenAIProxy() http.Handler {
 	director := func(req *http.Request) {
 		config := httpadapter.PluginConfigFromContext(req.Context())
 		settings := loadSettings(*config.AppInstanceSettings)
+		hasError := false
+		errorMsg := ""
 
-		u, _ := url.Parse(settings.OpenAI.URL)
+		u, err := url.Parse(settings.OpenAI.URL)
 		req.URL.Scheme = u.Scheme
 		req.URL.Host = u.Host
 
-		if settings.OpenAI.UseAzure {
-			// Map model to deployment
-			bodyBytes, _ := io.ReadAll(req.Body)
-			var requestBody map[string]interface{}
-			json.Unmarshal(bodyBytes, &requestBody)
+		if err != nil {
+			hasError = true
+			errorMsg = fmt.Sprintf("Unable to parse OpenAI URL: %s", err)
+		}
 
-			var deployment string = ""
-			for _, v := range settings.OpenAI.AzureMapping {
-				if val, ok := requestBody["model"].(string); ok && val == v[0] {
-					deployment = v[1]
-					break
-				}
+		if settings.OpenAI.UseAzure && !hasError {
+			err := mapAzureOpenAIRequest(req, settings)
+			if err != nil {
+				hasError = true
+				errorMsg = err.Error()
 			}
-
-			if deployment == "" {
-				log.DefaultLogger.Error(fmt.Sprintf("No deployment found for model: %s", requestBody["model"]))
-				deployment = "DEPLOYMENT_IS_MISSING"
-			}
-
-			req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/openai/v1"))
-			req.Header.Add("api-key", settings.OpenAI.apiKey)
-			req.URL.RawQuery = "api-version=2023-03-15-preview"
-
-			// Remove extra fields
-			delete(requestBody, "model")
-
-			newBodyBytes, _ := json.Marshal(requestBody)
-			req.Body = io.NopCloser(bytes.NewBuffer(newBodyBytes))
-			req.ContentLength = int64(len(newBodyBytes))
 		} else {
 			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
 			req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
 			req.Header.Add("OpenAI-Organization", settings.OpenAI.OrganizationID)
+		}
+
+		if hasError {
+			log.DefaultLogger.Error(fmt.Sprintf("Proxy error: %s", errorMsg))
 		}
 	}
 	return &httputil.ReverseProxy{Director: director}
