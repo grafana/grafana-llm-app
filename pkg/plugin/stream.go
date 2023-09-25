@@ -42,8 +42,13 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 
 	settings := loadSettings(*req.PluginContext.AppInstanceSettings)
-	var requestBody map[string]interface{}
-	json.Unmarshal(req.Data, &requestBody)
+	requestBody := map[string]interface{}{}
+	var err error
+	err = json.Unmarshal(req.Data, &requestBody)
+
+	if err != nil {
+		return fmt.Errorf("Unable to unmarshal request body: %w", err)
+	}
 
 	// set stream to true
 	requestBody["stream"] = true
@@ -51,7 +56,6 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	u, _ := url.Parse(settings.OpenAI.URL)
 
 	var outgoingBody []byte
-	var err error
 
 	if settings.OpenAI.UseAzure {
 		// Map model to deployment
@@ -69,9 +73,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 			deployment = "DEPLOYMENT_IS_MISSING"
 		}
 
-		apiPath := strings.TrimPrefix(req.Path, "openai/v1/")
-
-		u.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, apiPath)
+		u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completion", deployment)
 		u.RawQuery = "api-version=2023-03-15-preview"
 
 		// Remove extra fields
