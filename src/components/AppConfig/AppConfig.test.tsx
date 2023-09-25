@@ -17,7 +17,13 @@ describe('Components/AppConfig', () => {
           name: 'Sample App',
           type: PluginType.app,
           enabled: true,
-          jsonData: {},
+          jsonData: {
+            vector: {
+              store: {
+                type: 'qdrant',
+              }
+            },
+          },
         },
       },
       query: {},
@@ -34,6 +40,12 @@ describe('Components/AppConfig', () => {
     expect(screen.queryByTestId(testIds.appConfig.openAIKey)).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.openAIOrganizationID)).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.openAIUrl)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /save api settings/i })).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.model)).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /vector settings/i })).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.qdrantSecure)).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.qdrantAddress)).toBeInTheDocument();
+    // Don't expect to see the Grafana vector API field when type is qdrant
+    expect(screen.queryByTestId(testIds.appConfig.grafanaVectorApiUrl)).toBeNull();
+    expect(screen.queryByRole('button', { name: /save settings/i })).toBeInTheDocument();
   });
 });
