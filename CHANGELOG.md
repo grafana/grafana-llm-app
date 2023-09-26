@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Add support for Azure OpenAI. The plugin must be configured to use OpenAI and provide a link between OpenAI model names and Azure deployment names
+
 ## 0.2.1
 
 * Change path handling for chat completions streams to put separate requests into separate streams. Requests can pass a UUID as the suffix of the path now, but is backwards compatible with an older version of the frontend code.
