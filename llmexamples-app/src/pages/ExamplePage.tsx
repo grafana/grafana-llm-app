@@ -30,6 +30,8 @@ export function ExamplePage() {
       return { enabled };
     }
 
+    setStarted(true);
+    setFinished(false);
     if (!useStream) {
       // Make a single request to the LLM.
       const response = await llms.openai.chatCompletions({
@@ -40,12 +42,11 @@ export function ExamplePage() {
         ],
       });
       setReply(response.choices[0].message.content);
+      setStarted(false);
+      setFinished(true);
       return { enabled, response };
     } else {
-      setStarted(true);
-      setFinished(false);
       // Stream the completions. Each element is the next stream chunk.
-      console.log("AAAAAAAAAAAAA")
       const stream = llms.openai.streamChatCompletions({
         model: 'gpt-3.5-turbo',
         messages: [
