@@ -73,7 +73,6 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		u.Path = "/v1/chat/completions"
 	}
 
-	log.DefaultLogger.Info(fmt.Sprintf("requestBody: %s; url: %s", requestBody, u.String()))
 	outgoingBody, err = json.Marshal(requestBody)
 	if err != nil {
 		return fmt.Errorf("Unable to marshal new request body: %w", err)
