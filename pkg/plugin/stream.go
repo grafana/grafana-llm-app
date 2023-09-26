@@ -63,7 +63,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 			return fmt.Errorf("No deployment found for model: %s", requestBody["model"])
 		}
 
-		u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completion", deployment)
+		u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
 		u.RawQuery = "api-version=2023-03-15-preview"
 
 		// Remove extra fields
@@ -73,6 +73,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		u.Path = "/v1/chat/completions"
 	}
 
+	log.DefaultLogger.Info(fmt.Sprintf("requestBody: %s; url: %s", requestBody, u.String()))
 	outgoingBody, err = json.Marshal(requestBody)
 	if err != nil {
 		return fmt.Errorf("Unable to marshal new request body: %w", err)
@@ -88,11 +89,12 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
 		httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
 	}
+	httpReq.Header.Set("Content-Type", "application/json")
 
 	lastEventID := "" // no last event id
 	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)
 	if err != nil {
-		return fmt.Errorf("proxy: stream: eventsource.SubscribeWithRequest: %s: %w", httpReq.URL, err)
+		return fmt.Errorf("proxy: stream: eventsource.SubscribeWithRequest: %+v: %w", httpReq, err)
 	}
 	defer func() {
 		eventStream.Close()
