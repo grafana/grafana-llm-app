@@ -14,6 +14,8 @@ export function ExamplePage() {
   // The latest reply from the LLM.
   const [reply, setReply] = useState('');
 
+  const [useStream, setUseStream] = useState(false);
+
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(true);
 
@@ -28,34 +30,48 @@ export function ExamplePage() {
       return { enabled };
     }
 
-    setStarted(true);
-    setFinished(false);
-    // Stream the completions. Each element is the next stream chunk.
-    const stream = llms.openai.streamChatCompletions({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a cynical assistant.' },
-        { role: 'user', content: message },
-      ],
-    }).pipe(
-      // Accumulate the stream content into a stream of strings, where each
-      // element contains the accumulated message so far.
-      llms.openai.accumulateContent(),
-      // The stream is just a regular Observable, so we can use standard rxjs
-      // functionality to update state, e.g. recording when the stream
-      // has completed.
-      // The operator decision tree on the rxjs website is a useful resource:
-      // https://rxjs.dev/operator-decision-tree.
-      finalize(() => {
-        setStarted(false);
-        setFinished(true);
-      })
-    );
-    // Subscribe to the stream and update the state for each returned value.
-    return {
-      enabled,
-      stream: stream.subscribe(setReply),
-    };
+    if (!useStream) {
+      // Make a single request to the LLM.
+      const response = await llms.openai.chatCompletions({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a cynical assistant.' },
+          { role: 'user', content: message },
+        ],
+      });
+      setReply(response.choices[0].message.content);
+      return { enabled, response };
+    } else {
+      setStarted(true);
+      setFinished(false);
+      // Stream the completions. Each element is the next stream chunk.
+      console.log("AAAAAAAAAAAAA")
+      const stream = llms.openai.streamChatCompletions({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a cynical assistant.' },
+          { role: 'user', content: message },
+        ],
+      }).pipe(
+        // Accumulate the stream content into a stream of strings, where each
+        // element contains the accumulated message so far.
+        llms.openai.accumulateContent(),
+        // The stream is just a regular Observable, so we can use standard rxjs
+        // functionality to update state, e.g. recording when the stream
+        // has completed.
+        // The operator decision tree on the rxjs website is a useful resource:
+        // https://rxjs.dev/operator-decision-tree.
+        finalize(() => {
+          setStarted(false);
+          setFinished(true);
+        })
+      );
+      // Subscribe to the stream and update the state for each returned value.
+      return {
+        enabled,
+        stream: stream.subscribe(setReply),
+      };
+    }
   }, [message]);
 
   if (error) {
@@ -73,7 +89,8 @@ export function ExamplePage() {
             placeholder="Enter a message"
           />
           <br />
-          <Button type="submit" onClick={() => setMessage(input)}>Submit</Button>
+          <Button type="submit" onClick={() => {setMessage(input); setUseStream(true);}}>Submit Stream</Button>
+          <Button type="submit" onClick={() => {setMessage(input); setUseStream(false);}}>Submit Request</Button>
           <br />
           <div>{loading ? <Spinner /> : reply}</div>
           <div>{started ? "Response is started" : "Response is not started"}</div>
