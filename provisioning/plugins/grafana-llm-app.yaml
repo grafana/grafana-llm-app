@@ -12,6 +12,9 @@ apps:
           type: qdrant
           qdrant:
             address: qdrant:6334
+      azureopenai:
+        resource: grafana-machine-learning-dev
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
+      azureOpenAIKey: $AZURE_OPENAI_API_KEY

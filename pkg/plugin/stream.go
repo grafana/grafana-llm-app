@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -14,17 +15,6 @@ import (
 )
 
 const openAIChatCompletionsPath = "openai/v1/chat/completions"
-
-type chatCompletionsMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type chatCompletionsRequest struct {
-	Model    string                   `json:"model"`
-	Messages []chatCompletionsMessage `json:"messages"`
-	Stream   bool                     `json:"stream"`
-}
 
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
@@ -39,29 +29,67 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 }
 
 func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	// Deserialize request data.
-	incomingBody := chatCompletionsRequest{Stream: true}
-	err := json.Unmarshal(req.Data, &incomingBody)
-	if err != nil {
-		return err
-	}
 
-	// Load app settings.
 	settings := loadSettings(*req.PluginContext.AppInstanceSettings)
-
-	// Create and send OpenAI request.
-	outgoingBody, err := json.Marshal(incomingBody)
+	requestBody := map[string]interface{}{}
+	var err error
+	err = json.Unmarshal(req.Data, &requestBody)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to unmarshal request body: %w", err)
 	}
-	httpPath := strings.TrimPrefix(openAIChatCompletionsPath, "openai")
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, settings.OpenAI.URL+httpPath, bytes.NewReader(outgoingBody))
+
+	// set stream to true
+	requestBody["stream"] = true
+
+	u, err := url.Parse(settings.OpenAI.URL)
+	if err != nil {
+		return fmt.Errorf("Unable to parse OpenAI URL: %w", err)
+	}
+
+	var outgoingBody []byte
+
+	if settings.OpenAI.UseAzure {
+		// Map model to deployment
+
+		var deployment string = ""
+		for _, v := range settings.OpenAI.AzureMapping {
+			if val, ok := requestBody["model"].(string); ok && val == v[0] {
+				deployment = v[1]
+				break
+			}
+		}
+
+		if deployment == "" {
+			return fmt.Errorf("No deployment found for model: %s", requestBody["model"])
+		}
+
+		u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
+		u.RawQuery = "api-version=2023-03-15-preview"
+
+		// Remove extra fields
+		delete(requestBody, "model")
+
+	} else {
+		u.Path = "/v1/chat/completions"
+	}
+
+	outgoingBody, err = json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal new request body: %w", err)
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(outgoingBody))
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.OpenAI.apiKey))
-	httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
+
+	if settings.OpenAI.UseAzure {
+		httpReq.Header.Set("api-key", settings.OpenAI.apiKey)
+	} else {
+		httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
+		httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
+	}
 	httpReq.Header.Set("Content-Type", "application/json")
+
 	lastEventID := "" // no last event id
 	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)
 	if err != nil {

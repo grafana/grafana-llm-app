@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Add Go package providing an OpenAI client to use the LLM app from backend Go code
+* Add support for Azure OpenAI. The plugin must be configured to use OpenAI and provide a link between OpenAI model names and Azure deployment names
 
 ## 0.2.1
 

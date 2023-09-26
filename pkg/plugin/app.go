@@ -34,15 +34,16 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
 
+	log.DefaultLogger.Debug("Loading settings")
+	settings := loadSettings(appSettings)
+
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
 	// to use a *http.ServeMux for resource calls, so we can map multiple routes
 	// to CallResource without having to implement extra logic.
 	mux := http.NewServeMux()
-	app.registerRoutes(mux)
+	app.registerRoutes(mux, settings)
 	app.CallResourceHandler = httpadapter.New(mux)
 
-	log.DefaultLogger.Debug("Loading settings")
-	settings := loadSettings(appSettings)
 	var err error
 
 	if settings.Vector.Enabled {
