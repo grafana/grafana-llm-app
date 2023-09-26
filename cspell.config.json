@@ -33,6 +33,7 @@
     "grafana",
     "httpadapter",
     "instancemgmt",
+    "llmclient",
     "llms",
     "nolint",
     "openai",
