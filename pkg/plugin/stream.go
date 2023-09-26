@@ -93,7 +93,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	lastEventID := "" // no last event id
 	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)
 	if err != nil {
-		return fmt.Errorf("proxy: stream: eventsource.SubscribeWithRequest: %+v: %w", httpReq, err)
+		return fmt.Errorf("proxy: stream: eventsource.SubscribeWithRequest: %s: %w", httpReq.URL, err)
 	}
 	defer func() {
 		eventStream.Close()
