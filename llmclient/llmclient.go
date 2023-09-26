@@ -13,6 +13,10 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+const (
+	appResourcesPrefix = "/api/plugins/grafana-llm-app/resources"
+)
+
 // OpenAI is an interface for talking to OpenAI via the Grafana LLM app.
 // Requests made using this interface will be routed to the OpenAI backend
 // configured in the Grafana LLM app's settings, with authentication handled
@@ -44,7 +48,7 @@ func NewOpenAI(grafanaURL, grafanaAPIKey string) OpenAI {
 // NewOpenAIWithClient creates a new OpenAI client talking to the Grafana LLM app installed
 // on the given Grafana instance, using the given HTTP client.
 func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAI {
-	url := strings.TrimRight(grafanaURL, "/") + "/api/plugins/grafana-llm-app/resources/openai/v1"
+	url := strings.TrimRight(grafanaURL, "/") + appResourcesPrefix + "/openai/v1"
 	cfg := openai.DefaultConfig(grafanaAPIKey)
 	cfg.BaseURL = url
 	cfg.HTTPClient = httpClient
@@ -65,7 +69,7 @@ type healthCheckResponse struct {
 }
 
 func (o *openAI) Enabled(ctx context.Context) (bool, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", o.grafanaURL+"/api/plugins/grafana-llm-app/health", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", o.grafanaURL+appResourcesPrefix+"/health", nil)
 	if err != nil {
 		return false, fmt.Errorf("create request: %w", err)
 	}
