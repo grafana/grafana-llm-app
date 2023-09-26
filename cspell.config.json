@@ -36,6 +36,7 @@
     "llms",
     "nolint",
     "openai",
+    "proxied",
     "proxying",
     "qdrant",
     "testid",
