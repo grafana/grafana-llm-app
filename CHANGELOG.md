@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Add Go package providing an OpenAI client to use the LLM app from backend Go code
+
 ## 0.2.1
 
 * Improve health check endpoint to include status of various features
