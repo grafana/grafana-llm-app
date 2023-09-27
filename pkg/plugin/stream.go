@@ -90,14 +90,22 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	lastEventID := "" // no last event id
-	eventStream, err := eventsource.SubscribeWithRequest(lastEventID, httpReq)
+	// Subscribe to the stream, handling errors by immediately sending an 'error' message over the
+	// stream sender, then closing the underlying stream.
+	// This is the only way we can handle errors from the initial connection; see the docs for
+	// eventsource.StreamOptionErrorHandler for more details.
+	eventStream, err := eventsource.SubscribeWithRequestAndOptions(httpReq, eventsource.StreamOptionErrorHandler(func(err error) eventsource.StreamErrorHandlerResult {
+		payload := EventError{Error: err.Error()}
+		sendError(payload, sender)
+		return eventsource.StreamErrorHandlerResult{CloseNow: true}
+	}))
 	if err != nil {
 		return fmt.Errorf("proxy: stream: eventsource.SubscribeWithRequest: %s: %w", httpReq.URL, err)
 	}
+	log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: stream opened: %s", req.Path))
 	defer func() {
-		eventStream.Close()
 		log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: stream closed: %s", req.Path))
+		eventStream.Close()
 	}()
 
 	// Stream response back to frontend.
@@ -132,31 +140,6 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 				log.DefaultLogger.Error(err.Error())
 				return err
 			}
-		case err := <-eventStream.Errors:
-			err = fmt.Errorf("proxy: stream: error from event stream: %w", err)
-			log.DefaultLogger.Error(err.Error())
-			var payload struct {
-				Error string `json:"error"`
-				Done  bool   `json:"done"`
-			}
-			payload.Error = err.Error()
-			b, err := json.Marshal(payload)
-			if err != nil {
-				err = fmt.Errorf("proxy: stream: error marshalling error payload: %w", err)
-				log.DefaultLogger.Error(err.Error())
-				return err
-			}
-			err = sender.SendJSON([]byte(b))
-			if err != nil {
-				err = fmt.Errorf("proxy: stream: error unmarshalling event data: %w", err)
-				log.DefaultLogger.Error(err.Error())
-				return err
-			}
-			if payload.Done { // graceful end
-				log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: done==true, ending (in error branch): %s", req.Path))
-				return nil
-			}
-			return err
 		}
 	}
 }
@@ -164,7 +147,14 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	log.DefaultLogger.Debug(fmt.Sprintf("RunStream: %s", req.Path), "data", string(req.Data))
 	if strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
-		return a.runOpenAIChatCompletionsStream(ctx, req, sender)
+		// Run the stream. On error, send an error message over the stream sender, then return.
+		// We want to avoid returning an `error` here as much as possible because Grafana will
+		// blindly rerun the stream without notifying the UI if we do.
+		if err := a.runOpenAIChatCompletionsStream(ctx, req, sender); err != nil {
+			log.DefaultLogger.Info("error running stream", "err", err)
+			sendError(EventError{Error: err.Error()}, sender)
+		}
+		return nil
 	}
 	return fmt.Errorf("unknown stream path: %s", req.Path)
 }
@@ -177,4 +167,23 @@ func (a *App) PublishStream(context.Context, *backend.PublishStreamRequest) (*ba
 
 type EventDone struct {
 	Done bool `json:"done"`
+}
+
+type EventError struct {
+	Error string `json:"error"`
+}
+
+func sendError(event EventError, sender *backend.StreamSender) {
+	err := fmt.Errorf("proxy: stream: error from event stream: %s", event.Error)
+	log.DefaultLogger.Error(err.Error())
+	b, err := json.Marshal(event)
+	if err != nil {
+		err = fmt.Errorf("proxy: stream: error marshalling error payload: %w", err)
+		log.DefaultLogger.Error(err.Error())
+		b = []byte(fmt.Sprintf(`{"error": "%s", "done": false}`, err.Error()))
+	}
+	if err = sender.SendJSON(b); err != nil {
+		err = fmt.Errorf("proxy: stream: error unmarshalling event data: %w", err)
+		log.DefaultLogger.Error(err.Error())
+	}
 }
