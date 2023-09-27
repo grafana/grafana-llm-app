@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+## 0.3.0
+
 * Add Go package providing an OpenAI client to use the LLM app from backend Go code
 * Add support for Azure OpenAI. The plugin must be configured to use OpenAI and provide a link between OpenAI model names and Azure deployment names
+* Return streaming errors as part of the stream, with objects like `{"error": "<error message>"}`
 
 ## 0.2.1
 
