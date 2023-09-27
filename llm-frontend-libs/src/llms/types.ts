@@ -1,7 +1,7 @@
 export type LLMAppHealthCheck = {
   details: {
-    openAIEnabled?: boolean;
-    vectorEnabled?: boolean;
+    openAI?: boolean;
+    vector?: boolean;
     version?: string;
   };
 };
