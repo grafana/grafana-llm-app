@@ -126,7 +126,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			openAIsettings: OpenAISettings{
 				OrganizationID: "myOrg",
-				UseAzure:       false,
+				Provider:       openAIProviderOpenAI,
 			},
 			apiKey: "abcd1234",
 
@@ -148,7 +148,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			openAIsettings: OpenAISettings{
 				OrganizationID: "myOrg",
-				UseAzure:       true,
+				Provider:       openAIProviderAzure,
 				AzureMapping: [][]string{
 					{"gpt-3.5-turbo", "gpt-35-turbo"},
 				},
@@ -173,7 +173,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			openAIsettings: OpenAISettings{
 				OrganizationID: "myOrg",
-				UseAzure:       true,
+				Provider:       openAIProviderAzure,
 				AzureMapping: [][]string{
 					{"gpt-3.5-turbo", "gpt-35-turbo"},
 				},

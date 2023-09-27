@@ -1,10 +1,13 @@
 import React, { ChangeEvent } from "react";
 
-import { Field, FieldSet, Input, SecretInput, Switch, useStyles2 } from "@grafana/ui";
+import { Field, FieldSet, Input, SecretInput, Select, useStyles2 } from "@grafana/ui";
 
 import { testIds } from "components/testIds";
 import { getStyles, Secrets, SecretsSet } from "./AppConfig";
 import { AzureModelDeploymentConfig, AzureModelDeployments } from "./AzureConfig";
+import { SelectableValue } from "@grafana/data";
+
+export type OpenAIProvider = 'openai' | 'azure';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
@@ -12,7 +15,7 @@ export interface OpenAISettings {
   // The organization ID for OpenAI.
   organizationId?: string;
   // Whether to use Azure OpenAI.
-  useAzure?: boolean;
+  provider?: OpenAIProvider;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
 }
@@ -34,13 +37,15 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
   };
   return (
     <FieldSet label="OpenAI Settings">
-      <Field label="Use Azure OpenAI">
-        <Switch
-          name="useAzure"
-          data-testid={testIds.appConfig.useAzureOpenAI}
-          defaultChecked={settings.useAzure}
-          checked={settings.useAzure}
-          onChange={onChangeField}
+      <Field label="OpenAI Provider">
+        <Select
+          data-testid={testIds.appConfig.openAIProvider}
+          options={[
+            { label: 'OpenAI', value: 'openai' },
+            { label: 'Azure OpenAI', value: 'azure' },
+          ] as Array<SelectableValue<OpenAIProvider>>}
+          onChange={(e) => onChange({ ...settings, provider: e.value })}
+          width={60}
         />
       </Field>
       <Field label="OpenAI API URL" description="" className={s.marginTop}>
@@ -49,7 +54,7 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
           name="url"
           data-testid={testIds.appConfig.openAIUrl}
           value={settings.url}
-          placeholder={settings.useAzure ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`}
+          placeholder={settings.provider === 'azure' ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`}
           onChange={onChangeField}
         />
       </Field>
@@ -62,7 +67,7 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
           value={settings.organizationId}
           placeholder={settings.organizationId ? '' : 'org-...'}
           onChange={onChangeField}
-          disabled={settings.useAzure}
+          disabled={settings.provider === 'azure'}
         />
       </Field>
 
@@ -73,13 +78,13 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
           name="openAIKey"
           value={secrets.openAIKey}
           isConfigured={secretsSet.openAIKey ?? false}
-          placeholder={settings.useAzure ? '' : 'sk-...'}
+          placeholder={settings.provider === 'azure' ? '' : 'sk-...'}
           onChange={e => onChangeSecrets({ ...secrets, openAIKey: e.currentTarget.value })}
           onReset={() => onChangeSecrets({ ...secrets, openAIKey: '' })}
         />
       </Field>
 
-      {settings.useAzure && (
+      {settings.provider === 'azure' && (
         <Field label="Azure OpenAI Model Mapping" description="">
           <AzureModelDeploymentConfig
             modelMapping={settings.azureModelMapping ?? []}

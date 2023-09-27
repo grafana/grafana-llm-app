@@ -211,10 +211,13 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
-	if settings.OpenAI.UseAzure {
-		mux.Handle("/openai/", newAzureOpenAIProxy(settings))
-	} else {
+	switch settings.OpenAI.Provider {
+	case openAIProviderOpenAI:
 		mux.Handle("/openai/", newOpenAIProxy(settings))
+	case openAIProviderAzure:
+		mux.Handle("/openai/", newAzureOpenAIProxy(settings))
+	default:
+		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 }

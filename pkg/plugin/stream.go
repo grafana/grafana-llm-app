@@ -48,9 +48,11 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 	var outgoingBody []byte
 
-	if settings.OpenAI.UseAzure {
+	switch settings.OpenAI.Provider {
+	case openAIProviderOpenAI:
+		u.Path = "/v1/chat/completions"
+	case openAIProviderAzure:
 		// Map model to deployment
-
 		var deployment string = ""
 		for _, v := range settings.OpenAI.AzureMapping {
 			if val, ok := requestBody["model"].(string); ok && val == v[0] {
@@ -68,9 +70,8 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 		// Remove extra fields
 		delete(requestBody, "model")
-
-	} else {
-		u.Path = "/v1/chat/completions"
+	default:
+		return fmt.Errorf("Unknown OpenAI provider: %s", settings.OpenAI.Provider)
 	}
 
 	outgoingBody, err = json.Marshal(requestBody)
@@ -82,11 +83,12 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}
 
-	if settings.OpenAI.UseAzure {
-		httpReq.Header.Set("api-key", settings.OpenAI.apiKey)
-	} else {
+	switch settings.OpenAI.Provider {
+	case openAIProviderOpenAI:
 		httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
 		httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
+	case openAIProviderAzure:
+		httpReq.Header.Set("api-key", settings.OpenAI.apiKey)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
