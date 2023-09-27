@@ -351,5 +351,5 @@ export const enabled = async () => {
     setLLMPluginVersion(details.version);
   }
   // If the plugin is installed then check if it is configured.
-  return details?.openAIEnabled ?? false;
+  return details?.openAI ?? false;
 }
