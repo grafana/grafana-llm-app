@@ -48,6 +48,17 @@ interface Props<T> {
 export function VectorConfig({ settings, onChange }: Props<VectorSettings>) {
   return (
     <FieldSet label="Vector Settings">
+
+      <Field label="Enabled" description="Enable vector database powered features.">
+        <Switch
+          name="enabled"
+          data-testid={testIds.appConfig.vectorEnabled}
+          defaultChecked={settings?.enabled}
+          checked={settings?.enabled}
+          onChange={e => onChange({ ...settings, enabled: e.currentTarget.checked })}
+        />
+      </Field>
+
       <Field label="Model" description="The model used by the embedder and for embeddings stored in the store">
         <Input
           width={60}
