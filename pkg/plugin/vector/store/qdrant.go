@@ -82,7 +82,7 @@ func (q *qdrantStore) CollectionExists(ctx context.Context, collection string) (
 	return true, nil
 }
 
-func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64) ([]SearchResult, error) {
+func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]any) ([]SearchResult, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
 	}
