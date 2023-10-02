@@ -8,6 +8,8 @@ services:
       args:
         grafana_version: ${GRAFANA_VERSION:-10.1.0}
     environment:
+      AZURE_OPENAI_API_KEY: $AZURE_OPENAI_API_KEY
+      GF_LOG_LEVEL: debug
       OPENAI_ORGANIZATION_ID: $OPENAI_ORGANIZATION_ID
       OPENAI_API_KEY: $OPENAI_API_KEY
     ports:
