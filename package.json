@@ -19,7 +19,7 @@
   "author": "Grafana",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@babel/core": "^7.22.20",
+    "@babel/core": "^7.23.0",
     "@grafana/e2e": "10.1.1",
     "@grafana/e2e-selectors": "10.1.4",
     "@grafana/eslint-config": "^6.0.1",
