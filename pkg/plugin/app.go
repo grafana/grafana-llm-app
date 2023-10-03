@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -29,6 +30,8 @@ type App struct {
 	vectorService vector.Service
 
 	healthCheckClient healthCheckClient
+	healthCheckMutex  sync.Mutex
+	healthCheckResult *backend.CheckHealthResult
 	settings          Settings
 }
 
@@ -62,6 +65,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	}
 
 	app.healthCheckClient = &http.Client{}
+	app.healthCheckMutex = sync.Mutex{}
 
 	return &app, nil
 }

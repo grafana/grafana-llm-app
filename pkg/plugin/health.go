@@ -146,6 +146,11 @@ func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 // CheckHealth handles health checks sent from Grafana to the plugin.
 // It returns whether each feature is working based on the plugin settings.
 func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	a.healthCheckMutex.Lock()
+	defer a.healthCheckMutex.Unlock()
+	if a.healthCheckResult != nil {
+		return a.healthCheckResult, nil
+	}
 	openAI, err := a.openAIHealth(ctx)
 	if err != nil {
 		openAI.OK = false
@@ -164,8 +169,9 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 			Message: "failed to marshal details",
 		}, nil
 	}
-	return &backend.CheckHealthResult{
+	a.healthCheckResult = &backend.CheckHealthResult{
 		Status:      backend.HealthStatusOk,
 		JSONDetails: body,
-	}, nil
+	}
+	return a.healthCheckResult, nil
 }
