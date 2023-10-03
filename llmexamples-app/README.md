@@ -6,7 +6,7 @@ This is a Grafana plugin designed to showcase using the LLM functionality availa
 
 To get started you'll need a few things:
 
-- an OpenAI key - see the 'Getting access to LLMs' section of the [Getting Started with LLMs at Grafana doc][getting-started-doc]
+- an OpenAI key - this can be obtained via the [OpenAI Platform](https://platform.openai.com/)
   - this should be made available as the `OPENAI_API_KEY` environment variable
 - Docker
 
@@ -44,6 +44,5 @@ To add LLM functionality to your own plugin you'll need to do the following:
     - using provisioning (see provisioning/plugins/apps.yaml), or
     - within the app settings screen (e.g. http://localhost:3000/plugins/grafana-llm-app)
 
-[getting-started-doc]: https://docs.google.com/document/d/1H9bo0QOrVbmjioTleqFsknpGszZ-py75YX2aWRcCNGE/edit#heading=h.180bjy5a5l0k
 [`grafana-llm-app`]: https://github.com/grafana/grafana-llm-app
 [plugin extension]: https://grafana.com/docs/grafana/latest/developers/plugins/create-a-grafana-plugin/extend-a-plugin/extend-the-grafana-ui-with-links/
