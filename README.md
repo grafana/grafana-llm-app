@@ -200,6 +200,19 @@ const MyComponent = (): JSX.Element => {
    npm run lint:fix
    ```
 
+### Developing with the Example App
+The LLM example app can be a quick way to test out changes to the LLM plugin.
+
+To use the example app in conjunction with the LLM plugin:
+1. Clone the [llm example app](https://github.com/grafana/grafana-llmexamples-app/tree/main)
+2. Update the following fields in `docker-compose.yaml` in the llm example app
+- comment out # GF_INSTALL_PLUGINS: grafana-llm-app
+- Add the following volume:
+```
+<some-parent-path>/grafana-llm-app/dist:/var/lib/grafana/plugins/grafana-llm-app
+```
+3. Follow the instructions in the llm example app to run the app
+
 ## Release process
 - Bump version in package.json (e.g., 0.2.0 to 0.2.1)
 - Add notes to changelog describing changes since last release
