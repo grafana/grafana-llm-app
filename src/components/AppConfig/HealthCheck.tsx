@@ -101,18 +101,13 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
       <h5>OpenAI</h5>
       <div>{openAI.ok ? 'OK' : `Error: ${openAI.error}`}</div>
       <b>Models</b>
-      <table>
-        <thead>
-        </thead>
-        <tbody>
-          {Object.entries(openAI.models).map(([model, details], i) => (
-            <tr key={i}>
-              <td>{model}: </td>
-              <td>{details.ok ? 'OK' : `Error: ${details.error}`}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div>
+        {Object.entries(openAI.models).map(([model, details], i) => (
+          <li key={i}>
+            {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
+          </li>
+        ))}
+      </div>
     </div>
   )
 }
