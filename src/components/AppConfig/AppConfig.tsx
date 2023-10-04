@@ -4,7 +4,7 @@ import { lastValueFrom } from 'rxjs';
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, KeyValue, PluginConfigPageProps, PluginMeta } from '@grafana/data';
 import { FetchResponse, getBackendSrv, HealthCheckResult } from '@grafana/runtime';
-import { Button, Spinner, useStyles2 } from '@grafana/ui';
+import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
 import { OpenAIConfig, OpenAISettings } from './OpenAI';
@@ -76,7 +76,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         }}
       />
 
-      {healthCheck && <ShowHealthCheckResult {...healthCheck} />}
+      {isUpdating ? <LoadingPlaceholder text="Running health check..." /> : healthCheck && (
+        <ShowHealthCheckResult {...healthCheck} />
+      )}
       <div className={s.marginTop}>
         <Button
           type="submit"
@@ -103,11 +105,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             setIsUpdating(false);
             setHealthCheck(result.data);
           }}
-          disabled={!updated}
+          disabled={!updated || isUpdating}
         >
           Save &amp; test
         </Button>
-        {isUpdating && <Spinner />}
       </div>
     </div>
   );
