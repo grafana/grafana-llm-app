@@ -73,33 +73,32 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
   if (!isHealthCheckDetails(props.details)) {
     return (
       <div className="gf-form-group p-t-2">
-        <Alert severity={severity} title={props.message}>
-        </Alert>
+        <Alert severity={severity} title={props.message} />
       </div>
     );
   }
 
   severity = getAlertSeverity(props.status ?? 'error', props.details);
-  const message = severity === 'success' ? 'Health check succeeded!' : props.message;
-
+  const showOpenAI = typeof props.details.openAI === 'boolean' || typeof props.details.openAI === 'object' && props.details.openAI.configured;
+  const showVector = typeof props.details.vector === 'boolean' || typeof props.details.vector === 'object' && props.details.vector.enabled;
   return (
     <VerticalGroup>
-      <Alert severity={severity} title={message}>
-        <ShowOpenAIHealth openAI={props.details.openAI} />
-        <ShowVectorHealth vector={props.details.vector} />
-      </Alert>
-    </VerticalGroup>
+      {showOpenAI && <ShowOpenAIHealth openAI={props.details.openAI} />}
+      {showVector && <ShowVectorHealth vector={props.details.vector} />}
+    </VerticalGroup >
   );
 }
 
 function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean }) {
   if (typeof openAI === 'boolean') {
-    return <div>OpenAI: {openAI ? 'Enabled' : 'Disabled'}</div>;
+    const severity = openAI ? 'success' : 'error';
+    const message = openAI ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.'
+    return <Alert title={message} severity={severity} />;
   }
+  const message = openAI.ok ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.'
+  const severity = openAI.ok ? 'success' : 'error';
   return (
-    <div>
-      <h5>OpenAI</h5>
-      <div>{openAI.ok ? 'OK' : `Error: ${openAI.error}`}</div>
+    <Alert severity={severity} title={message}>
       <b>Models</b>
       <div>
         {Object.entries(openAI.models).map(([model, details], i) => (
@@ -108,21 +107,21 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
           </li>
         ))}
       </div>
-    </div>
+    </Alert>
   )
 }
 
 function ShowVectorHealth({ vector }: { vector: VectorHealthDetails | boolean }) {
   if (typeof vector === 'boolean') {
-    return <div>Vector: {vector ? 'Enabled' : 'Disabled'}</div>;
+    const severity = vector ? 'success' : 'error';
+    const message = vector ? 'Vector service health check succeeded!' : 'Vector service health check failed.'
+    return <Alert title={message} severity={severity} />;
   }
+  const severity = vector.ok ? 'success' : 'error';
+  const message = vector.ok ? 'Vector service health check succeeded!' : 'Vector service health check failed.'
   return (
-    <div>
-      <h5>Vector service</h5>
-      <div>{vector.enabled ? 'Enabled' : 'Disabled'}</div>
-      {vector.enabled && (
-        <div>{vector.ok ? 'OK' : `Error: ${vector.error}`}</div>
-      )}
-    </div>
+    <Alert title={message} severity={severity}>
+      {vector.error && <div>Error: {vector.error}</div>}
+    </Alert>
   )
 }

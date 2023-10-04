@@ -40,7 +40,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   // Whether each secret is already configured in the plugin backend.
   const [configuredSecrets, setConfiguredSecrets] = useState<SecretsSet>(initialSecrets(secureJsonFields ?? {}));
   // Whether any settings have been updated.
-  const [updated, setUpdated] = useState(true);
+  const [updated, setUpdated] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
