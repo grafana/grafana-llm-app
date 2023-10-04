@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { HealthCheckResult } from "@grafana/runtime";
-import { Alert, AlertVariant } from "@grafana/ui";
+import { Alert, AlertVariant, VerticalGroup } from "@grafana/ui";
 
 interface HealthCheckDetails {
   openAI: OpenAIHealthDetails | boolean;
@@ -83,12 +83,12 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
   const message = severity === 'success' ? 'Health check succeeded!' : props.message;
 
   return (
-    <div className="gf-form-group p-t-2">
+    <VerticalGroup>
       <Alert severity={severity} title={message}>
         <ShowOpenAIHealth openAI={props.details.openAI} />
         <ShowVectorHealth vector={props.details.vector} />
       </Alert>
-    </div>
+    </VerticalGroup>
   );
 }
 
