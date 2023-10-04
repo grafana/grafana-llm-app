@@ -83,53 +83,74 @@ func (q *qdrantStore) CollectionExists(ctx context.Context, collection string) (
 	return true, nil
 }
 
-func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]any) (*qdrant.Filter, error) {
-	// map input filter to qdrant filter
-	qdrantFilterMap := qdrant.Filter{}
+func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]interface{}) (*qdrant.Filter, error) {
+	qdrantFilterMap := &qdrant.Filter{}
+
 	if filter == nil {
-		return &qdrantFilterMap, nil
+		return qdrantFilterMap, nil
 	}
+
 	for k, v := range filter {
 		switch v := v.(type) {
-		case map[string]any:
+		case map[string]interface{}:
 			for op, val := range v {
+				match, err := createQdrantMatch(val)
+				if err != nil {
+					return nil, err
+				}
+
+				condition := &qdrant.Condition{
+					ConditionOneOf: &qdrant.Condition_Field{
+						Field: &qdrant.FieldCondition{
+							Key:   k,
+							Match: match,
+						},
+					},
+				}
+
 				switch op {
 				case "$eq":
-					// map value to qdrant match
-					match := qdrant.Match{}
-					switch val := val.(type) {
-					case string:
-						match.MatchValue = &qdrant.Match_Keyword{
-							Keyword: val,
-						}
-					case int:
-						match.MatchValue = &qdrant.Match_Integer{
-							Integer: int64(val),
-						}
-					case bool:
-						match.MatchValue = &qdrant.Match_Boolean{
-							Boolean: val,
-						}
-					default:
-						return nil, fmt.Errorf("unsupported filter type: %T", val)
-					}
-
-					condition := qdrant.Condition{
-						ConditionOneOf: &qdrant.Condition_Field{
-							Field: &qdrant.FieldCondition{
-								Key:   k,
-								Match: &match,
-							},
-						},
-					}
-					qdrantFilterMap.Must = append(qdrantFilterMap.Must, &condition)
+					qdrantFilterMap.Must = append(qdrantFilterMap.Must, condition)
+				case "$ne":
+					qdrantFilterMap.MustNot = append(qdrantFilterMap.MustNot, condition)
 				}
 			}
+		case []interface{}:
+			switch k {
+			case "$or":
+				for _, u := range v {
+					filterMap, err := q.mapFilters(ctx, u.(map[string]interface{}))
+					if err != nil {
+						return nil, err
+					}
+					qdrantFilterMap.Should = append(qdrantFilterMap.Should, &qdrant.Condition{
+						ConditionOneOf: &qdrant.Condition_Filter{
+							Filter: filterMap,
+						},
+					})
+				}
+			}
+		default:
+			return nil, fmt.Errorf("unsupported filter struct: %T", v)
 		}
 	}
 
-	return &qdrantFilterMap, nil
+	return qdrantFilterMap, nil
 }
+
+func createQdrantMatch(val interface{}) (*qdrant.Match, error) {
+	match := &qdrant.Match{}
+	switch val := val.(type) {
+	case string:
+		match.MatchValue = &qdrant.Match_Keyword{
+			Keyword: val,
+		}
+	default:
+		return nil, fmt.Errorf("unsupported filter type: %T", val)
+	}
+	return match, nil
+}
+
 func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]any) ([]SearchResult, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
