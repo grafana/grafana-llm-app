@@ -59,26 +59,30 @@ export function VectorConfig({ settings, onChange }: Props<VectorSettings>) {
         />
       </Field>
 
-      <Field label="Model" description="The model used by the embedder and for embeddings stored in the store">
-        <Input
-          width={60}
-          name="model"
-          data-testid={testIds.appConfig.model}
-          value={settings?.model}
-          placeholder={""}
-          onChange={e => onChange({ ...settings, model: e.currentTarget.value })}
-        />
-      </Field>
+      {settings?.enabled && (
+        <>
+          <Field label="Model" description="The model used by the embedder and for embeddings stored in the store">
+            <Input
+              width={60}
+              name="model"
+              data-testid={testIds.appConfig.model}
+              value={settings?.model}
+              placeholder={""}
+              onChange={e => onChange({ ...settings, model: e.currentTarget.value })}
+            />
+          </Field>
 
-      <EmbedderConfig
-        settings={settings?.embed}
-        onChange={embed => onChange({ ...settings, embed })}
-      />
+          <EmbedderConfig
+            settings={settings?.embed}
+            onChange={embed => onChange({ ...settings, embed })}
+          />
 
-      <StoreConfig
-        settings={settings?.store}
-        onChange={store => onChange({ ...settings, store })}
-      />
+          <StoreConfig
+            settings={settings?.store}
+            onChange={store => onChange({ ...settings, store })}
+          />
+        </>
+      )}
     </FieldSet>
   )
 }
