@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Field, FieldSet, Input, Select, Switch, useStyles2 } from "@grafana/ui";
+import { Checkbox, Field, FieldSet, Input, Select, useStyles2 } from "@grafana/ui";
 
 import { testIds } from "components/testIds";
 import { getStyles } from "./AppConfig";
@@ -50,7 +50,7 @@ export function VectorConfig({ settings, onChange }: Props<VectorSettings>) {
     <FieldSet label="Vector Settings">
 
       <Field label="Enabled" description="Enable vector database powered features.">
-        <Switch
+        <Checkbox
           name="enabled"
           data-testid={testIds.appConfig.vectorEnabled}
           defaultChecked={settings?.enabled}
@@ -141,7 +141,7 @@ function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
         />
       </Field>
       <Field label="Secure" description="Whether to use a secure connection">
-        <Switch
+        <Checkbox
           name="secure"
           data-testid={testIds.appConfig.qdrantSecure}
           defaultChecked={settings?.secure}

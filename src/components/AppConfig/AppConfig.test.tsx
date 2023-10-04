@@ -19,6 +19,7 @@ describe('Components/AppConfig', () => {
           enabled: true,
           jsonData: {
             vector: {
+              enabled: true,
               store: {
                 type: 'qdrant',
               }
