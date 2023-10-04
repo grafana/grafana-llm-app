@@ -76,6 +76,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         }}
       />
 
+      {healthCheck && <ShowHealthCheckResult {...healthCheck} />}
       <div className={s.marginTop}>
         <Button
           type="submit"
@@ -108,8 +109,6 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         </Button>
         {isUpdating && <Spinner />}
       </div>
-
-      {healthCheck && <ShowHealthCheckResult {...healthCheck} />}
     </div>
   );
 };
