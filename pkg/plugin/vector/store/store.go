@@ -18,6 +18,29 @@ type SearchResult struct {
 	Score   float64        `json:"score"`
 }
 
+// exmaple filters
+// only counter metrics
+// {"<key>": {"$eq": "<value>"} }
+// e.g.
+// {"metric_type": {"$eq": "counter"} }
+// {"year": {"$eq": 2007} }
+// all counter or histogram metrics
+//
+//	{
+//		"$or": [
+//			{
+//				"metric_type": {
+//					"$eq": "counter"
+//				}
+//			},
+//			{
+//				"metric_type": {
+//					"$eq": "histogram"
+//				}
+//			}
+//		]
+//	}
+
 type ReadVectorStore interface {
 	CollectionExists(ctx context.Context, collection string) (bool, error)
 	Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]any) ([]SearchResult, error)

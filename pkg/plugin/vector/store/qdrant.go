@@ -82,14 +82,53 @@ func (q *qdrantStore) CollectionExists(ctx context.Context, collection string) (
 	return true, nil
 }
 
+func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]any) (*qdrant.Filter, error) {
+	// map input filter to qdrant filter
+	qdrantFilterMap := qdrant.Filter{}
+	if filter == nil {
+		return &qdrantFilterMap, nil
+	}
+	for k, v := range filter {
+		switch v := v.(type) {
+		case map[string]any:
+			for op, val := range v {
+				switch op {
+				case "$eq":
+					condition := qdrant.Condition{
+						ConditionOneOf: &qdrant.Condition_Field{
+							Field: &qdrant.FieldCondition{
+								Key: k,
+								Match: &qdrant.Match{
+									MatchValue: &qdrant.Match_Keyword{
+										Keyword: val.(string),
+									},
+								},
+							},
+						},
+					}
+					qdrantFilterMap.Must = append(qdrantFilterMap.Must, &condition)
+				}
+			}
+		}
+	}
+
+	return &qdrantFilterMap, nil
+}
 func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]any) ([]SearchResult, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
 	}
+
+	qdrantFilter, err := q.mapFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
 	result, err := q.pointsClient.Search(ctx, &qdrant.SearchPoints{
 		CollectionName: collection,
 		Vector:         vector,
 		Limit:          topK,
+		Filter:         qdrantFilter,
 		// Include all payloads in the search result
 		WithVectors: &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
 		WithPayload: &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
