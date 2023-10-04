@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	qdrant "github.com/qdrant/go-client/qdrant"
@@ -94,15 +95,30 @@ func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]any) (*q
 			for op, val := range v {
 				switch op {
 				case "$eq":
+					// map value to qdrant match
+					match := qdrant.Match{}
+					switch val := val.(type) {
+					case string:
+						match.MatchValue = &qdrant.Match_Keyword{
+							Keyword: val,
+						}
+					case int:
+						match.MatchValue = &qdrant.Match_Integer{
+							Integer: int64(val),
+						}
+					case bool:
+						match.MatchValue = &qdrant.Match_Boolean{
+							Boolean: val,
+						}
+					default:
+						return nil, fmt.Errorf("unsupported filter type: %T", val)
+					}
+
 					condition := qdrant.Condition{
 						ConditionOneOf: &qdrant.Condition_Field{
 							Field: &qdrant.FieldCondition{
-								Key: k,
-								Match: &qdrant.Match{
-									MatchValue: &qdrant.Match_Keyword{
-										Keyword: val.(string),
-									},
-								},
+								Key:   k,
+								Match: &match,
 							},
 						},
 					}
