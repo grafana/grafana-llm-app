@@ -3,12 +3,13 @@ import { lastValueFrom } from 'rxjs';
 
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, KeyValue, PluginConfigPageProps, PluginMeta } from '@grafana/data';
-import { getBackendSrv } from '@grafana/runtime';
-import { Button, useStyles2 } from '@grafana/ui';
+import { FetchResponse, getBackendSrv, HealthCheckResult } from '@grafana/runtime';
+import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
 import { OpenAIConfig, OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
+import { ShowHealthCheckResult } from './HealthCheck';
 
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
@@ -41,6 +42,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   // Whether any settings have been updated.
   const [updated, setUpdated] = useState(false);
 
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
+
   return (
     <div data-testid={testIds.appConfig.container}>
 
@@ -72,11 +76,16 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         }}
       />
 
+      {isUpdating ? <LoadingPlaceholder text="Running health check..." /> : healthCheck && (
+        <ShowHealthCheckResult {...healthCheck} />
+      )}
       <div className={s.marginTop}>
         <Button
           type="submit"
           data-testid={testIds.appConfig.submit}
-          onClick={() => {
+          onClick={async () => {
+            setIsUpdating(true);
+            setHealthCheck(undefined);
             let key: keyof SecretsSet;
             const secureJsonData: Secrets = {};
             for (key in configuredSecrets) {
@@ -86,16 +95,19 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
                 secureJsonData[key] = newSecrets[key];
               }
             }
-            updatePluginAndReload(plugin.meta.id, {
+            await updatePlugin(plugin.meta.id, {
               enabled,
               pinned,
               jsonData: settings,
               secureJsonData,
-            })
+            });
+            const result = await checkPluginHealth(plugin.meta.id);
+            setIsUpdating(false);
+            setHealthCheck(result.data);
           }}
-          disabled={!updated}
+          disabled={!updated || isUpdating}
         >
-          Save settings
+          Save &amp; test
         </Button>
       </div>
     </div>
@@ -111,19 +123,7 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   `,
 });
 
-const updatePluginAndReload = async (pluginId: string, data: Partial<PluginMeta<AppPluginSettings>>) => {
-  try {
-    await updatePlugin(pluginId, data);
-
-    // Reloading the page as the changes made here wouldn't be propagated to the actual plugin otherwise.
-    // This is not ideal, however unfortunately currently there is no supported way for updating the plugin state.
-    window.location.reload();
-  } catch (e) {
-    console.error('Error while updating the plugin', e);
-  }
-};
-
-export const updatePlugin = async (pluginId: string, data: Partial<PluginMeta>) => {
+export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
   const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/settings`,
     method: 'POST',
@@ -132,3 +132,10 @@ export const updatePlugin = async (pluginId: string, data: Partial<PluginMeta>) 
 
   return lastValueFrom(response);
 };
+
+const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckResult>> => {
+  const response = getBackendSrv().fetch({
+    url: `/api/plugins/${pluginId}/health`,
+  });
+  return lastValueFrom(response) as Promise<FetchResponse<HealthCheckResult>>
+}

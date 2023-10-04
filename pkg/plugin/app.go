@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -27,6 +28,11 @@ type App struct {
 	backend.CallResourceHandler
 
 	vectorService vector.Service
+
+	healthCheckClient healthCheckClient
+	healthCheckMutex  sync.Mutex
+	healthCheckResult *backend.CheckHealthResult
+	settings          Settings
 }
 
 // NewApp creates a new example *App instance.
@@ -35,21 +41,21 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	var app App
 
 	log.DefaultLogger.Debug("Loading settings")
-	settings := loadSettings(appSettings)
+	app.settings = loadSettings(appSettings)
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
 	// to use a *http.ServeMux for resource calls, so we can map multiple routes
 	// to CallResource without having to implement extra logic.
 	mux := http.NewServeMux()
-	app.registerRoutes(mux, settings)
+	app.registerRoutes(mux, app.settings)
 	app.CallResourceHandler = httpadapter.New(mux)
 
 	var err error
 
-	if settings.Vector.Enabled {
+	if app.settings.Vector.Enabled {
 		log.DefaultLogger.Debug("Creating vector service")
 		app.vectorService, err = vector.NewService(
-			settings.Vector,
+			app.settings.Vector,
 			appSettings.DecryptedSecureJSONData,
 		)
 		if err != nil {
@@ -57,6 +63,9 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 			return nil, err
 		}
 	}
+
+	app.healthCheckClient = &http.Client{}
+	app.healthCheckMutex = sync.Mutex{}
 
 	return &app, nil
 }
