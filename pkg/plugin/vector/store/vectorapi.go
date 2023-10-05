@@ -31,12 +31,12 @@ func (g *grafanaVectorAPI) CollectionExists(ctx context.Context, collection stri
 	return true, nil
 }
 
-func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]any) ([]SearchResult, error) {
+func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]interface{}) ([]SearchResult, error) {
 	type queryPointsRequest struct {
 		Query []float32 `json:"query"`
 		TopK  uint64    `json:"top_k"`
 		// optional filter json field
-		Filter map[string]any `json:"filter"`
+		Filter map[string]interface{} `json:"filter"`
 	}
 	reqBody := queryPointsRequest{
 		Query:  vector,

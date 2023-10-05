@@ -151,7 +151,7 @@ func createQdrantMatch(val interface{}) (*qdrant.Match, error) {
 	return match, nil
 }
 
-func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]any) ([]SearchResult, error) {
+func (q *qdrantStore) Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]interface{}) ([]SearchResult, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
 	}
