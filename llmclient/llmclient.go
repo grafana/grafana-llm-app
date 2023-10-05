@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -61,7 +62,35 @@ func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Clie
 	}
 }
 
+type openAIModelHealth struct {
+	OK    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+}
+
+type openAIHealthDetails struct {
+	Configured bool                         `json:"configured"`
+	OK         bool                         `json:"ok"`
+	Error      string                       `json:"error,omitempty"`
+	Models     map[string]openAIModelHealth `json:"models"`
+}
+
+type vectorHealthDetails struct {
+	Enabled bool   `json:"enabled"`
+	OK      bool   `json:"ok"`
+	Error   string `json:"error,omitempty"`
+}
+
+type healthCheckDetails struct {
+	OpenAI  openAIHealthDetails `json:"openAI"`
+	Vector  vectorHealthDetails `json:"vector"`
+	Version string              `json:"version"`
+}
+
 type healthCheckResponse struct {
+	Details healthCheckDetails `json:"details"`
+}
+
+type oldHealthCheckResponse struct {
 	Details struct {
 		OpenAIEnabled bool `json:"openAI"`
 		VectorEnabled bool `json:"vector"`
@@ -78,14 +107,27 @@ func (o *openAI) Enabled(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("make request: %w", err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return false, nil
 	}
-	var response healthCheckResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return false, fmt.Errorf("unmarshal response: %w", err)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("read response body: %w", err)
 	}
-	return response.Details.OpenAIEnabled, nil
+	var response healthCheckResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		// Try the old response format
+		var oldResponse oldHealthCheckResponse
+		if err := json.Unmarshal(body, &oldResponse); err != nil {
+			return false, fmt.Errorf("unmarshal response: %w", err)
+		}
+		return oldResponse.Details.OpenAIEnabled, nil
+	}
+	if response.Details.OpenAI.Error != "" {
+		err = fmt.Errorf("OpenAI error: %s", response.Details.OpenAI.Error)
+	}
+	return response.Details.OpenAI.OK, err
 }
 
 func (o *openAI) ChatCompletions(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error) {

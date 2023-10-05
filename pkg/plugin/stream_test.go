@@ -86,7 +86,7 @@ func TestRunStream(t *testing.T) {
 			server := newMockOpenAIStreamServer(t, tc.statusCode, finish)
 
 			// Initialize app
-			settings := Settings{OpenAI: OpenAISettings{URL: server.server.URL}}
+			settings := Settings{OpenAI: OpenAISettings{URL: server.server.URL, Provider: openAIProviderOpenAI}}
 			jsonData, err := json.Marshal(settings)
 			if err != nil {
 				t.Fatalf("json marshal: %s", err)

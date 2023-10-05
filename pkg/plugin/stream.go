@@ -1,11 +1,9 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -30,7 +28,6 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 
 func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 
-	settings := loadSettings(*req.PluginContext.AppInstanceSettings)
 	requestBody := map[string]interface{}{}
 	var err error
 	err = json.Unmarshal(req.Data, &requestBody)
@@ -41,55 +38,16 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	// set stream to true
 	requestBody["stream"] = true
 
-	u, err := url.Parse(settings.OpenAI.URL)
+	u, err := url.Parse(a.settings.OpenAI.URL)
 	if err != nil {
 		return fmt.Errorf("Unable to parse OpenAI URL: %w", err)
 	}
 
-	var outgoingBody []byte
-
-	switch settings.OpenAI.Provider {
-	case openAIProviderOpenAI:
-		u.Path = "/v1/chat/completions"
-	case openAIProviderAzure:
-		// Map model to deployment
-		var deployment string = ""
-		for _, v := range settings.OpenAI.AzureMapping {
-			if val, ok := requestBody["model"].(string); ok && val == v[0] {
-				deployment = v[1]
-				break
-			}
-		}
-
-		if deployment == "" {
-			return fmt.Errorf("No deployment found for model: %s", requestBody["model"])
-		}
-
-		u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
-		u.RawQuery = "api-version=2023-03-15-preview"
-
-		// Remove extra fields
-		delete(requestBody, "model")
-	default:
-		return fmt.Errorf("Unknown OpenAI provider: %s", settings.OpenAI.Provider)
-	}
-
-	outgoingBody, err = json.Marshal(requestBody)
-	if err != nil {
-		return fmt.Errorf("Unable to marshal new request body: %w", err)
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(outgoingBody))
+	httpReq, err := a.newOpenAIChatCompletionsRequest(ctx, u, requestBody)
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}
 
-	switch settings.OpenAI.Provider {
-	case openAIProviderOpenAI:
-		httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAI.apiKey)
-		httpReq.Header.Set("OpenAI-Organization", settings.OpenAI.OrganizationID)
-	case openAIProviderAzure:
-		httpReq.Header.Set("api-key", settings.OpenAI.apiKey)
-	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	// Subscribe to the stream, handling errors by immediately sending an 'error' message over the

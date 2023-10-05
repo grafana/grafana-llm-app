@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Field, FieldSet, Input, Select, Switch, useStyles2 } from "@grafana/ui";
+import { Checkbox, Field, FieldSet, Input, Select, useStyles2 } from "@grafana/ui";
 
 import { testIds } from "components/testIds";
 import { getStyles } from "./AppConfig";
@@ -50,7 +50,7 @@ export function VectorConfig({ settings, onChange }: Props<VectorSettings>) {
     <FieldSet label="Vector Settings">
 
       <Field label="Enabled" description="Enable vector database powered features.">
-        <Switch
+        <Checkbox
           name="enabled"
           data-testid={testIds.appConfig.vectorEnabled}
           defaultChecked={settings?.enabled}
@@ -59,26 +59,30 @@ export function VectorConfig({ settings, onChange }: Props<VectorSettings>) {
         />
       </Field>
 
-      <Field label="Model" description="The model used by the embedder and for embeddings stored in the store">
-        <Input
-          width={60}
-          name="model"
-          data-testid={testIds.appConfig.model}
-          value={settings?.model}
-          placeholder={""}
-          onChange={e => onChange({ ...settings, model: e.currentTarget.value })}
-        />
-      </Field>
+      {settings?.enabled && (
+        <>
+          <Field label="Model" description="The model used by the embedder and for embeddings stored in the store">
+            <Input
+              width={60}
+              name="model"
+              data-testid={testIds.appConfig.model}
+              value={settings?.model}
+              placeholder={""}
+              onChange={e => onChange({ ...settings, model: e.currentTarget.value })}
+            />
+          </Field>
 
-      <EmbedderConfig
-        settings={settings?.embed}
-        onChange={embed => onChange({ ...settings, embed })}
-      />
+          <EmbedderConfig
+            settings={settings?.embed}
+            onChange={embed => onChange({ ...settings, embed })}
+          />
 
-      <StoreConfig
-        settings={settings?.store}
-        onChange={store => onChange({ ...settings, store })}
-      />
+          <StoreConfig
+            settings={settings?.store}
+            onChange={store => onChange({ ...settings, store })}
+          />
+        </>
+      )}
     </FieldSet>
   )
 }
@@ -137,7 +141,7 @@ function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
         />
       </Field>
       <Field label="Secure" description="Whether to use a secure connection">
-        <Switch
+        <Checkbox
           name="secure"
           data-testid={testIds.appConfig.qdrantSecure}
           defaultChecked={settings?.secure}

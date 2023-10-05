@@ -19,6 +19,7 @@ describe('Components/AppConfig', () => {
           enabled: true,
           jsonData: {
             vector: {
+              enabled: true,
               store: {
                 type: 'qdrant',
               }
@@ -46,6 +47,6 @@ describe('Components/AppConfig', () => {
     expect(screen.queryByTestId(testIds.appConfig.qdrantAddress)).toBeInTheDocument();
     // Don't expect to see the Grafana vector API field when type is qdrant
     expect(screen.queryByTestId(testIds.appConfig.grafanaVectorApiUrl)).toBeNull();
-    expect(screen.queryByRole('button', { name: /save settings/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save & test/i })).toBeInTheDocument();
   });
 });

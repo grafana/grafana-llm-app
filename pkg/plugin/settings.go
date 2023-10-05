@@ -40,6 +40,13 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	}
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
 
+	// We need to handle the case where the user has customized the URL,
+	// then reverted that customization so that the JSON data includes
+	// an empty string.
+	if settings.OpenAI.URL == "" {
+		settings.OpenAI.URL = "https://api.openai.com"
+	}
+
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 	case openAIProviderAzure:
