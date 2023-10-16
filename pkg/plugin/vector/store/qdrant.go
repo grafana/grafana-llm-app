@@ -113,6 +113,8 @@ func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]interfac
 					qdrantFilterMap.Must = append(qdrantFilterMap.Must, condition)
 				case "$ne":
 					qdrantFilterMap.MustNot = append(qdrantFilterMap.MustNot, condition)
+				default:
+					return nil, fmt.Errorf("unsupported operator: %s", op)
 				}
 			}
 		case []interface{}:
@@ -129,6 +131,8 @@ func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]interfac
 						},
 					})
 				}
+			default:
+				return nil, fmt.Errorf("unsupported operator: %s", k)
 			}
 		default:
 			return nil, fmt.Errorf("unsupported filter struct: %T", v)
