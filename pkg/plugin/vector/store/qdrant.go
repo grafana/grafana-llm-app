@@ -131,6 +131,18 @@ func (q *qdrantStore) mapFilters(ctx context.Context, filter map[string]interfac
 						},
 					})
 				}
+			case "$and":
+				for _, u := range v {
+					filterMap, err := q.mapFilters(ctx, u.(map[string]interface{}))
+					if err != nil {
+						return nil, err
+					}
+					qdrantFilterMap.Must = append(qdrantFilterMap.Must, &qdrant.Condition{
+						ConditionOneOf: &qdrant.Condition_Filter{
+							Filter: filterMap,
+						},
+					})
+				}
 			default:
 				return nil, fmt.Errorf("unsupported operator: %s", k)
 			}
