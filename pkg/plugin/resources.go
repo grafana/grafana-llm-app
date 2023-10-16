@@ -168,10 +168,10 @@ func newAzureOpenAIProxy(settings Settings) http.Handler {
 }
 
 type vectorSearchRequest struct {
-	Query      string `json:"query"`
-	Collection string `json:"collection"`
-	TopK       uint64 `json:"topK"`
-	Filter     map[string]interface{}
+	Query      string                 `json:"query"`
+	Collection string                 `json:"collection"`
+	TopK       uint64                 `json:"topK"`
+	Filter     map[string]interface{} `json:"filter"`
 }
 
 type vectorSearchResponse struct {
