@@ -122,7 +122,7 @@ func (a *App) testVectorService(ctx context.Context) error {
 	if a.vectorService == nil {
 		return fmt.Errorf("vector service not configured")
 	}
-	_, err := a.vectorService.Search(ctx, vectorCollections[0], "test", 1)
+	_, err := a.vectorService.Search(ctx, vectorCollections[0], "test", 1, nil)
 	return err
 }
 
