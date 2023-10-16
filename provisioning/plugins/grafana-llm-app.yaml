@@ -5,7 +5,7 @@ apps:
     jsonData:
       vector:
         enabled: true
-        model: BAAI/bge-base-en
+        model: BAAI/bge-small-en-v1.5
         embed:
           type: openai
           openai:
