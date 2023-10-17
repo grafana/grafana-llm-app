@@ -233,7 +233,7 @@ export function isContentMessage(message: ChatCompletionsDelta): message is Cont
 
 /** Return true if the message is a 'done' message. */
 export function isDoneMessage(message: ChatCompletionsDelta): message is DoneMessage {
-  return 'done' in message;
+  return 'done' in message && message.done != null;
 }
 
 /** Return true if the response is an error response. */
