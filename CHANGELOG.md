@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.4.0
+* Add 'Enabled' switch for vector services to configuration UI by @sd2k in https://github.com/grafana/grafana-llm-app/pull/79
+* Added instructions for developing with example app by @edwardcqian in https://github.com/grafana/grafana-llm-app/pull/86
+* Improve health check to return more granular details by @sd2k in https://github.com/grafana/grafana-llm-app/pull/85
+* Add support for filtered vector search by @yoziru in https://github.com/grafana/grafana-llm-app/pull/100
+
 ## 0.3.0
 
 * Add Go package providing an OpenAI client to use the LLM app from backend Go code
