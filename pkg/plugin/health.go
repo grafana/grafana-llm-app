@@ -13,7 +13,6 @@ import (
 )
 
 var openAIModels = []string{"gpt-3.5-turbo", "gpt-4"}
-var vectorCollections = []string{"grafana.core.dashboards"}
 
 type healthCheckClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -122,8 +121,11 @@ func (a *App) testVectorService(ctx context.Context) error {
 	if a.vectorService == nil {
 		return fmt.Errorf("vector service not configured")
 	}
-	_, err := a.vectorService.Search(ctx, vectorCollections[0], "test", 1, nil)
-	return err
+	err := a.vectorService.Health(ctx)
+	if err != nil {
+		return fmt.Errorf("vector service health check failed: %w", err)
+	}
+	return nil
 }
 
 func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
