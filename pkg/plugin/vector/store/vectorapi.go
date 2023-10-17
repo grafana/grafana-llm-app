@@ -86,6 +86,17 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 	return results, nil
 }
 
+func (g *grafanaVectorAPI) Health(ctx context.Context) error {
+	resp, err := g.client.Get(g.url + "/healthz")
+	if err != nil {
+		return fmt.Errorf("get health: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("get health: %s", resp.Status)
+	}
+	return nil
+}
+
 func newGrafanaVectorAPI(s grafanaVectorAPISettings, secrets map[string]string) ReadVectorStore {
 	return &grafanaVectorAPI{
 		client: &http.Client{},

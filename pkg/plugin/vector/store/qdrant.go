@@ -62,6 +62,17 @@ func newQdrantStore(s qdrantSettings, secrets map[string]string) (ReadVectorStor
 	}, cancel, nil
 }
 
+func (q *qdrantStore) Health(ctx context.Context) error {
+	if q.md != nil {
+		ctx = metadata.NewOutgoingContext(ctx, *q.md)
+	}
+	_, err := q.collectionsClient.List(ctx, &qdrant.ListCollectionsRequest{}, grpc.WaitForReady(true))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (q *qdrantStore) CollectionExists(ctx context.Context, collection string) (bool, error) {
 	if q.md != nil {
 		ctx = metadata.NewOutgoingContext(ctx, *q.md)
