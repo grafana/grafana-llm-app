@@ -31,6 +31,7 @@
     "errcheck",
     "eventsource",
     "grafana",
+    "healthz",
     "httpadapter",
     "instancemgmt",
     "llmclient",
