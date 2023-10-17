@@ -32,6 +32,10 @@ export interface SearchRequest {
    * Defaults to 10.
    **/
   topK?: number;
+
+  /** Metadata filters to apply to the vector search. */
+  /* example: filter: { metric_type: { $eq: 'histogram' } } */
+  filter?: Record<string, any>;
 }
 
 /**
