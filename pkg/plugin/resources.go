@@ -168,9 +168,10 @@ func newAzureOpenAIProxy(settings Settings) http.Handler {
 }
 
 type vectorSearchRequest struct {
-	Query      string `json:"query"`
-	Collection string `json:"collection"`
-	TopK       uint64 `json:"topK"`
+	Query      string                 `json:"query"`
+	Collection string                 `json:"collection"`
+	TopK       uint64                 `json:"topK"`
+	Filter     map[string]interface{} `json:"filter"`
 }
 
 type vectorSearchResponse struct {
@@ -194,7 +195,7 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 	if body.TopK == 0 {
 		body.TopK = 10
 	}
-	results, err := app.vectorService.Search(req.Context(), body.Collection, body.Query, body.TopK)
+	results, err := app.vectorService.Search(req.Context(), body.Collection, body.Query, body.TopK, body.Filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -20,7 +20,7 @@ type SearchResult struct {
 
 type ReadVectorStore interface {
 	CollectionExists(ctx context.Context, collection string) (bool, error)
-	Search(ctx context.Context, collection string, vector []float32, topK uint64) ([]SearchResult, error)
+	Search(ctx context.Context, collection string, vector []float32, topK uint64, filter map[string]interface{}) ([]SearchResult, error)
 }
 
 type WriteVectorStore interface {

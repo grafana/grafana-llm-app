@@ -23,7 +23,7 @@ func (m *mockHealthCheckClient) Do(req *http.Request) (*http.Response, error) {
 
 type mockVectorService struct{}
 
-func (m *mockVectorService) Search(ctx context.Context, collection string, query string, topK uint64) ([]store.SearchResult, error) {
+func (m *mockVectorService) Search(ctx context.Context, collection string, query string, topK uint64, filter map[string]interface{}) ([]store.SearchResult, error) {
 	return []store.SearchResult{{Payload: map[string]any{"a": "b"}, Score: 1.0}}, nil
 }
 
