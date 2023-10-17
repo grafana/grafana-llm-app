@@ -8,6 +8,7 @@
 * Added instructions for developing with example app
 * Improve health check to return more granular details
 * Add support for filtered vector search
+* Improve vector service health check
 
 ## 0.3.0
 
