@@ -117,12 +117,15 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 	return d, nil
 }
 
-func (a *App) testVectorService(ctx context.Context) (bool, error) {
+func (a *App) testVectorService(ctx context.Context) error {
 	if a.vectorService == nil {
-		return false, fmt.Errorf("vector service not configured")
+		return fmt.Errorf("vector service not configured")
 	}
-	result, err := a.vectorService.Health(ctx)
-	return result, err
+	err := a.vectorService.Health(ctx)
+	if err != nil {
+		return fmt.Errorf("vector service health check failed: %w", err)
+	}
+	return nil
 }
 
 func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
@@ -134,14 +137,10 @@ func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 		d.OK = false
 		return d
 	}
-	result, err := a.testVectorService(ctx)
+	err := a.testVectorService(ctx)
 	if err != nil {
 		d.OK = false
 		d.Error = err.Error()
-	}
-	if !result {
-		d.OK = false
-		d.Error = "Vector service health check failed"
 	}
 	return d
 }

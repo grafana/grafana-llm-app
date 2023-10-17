@@ -13,7 +13,7 @@ import (
 
 type Service interface {
 	Search(ctx context.Context, collection string, query string, topK uint64, filter map[string]interface{}) ([]store.SearchResult, error)
-	Health(ctx context.Context) (bool, error)
+	Health(ctx context.Context) error
 	Cancel()
 }
 
@@ -87,7 +87,7 @@ func (v *vectorService) Search(ctx context.Context, collection string, query str
 	return results, nil
 }
 
-func (v *vectorService) Health(ctx context.Context) (bool, error) {
+func (v *vectorService) Health(ctx context.Context) error {
 	return v.store.Health(ctx)
 }
 

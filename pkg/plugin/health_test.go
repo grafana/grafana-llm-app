@@ -27,8 +27,8 @@ func (m *mockVectorService) Search(ctx context.Context, collection string, query
 	return []store.SearchResult{{Payload: map[string]any{"a": "b"}, Score: 1.0}}, nil
 }
 
-func (m *mockVectorService) Health(ctx context.Context) (bool, error) {
-	return true, nil
+func (m *mockVectorService) Health(ctx context.Context) error {
+	return nil
 }
 
 func (m *mockVectorService) Cancel() {}
