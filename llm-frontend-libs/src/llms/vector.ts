@@ -10,7 +10,7 @@
 
 import { getBackendSrv, logDebug } from "@grafana/runtime";
 import { LLM_PLUGIN_ROUTE, setLLMPluginVersion } from "./constants";
-import { LLMAppHealthCheck } from "./types";
+import { HealthCheckResponse, VectorHealthDetails } from "./types";
 
 interface SearchResultPayload extends Record<string, any> { }
 
@@ -78,26 +78,48 @@ export async function search<T extends SearchResultPayload>(request: SearchReque
 let loggedWarning = false;
 
 /** Check if the vector API is enabled and configured via the LLM plugin. */
-export const enabled = async () => {
-  // Run a health check to see if the plugin is installed.
-  let response: LLMAppHealthCheck;
+export const enabled = async (): Promise<VectorHealthDetails> => {
+  // First check if the plugin is enabled.
+  try {
+    const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
+      showSuccessAlert: false, showErrorAlert: false,
+    });
+    if (!settings.enabled) {
+      return { enabled: false, ok: false, error: 'The Grafana LLM plugin is not enabled.' }
+    }
+  } catch (e) {
+    logDebug(String(e));
+    logDebug('Failed to check if the vector service is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.');
+    loggedWarning = true;
+    return { enabled: false, ok: false, error: 'The Grafana LLM plugin is not installed.' }
+  }
+
+  // Run a health check to see if the vector service is configured on the plugin.
+  let response: HealthCheckResponse;
   try {
     response = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/health`, undefined, undefined, {
       showSuccessAlert: false, showErrorAlert: false,
     });
   } catch (e) {
+    // We shouldn't really get here if we managed to get the plugin's settings above,
+    // but catch this just in case.
     if (!loggedWarning) {
       logDebug(String(e));
       logDebug('Failed to check if vector service is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.');
       loggedWarning = true;
     }
-    return false;
+    return { enabled: false, ok: false, error: 'The Grafana LLM plugin is not installed.' }
   }
+
   const { details } = response;
   // Update the version if it's present on the response.
-  if (details.version !== undefined) {
+  if (details?.version !== undefined) {
     setLLMPluginVersion(details.version);
   }
-  // If the plugin is installed then check if it is configured.
-  return details.vector ?? false;
+  if (details?.vector === undefined) {
+    return { enabled: false, ok: false, error: 'The Grafana LLM plugin is outdated; please update it.' }
+  }
+  return typeof details.vector === 'boolean' ?
+    { enabled: details.vector, ok: details.vector } :
+    details.vector;
 };

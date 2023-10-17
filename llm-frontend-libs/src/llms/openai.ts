@@ -15,7 +15,7 @@ import { pipe, Observable, UnaryFunction } from "rxjs";
 import { filter, map, scan, takeWhile, tap } from "rxjs/operators";
 
 import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE, setLLMPluginVersion } from "./constants";
-import { LLMAppHealthCheck } from "./types";
+import { HealthCheckResponse, OpenAIHealthDetails } from "./types";
 
 const OPENAI_CHAT_COMPLETIONS_PATH = 'openai/v1/chat/completions';
 
@@ -345,9 +345,24 @@ export function streamChatCompletions(request: ChatCompletionsRequest): Observab
 let loggedWarning = false;
 
 /** Check if the OpenAI API is enabled via the LLM plugin. */
-export const enabled = async () => {
-  // Run a health check to see if the plugin is installed.
-  let response: LLMAppHealthCheck;
+export const enabled = async (): Promise<OpenAIHealthDetails> => {
+  // First check if the plugin is enabled.
+  try {
+    const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
+      showSuccessAlert: false, showErrorAlert: false,
+    });
+    if (!settings.enabled) {
+      return { configured: false, ok: false, error: 'The Grafana LLM plugin is not enabled.' }
+    }
+  } catch (e) {
+    logDebug(String(e));
+    logDebug('Failed to check if OpenAI is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.');
+    loggedWarning = true;
+    return { configured: false, ok: false, error: 'The Grafana LLM plugin is not installed.' }
+  }
+
+  // Run a health check to see if OpenAI is configured on the plugin.
+  let response: HealthCheckResponse;
   try {
     response = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/health`, undefined, undefined, {
       showSuccessAlert: false, showErrorAlert: false,
@@ -358,14 +373,18 @@ export const enabled = async () => {
       logDebug('Failed to check if OpenAI is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.');
       loggedWarning = true;
     }
-    return false;
+    return { configured: false, ok: false, error: 'The Grafana LLM plugin is not installed.' }
   }
 
   const { details } = response;
   // Update the version if it's present on the response.
-  if (details.version !== undefined) {
+  if (details?.version !== undefined) {
     setLLMPluginVersion(details.version);
   }
-  // If the plugin is installed then check if it is configured.
-  return details?.openAI ?? false;
+  if (details?.openAI === undefined) {
+    return { configured: false, ok: false, error: 'The Grafana LLM plugin is outdated; please update it.' }
+  }
+  return typeof details.openAI === 'boolean' ?
+    { configured: details.openAI, ok: details.openAI } :
+    details.openAI;
 }
