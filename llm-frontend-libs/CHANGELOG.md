@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Add support for filtered vector search
 - Handle error messages in OpenAI chat completion streams
 - Fix expected field names in type in health check details
+- LLM: use new, more detailed health check results
 
 ## v1.7.3
 
