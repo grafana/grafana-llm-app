@@ -1,13 +1,27 @@
-# Grafana LLM App (Experimental)
+# Grafana LLM App (Public Preview)
 
-A Grafana plugin designed to centralize access to LLMs, providing authentication, rate limiting, and more.
+A Grafana plugin designed to centralize access to LLMs, providing authentication, proxying, streaming, and custom extensions.
 Installing this plugin will enable various pieces of LLM-based functionality throughout Grafana.
 
-Note: This plugin is **experimental**, and may change significantly between
-versions, or be deprecated completely in favor of a different approach based on
-user feedback.
+Note: The Grafana LLM App plugin is currently in [Public preview](https://grafana.com/docs/release-life-cycle/). Grafana Labs offers support on a best-effort basis, and there might be breaking changes before the feature is generally available.
 
-## Installing this plugin
+## Install the plugin on Grafana Cloud
+
+Prerequisites:
+- Any Grafana Cloud environment (including Free)
+- API connection details from an account with [OpenAI](https://platform.openai.com) or [Azure OpenAI](https://oai.azure.com/)
+
+Steps:
+1. In your Grafana instance, open Administration → Plugins
+1. Select "All" instead of "Installed" and search for "LLM"
+1. Click "Install via grafana.com"
+1. You should see your instance listed; click "Install plugin"
+1. Return to Grafana, and search installed plugins, reloading until the LLM plugin is listed (this may take a minute or two)
+1. Configuration: choose your provider (OpenAI or Azure) and fill in the fields needed
+1. Save settings, then click "Enable" (upper right) to enable the plugin
+
+
+## Install the plugin directly
 
 To install this plugin, use the `GF_INSTALL_PLUGINS` environment variable when running Grafana:
 

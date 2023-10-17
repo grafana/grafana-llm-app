@@ -1,6 +1,6 @@
-# Grafana LLM app (experimental)
+# Grafana LLM app (public preview)
 
-This is a Grafana application plugin which centralizes access to LLMs across Grafana.
+This Grafana application plugin centralizes access to LLMs across Grafana.
 
 It is responsible for:
 
@@ -11,29 +11,26 @@ It is responsible for:
 
 Future functionality will include:
 
-- support for multiple LLM providers, including the ability to choose your own at runtime
+- support for additional LLM providers, including the ability to choose your own at runtime
 - rate limiting of requests to LLMs, for cost control
 - token and cost estimation
 - RBAC to only allow certain users to use LLM functionality
 
-Note: This plugin is **experimental**, and may change significantly between
-versions, or deprecated completely in favor of a different approach based on
-user feedback.
+Note: The Grafana LLM App plugin is currently in [Public preview](https://grafana.com/docs/release-life-cycle/). Grafana Labs offers support on a best-effort basis, and there might be breaking changes before the feature is generally available.
 
 ## For users
 
 Install and configure this plugin to enable various LLM-related functionality across Grafana.
-This will include new functionality inside Grafana itself, such as explaining panels, or
-in plugins, such as natural language query editors.
+This include new functionality inside Grafana itself, such as explaining panels, or in plugins,
+such as natural language query editors.
 
 All LLM requests will be routed via this plugin, which ensures the correct API key is being
-used and rate limited appropriately.
+used and requests are routed appropriately.
 
 ## For plugin developers
 
-This plugin is not designed to be directly interacted with; instead, use the
-convenience functions in the
-[`@grafana/experimental`](https://www.npmjs.com/package/@grafana/experimental)
+This plugin is not designed to be directly interacted with; instead, use the convenience functions
+in the [`@grafana/experimental`](https://www.npmjs.com/package/@grafana/experimental)
 package which will communicate with this plugin, if installed.
 
 First, add the correct version of `@grafana/experimental` to your dependencies in package.json:
