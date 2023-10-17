@@ -2,10 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.7.4
+
+- Add support for filtered vector search
+- Handle error messages in OpenAI chat completion streams
+- Fix expected field names in type in health check details
+
 ## v1.7.3
 
 - Add UUID to streaming OpenAI requests
 - Add health check in enabled functions
+
 ## v1.7.2
 
 - Fix API return code matching in vector search support
