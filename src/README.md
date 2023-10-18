@@ -21,7 +21,7 @@ Note: The Grafana LLM App plugin is currently in [Public preview](https://grafan
 ## For users
 
 Install and configure this plugin to enable various LLM-related functionality across Grafana.
-This include new functionality inside Grafana itself, such as explaining panels, or in plugins,
+This includes new functionality inside Grafana itself, such as explaining panels, or in plugins,
 such as natural language query editors.
 
 All LLM requests will be routed via this plugin, which ensures the correct API key is being
