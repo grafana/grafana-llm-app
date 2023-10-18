@@ -226,19 +226,19 @@ export interface ChatCompletionsChunk {
 }
 
 /** Return true if the message is a 'content' message. */
-export function isContentMessage(message: any): message is ContentMessage {
-  return message.content != null;
+export function isContentMessage(message: ChatCompletionsDelta): message is ContentMessage {
+  return 'content' in message
 }
 
 
 /** Return true if the message is a 'done' message. */
-export function isDoneMessage(message: any): message is DoneMessage {
-  return message.done !== undefined
+export function isDoneMessage(message: ChatCompletionsDelta): message is DoneMessage {
+  return 'done' in message && message.done != null;
 }
 
 /** Return true if the response is an error response. */
-export function isErrorResponse(response: any): response is ChatCompletionsErrorResponse {
-  return response.error !== undefined;
+export function isErrorResponse<T>(response: ChatCompletionsResponse<T> | ChatCompletionsErrorResponse): response is ChatCompletionsErrorResponse {
+  return 'error' in response;
 }
 
 /**
