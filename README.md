@@ -60,6 +60,77 @@ apps:
       openAIKey: $OPENAI_API_KEY
 ```
 
+
+### Using Azure OpenAI
+
+To provision the plugin to use Azure OpenAI, use settings similar to this:
+
+```yaml
+apiVersion: 1
+
+apps:
+  - type: 'grafana-llm-app'
+    disabled: false
+    jsonData:
+      openAI:
+        provider: azure
+        url: https://<resource>.openai.azure.com
+        azureModelMapping:
+          - ["gpt-3.5-turbo", "gpt-35-turbo"]
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
+```
+
+where:
+
+- `<resource>` is your Azure OpenAI resource name
+- the `azureModelMapping` field contains `[model, deployment]` pairs so that features know
+  which Azure deployment to use in place of each model you wish to be used.
+
+### Provisioning vector services
+
+The vector services of the plugin allow certain AI-based features to perform semantic search to improve the responses given by LLMs. Configuration is in roughly three parts:
+
+- 'global' vector settings:
+  - `enabled` - whether to enable or disable vector services overall
+  - `model` - the name of the model to use to calculate embeddings for searches. This must match the model used when storing the data, or the embeddings will be meaningless.
+- 'embedding' vector settings (`embed`):
+  - `type` - must be `openai`, for now.
+  - `openai` - custom settings for OpenAI embeddings, with keys:
+    - `url` - the URL to the OpenAI instance.
+- 'store' vector settings (`store`):
+  - `type` - the type of vector store to connect to, either `qdrant` to use [Qdrant](https://qdrant.tech) or `grafana/vectorapi` to use Grafana's own vector API.
+  - `qdrant`, if `type` is `qdrant`, with keys:
+    - `address` - the address of the Qdrant server. Note that this uses a gRPC connection.
+    - `secure` - boolean, whether to use a secure connection. If you're using a secure connection you can set the `qdrantApiKey` field in `secureJsonData` to provide an API key with each request.
+  - `grafanaVectorAPI`, if `type` is `grafana/vectorapi`, with keys:
+    - `url` - the URL of the Grafana VectorAPI instance.
+
+**Qdrant example**
+
+```yaml
+apiVersion: 1
+
+apps:
+  - type: 'grafana-llm-app'
+    disabled: false
+    jsonData:
+      vector: 
+        enabled: true
+        model: text-embedding-ada-002
+        embed:
+          type: openai
+        store:
+          type: qdrant
+          qdrant:
+            address: localhost:6334
+            secure: true
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
+      qdrantApiKey: $QDRANT_API_KEY
+```
+
+
 ## Adding LLM features to your plugin or Grafana core
 
 To make use of this plugin when adding LLM-based features, you can use the helper functions in the `@grafana/experimental` package.
