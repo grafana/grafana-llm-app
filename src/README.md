@@ -33,6 +33,8 @@ This plugin is not designed to be directly interacted with; instead, use the con
 in the [`@grafana/experimental`](https://www.npmjs.com/package/@grafana/experimental)
 package which will communicate with this plugin, if installed.
 
+Looking for working examples? Check https://github.com/grafana/grafana-llmexamples-app
+
 First, add the latest version of `@grafana/experimental` to your dependencies in package.json:
 
 ```json
