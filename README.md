@@ -15,7 +15,7 @@ Steps:
 1. In your Grafana instance, open Administration → Plugins
 1. Select "All" instead of "Installed" and search for "LLM"
 1. Click "Install via grafana.com"
-1. You should see your instance listed; click "Install plugin"
+1. On the [LLM's plugin page](https://grafana.com/grafana/plugins/grafana-llm-app/), you should see your instance listed; click "Install plugin"
 1. Return to Grafana, and search installed plugins, reloading until the LLM plugin is listed (this may take a minute or two)
 1. Configuration: choose your provider (OpenAI or Azure) and fill in the fields needed
 1. Save settings, then click "Enable" (upper right) to enable the plugin
