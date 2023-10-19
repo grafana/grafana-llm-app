@@ -49,7 +49,10 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
           width={60}
         />
       </Field>
-      <Field label="OpenAI API URL" description="" className={s.marginTop}>
+      <Field
+        label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'OpenAI API URL'}
+        className={s.marginTop}
+      >
         <Input
           width={60}
           name="url"
@@ -60,19 +63,10 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
         />
       </Field>
 
-      <Field label="OpenAI API Organization ID" description="Your OpenAI API Organization ID">
-        <Input
-          width={60}
-          name="organizationId"
-          data-testid={testIds.appConfig.openAIOrganizationID}
-          value={settings.organizationId}
-          placeholder={settings.organizationId ? '' : 'org-...'}
-          onChange={onChangeField}
-          disabled={settings.provider === 'azure'}
-        />
-      </Field>
-
-      <Field label="OpenAI API Key" description="Your OpenAI API Key">
+      <Field
+        label={settings.provider === 'azure' ? 'Azure OpenAI Key' : 'OpenAI API Key'}
+        description={settings.provider === 'azure' ? "Your Azure OpenAI Key" : "Your OpenAI API Key"}
+      >
         <SecretInput
           width={60}
           data-testid={testIds.appConfig.openAIKey}
@@ -85,8 +79,27 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
         />
       </Field>
 
+      {settings.provider !== 'azure' && (
+        <Field
+          label="OpenAI API Organization ID"
+          description="Your OpenAI API Organization ID"
+        >
+          <Input
+            width={60}
+            name="organizationId"
+            data-testid={testIds.appConfig.openAIOrganizationID}
+            value={settings.organizationId}
+            placeholder={settings.organizationId ? '' : 'org-...'}
+            onChange={onChangeField}
+          />
+        </Field>
+      )}
+
       {settings.provider === 'azure' && (
-        <Field label="Azure OpenAI Model Mapping" description="">
+        <Field
+          label="Azure OpenAI Model Mapping"
+          description="Mapping from OpenAI model names to Azure deployment names."
+        >
           <AzureModelDeploymentConfig
             modelMapping={settings.azureModelMapping ?? []}
             modelNames={["gpt-3.5-turbo", "gpt-4"]}
@@ -101,5 +114,4 @@ export function OpenAIConfig({ settings, secrets, secretsSet, onChange, onChange
       )}
     </FieldSet>
   );
-
 }
