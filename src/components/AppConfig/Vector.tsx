@@ -53,7 +53,6 @@ export function VectorConfig({ settings, onChange }: Props<VectorSettings>) {
         <Checkbox
           name="enabled"
           data-testid={testIds.appConfig.vectorEnabled}
-          defaultChecked={settings?.enabled}
           checked={settings?.enabled}
           onChange={e => onChange({ ...settings, enabled: e.currentTarget.checked })}
         />
@@ -144,7 +143,6 @@ function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
         <Checkbox
           name="secure"
           data-testid={testIds.appConfig.qdrantSecure}
-          defaultChecked={settings?.secure}
           checked={settings?.secure}
           onChange={e => onChange({ ...settings, secure: e.currentTarget.checked })}
         />
