@@ -31,6 +31,9 @@ func (m *mockVectorService) Health(ctx context.Context) error {
 	return nil
 }
 
+func (m *mockVectorService) StartSync() {
+}
+
 func (m *mockVectorService) Cancel() {}
 
 // TestCheckHealth tests CheckHealth calls, using backend.CheckHealthRequest and backend.CheckHealthResponse.
