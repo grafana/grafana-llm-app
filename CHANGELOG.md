@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.4.0
+
+* Add 'Enabled' switch for vector services to configuration UI
+* Added instructions for developing with example app
+* Improve health check to return more granular details
+* Add support for filtered vector search
+* Improve vector service health check
+
 ## 0.3.0
 
 * Add Go package providing an OpenAI client to use the LLM app from backend Go code
