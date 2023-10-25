@@ -9,7 +9,7 @@
  */
 
 import { isLiveChannelMessageEvent, LiveChannelAddress, LiveChannelMessageEvent, LiveChannelScope } from "@grafana/data";
-import { getBackendSrv, getGrafanaLiveSrv, logDebug, logError } from "@grafana/runtime";
+import { getBackendSrv, getGrafanaLiveSrv, logDebug, /* logError */ } from "@grafana/runtime";
 
 import React, { useEffect, useCallback, useState } from 'react';
 import { useAsync } from 'react-use';
@@ -455,7 +455,7 @@ export function useOpenAIStream(
         `Please try again or if the problem persists, contact your organization admin.`
       );
       console.error(e);
-      logError(e, { messages: JSON.stringify(messages), model, temperature: String(temperature) });
+      // logError(e, { messages: JSON.stringify(messages), model, temperature: String(temperature) });
     },
     [messages, model, temperature, notifyError]
   );
