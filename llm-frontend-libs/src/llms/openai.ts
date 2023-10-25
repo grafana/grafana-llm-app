@@ -457,7 +457,7 @@ export function useOpenAIStream(
       console.error(e);
       // logError(e, { messages: JSON.stringify(messages), model, temperature: String(temperature) });
     },
-    [messages, model, temperature, notifyError]
+    [notifyError]
   );
 
   const { error: enabledError, value: isEnabled } = useAsync(
