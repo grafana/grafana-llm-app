@@ -434,8 +434,8 @@ export type OpenAIStreamState = {
  * @property {Subscription|undefined} value.stream - The stream subscription object if the stream is active, or undefined if not.
  */
 export function useOpenAIStream(
-  model: string = 'gpt-4',
-  temperature: number = 1,
+  model = 'gpt-4',
+  temperature = 1,
   notifyError: (title: string, text?: string, traceId?: string) => void = () => {},
 ): OpenAIStreamState {
   // The messages array to send to the LLM.
