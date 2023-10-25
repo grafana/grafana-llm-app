@@ -438,7 +438,7 @@ export function useOpenAIStream(
   temperature = 1,
   notifyError: (title: string, text?: string, traceId?: string) => void = () => {},
 ): OpenAIStreamState {
-  // The messages array to send to the LLM, updated when the button is clicked.
+  // The messages array to send to the LLM.
   const [messages, setMessages] = useState<Message[]>([]);
   // The latest reply from the LLM.
   const [reply, setReply] = useState('');
