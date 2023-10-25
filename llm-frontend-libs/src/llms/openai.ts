@@ -391,15 +391,37 @@ export const enabled = async (): Promise<OpenAIHealthDetails> => {
     details.openAI;
 }
 
+/**
+ * Enum representing different states for a stream.
+ * @enum {string}
+ */
 export enum StreamStatus {
   IDLE = 'idle',
   GENERATING = 'generating',
   COMPLETED = 'completed',
 }
 
+/**
+ * A constant representing the timeout value in milliseconds.
+ * @type {number}
+ */
 export const TIMEOUT = 10000;
 
-
+/**
+ * A type representing the state of an OpenAI stream.
+ * @typedef {Object} OpenAIStreamState
+ * @property {React.Dispatch<React.SetStateAction<Message[]>} setMessages - A function to set messages.
+ * @property {string} reply - The reply associated with the stream.
+ * @property {typeof StreamStatus} streamStatus - The current status of the stream.
+ * @property {Error|undefined} error - An optional error associated with the stream.
+ * @property {{
+ *    enabled: boolean|undefined;
+ *    stream?: undefined;
+ *  }|{
+ *    enabled: boolean|undefined;
+ *    stream: Subscription;
+ *  }|undefined} value - A value that can be an object with 'enabled' and 'stream' properties or undefined.
+ */
 export type OpenAIStreamState = {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   reply: string;
