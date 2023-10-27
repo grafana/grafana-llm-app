@@ -4,6 +4,7 @@
   "description": "Examples of using LLMs inside a Grafana plugin",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
+    "build-dev": "webpack -c ./.config/webpack/webpack.config.ts --env development",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
