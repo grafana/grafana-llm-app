@@ -9,25 +9,23 @@ import (
 type EmbedderType string
 
 const (
-	EmbedderOpenAI EmbedderType = "openai"
+	EmbedderOpenAI           EmbedderType = "openai"
+	EmbedderGrafanaVectorAPI EmbedderType = "grafana/vectorapi"
 )
 
 type Embedder interface {
 	Embed(ctx context.Context, model string, text string) ([]float32, error)
+	Health(ctx context.Context, model string) error
 }
 
 type Settings struct {
-	Type string `json:"type"`
+	Type EmbedderType `json:"type"`
 
 	OpenAI openAISettings `json:"openai"`
 }
 
 // NewEmbedder creates a new embedder.
 func NewEmbedder(s Settings, secrets map[string]string) (Embedder, error) {
-	switch EmbedderType(s.Type) {
-	case EmbedderOpenAI:
-		log.DefaultLogger.Debug("Creating OpenAI embedder")
-		return newOpenAIEmbedder(s.OpenAI, secrets), nil
-	}
-	return nil, nil
+	log.DefaultLogger.Debug("Creating OpenAI embedder")
+	return newOpenAIEmbedder(s.OpenAI, secrets), nil
 }

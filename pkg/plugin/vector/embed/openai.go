@@ -13,13 +13,22 @@ import (
 )
 
 type openAISettings struct {
-	URL string `json:"url"`
+	URL           string `json:"url"`
+	AuthType      string `json:"authType"`
+	BasicAuthUser string `json:"basicAuthUser"`
+}
+
+type openAIEmbeddingsAuthSettings struct {
+	BasicAuthUser     string
+	BasicAuthPassword string
+	OpenAIKey         string
 }
 
 type openAIClient struct {
-	client *http.Client
-	url    string
-	apiKey string
+	client       *http.Client
+	url          string
+	authType     string
+	authSettings openAIEmbeddingsAuthSettings
 }
 
 type openAIEmbeddingsRequest struct {
@@ -33,6 +42,16 @@ type openAIEmbeddingsResponse struct {
 
 type openAIEmbeddingData struct {
 	Embedding []float32 `json:"embedding"`
+}
+
+func (o *openAIClient) setAuth(req *http.Request) {
+	switch o.authType {
+	case "basic-auth":
+		req.SetBasicAuth(o.authSettings.BasicAuthUser, o.authSettings.BasicAuthPassword)
+	case "openai-key-auth":
+		req.Header.Add("Authorization", "Bearer "+o.authSettings.OpenAIKey)
+	}
+
 }
 
 func (o *openAIClient) Embed(ctx context.Context, model string, payload string) ([]float32, error) {
@@ -56,9 +75,9 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if o.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+o.apiKey)
-	}
+	o.setAuth(req)
+
+	log.DefaultLogger.Info("MMMMMMMMMMMaking request", "req", fmt.Sprintf("%+v", req))
 	resp, err := o.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
@@ -86,12 +105,22 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 	return body.Data[0].Embedding, nil
 }
 
+func (o *openAIClient) Health(ctx context.Context, model string) error {
+	_, err := o.Embed(ctx, model, "Hello, world!")
+	return err
+}
+
 // newOpenAIEmbedder creates a new Embedder using OpenAI's API.
 func newOpenAIEmbedder(settings openAISettings, secrets map[string]string) Embedder {
 	impl := openAIClient{
-		client: &http.Client{},
-		url:    settings.URL,
-		apiKey: secrets["openAIKey"],
+		client:   &http.Client{},
+		url:      settings.URL,
+		authType: string(settings.AuthType),
+		authSettings: openAIEmbeddingsAuthSettings{
+			BasicAuthUser:     settings.BasicAuthUser,
+			BasicAuthPassword: secrets["vectorEmbedderBasicAuthPassword"],
+			OpenAIKey:         secrets["openAIKey"],
+		},
 	}
 	return &impl
 }

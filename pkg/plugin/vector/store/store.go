@@ -13,6 +13,12 @@ const (
 	VectorStoreTypeGrafanaVectorAPI VectorStoreType = "grafana/vectorapi"
 )
 
+type VectorStoreAuthType string
+
+const (
+	VectorStoreAuthTypeBasicAuth VectorStoreAuthType = "basic-auth"
+)
+
 type SearchResult struct {
 	Payload map[string]any `json:"payload"`
 	Score   float64        `json:"score"`
@@ -36,19 +42,28 @@ type VectorStore interface {
 	WriteVectorStore
 }
 
-type Settings struct {
-	Type string `json:"type"`
+type AuthSettings struct {
+	BasicAuthUser string `json:"basicAuthUser"`
+}
 
-	GrafanaVectorAPI grafanaVectorAPISettings `json:"grafanaVectorAPI"`
+type Settings struct {
+	Type VectorStoreType `json:"type"`
+
+	AuthType VectorStoreAuthType `json:"authType"`
+
+	AuthSettings AuthSettings `json:"authSettings"`
+
+	GrafanaVectorAPI GrafanaVectorAPISettings `json:"grafanaVectorAPI"`
 
 	Qdrant qdrantSettings `json:"qdrant"`
 }
 
 func NewReadVectorStore(s Settings, secrets map[string]string) (ReadVectorStore, context.CancelFunc, error) {
-	switch VectorStoreType(s.Type) {
+	switch s.Type {
 	case VectorStoreTypeGrafanaVectorAPI:
 		log.DefaultLogger.Debug("Creating Grafana Vector API store")
-		return newGrafanaVectorAPI(s.GrafanaVectorAPI, secrets), func() {}, nil
+		vectorStore, err := newGrafanaVectorAPI(s.GrafanaVectorAPI, secrets)
+		return vectorStore, func() {}, err
 	case VectorStoreTypeQdrant:
 		log.DefaultLogger.Debug("Creating Qdrant store")
 		return newQdrantStore(s.Qdrant, secrets)

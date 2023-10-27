@@ -50,6 +50,8 @@ func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 		log.DefaultLogger.Warn("No vector store configured")
 		return nil, nil
 	}
+
+	log.DefaultLogger.Info("Vector service created", "model", fmt.Sprintf("EEEEEEEE%+v\nSSSSSSS%+v", em, st))
 	return &vectorService{
 		embedder: em,
 		store:    st,
@@ -88,7 +90,15 @@ func (v *vectorService) Search(ctx context.Context, collection string, query str
 }
 
 func (v *vectorService) Health(ctx context.Context) error {
-	return v.store.Health(ctx)
+	err := v.store.Health(ctx)
+	if err != nil {
+		return fmt.Errorf("vector store health: %w", err)
+	}
+	err = v.embedder.Health(ctx, v.model)
+	if err != nil {
+		return fmt.Errorf("embedder health: %w", err)
+	}
+	return nil
 }
 
 func (v vectorService) Cancel() {
