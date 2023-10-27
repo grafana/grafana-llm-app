@@ -51,7 +51,6 @@ func NewService(s VectorSettings, secrets map[string]string) (Service, error) {
 		return nil, nil
 	}
 
-	log.DefaultLogger.Info("Vector service created", "model", fmt.Sprintf("EEEEEEEE%+v\nSSSSSSS%+v", em, st))
 	return &vectorService{
 		embedder: em,
 		store:    st,

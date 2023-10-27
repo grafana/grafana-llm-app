@@ -77,7 +77,6 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 	req.Header.Set("Content-Type", "application/json")
 	o.setAuth(req)
 
-	log.DefaultLogger.Info("MMMMMMMMMMMaking request", "req", fmt.Sprintf("%+v", req))
 	resp, err := o.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
