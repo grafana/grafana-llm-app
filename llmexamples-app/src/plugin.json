@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "LLM Examples",
+  "id": "grafana-llmexamples-app",
+  "backend": true,
+  "streaming": true,
+  "executable": "gpx_llmexamples",
+  "preload": true,
+  "info": {
+    "keywords": [
+      "app"
+    ],
+    "description": "Examples of using LLMs inside a Grafana plugin",
+    "author": {
+      "name": "Grafana"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Examples",
+      "path": "/a/grafana-llmexamples-app",
+      "addToNav": true,
+      "defaultNav": true
+    },
+    {
+      "type": "page",
+      "name": "Vector search",
+      "path": "/a/grafana-llmexamples-app/vector-search",
+      "addToNav": true,
+      "defaultNav": false
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=9.5.2",
+    "plugins": []
+  }
+}

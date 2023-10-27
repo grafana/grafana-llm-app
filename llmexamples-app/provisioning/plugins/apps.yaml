@@ -1,0 +1,22 @@
+apiVersion: 1
+
+apps:
+  - type: 'grafana-llmexamples-app'
+    disabled: false
+  - type: 'grafana-llm-app'
+    disabled: false
+    jsonData:
+      openai:
+        organizationId: $OPENAI_ORGANIZATION_ID
+      vector:
+        enabled: true
+        model: text-embedding-ada-002
+        embed:
+          type: openai
+        store:
+          type: qdrant
+          qdrant:
+            address: qdrant:6334
+
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
