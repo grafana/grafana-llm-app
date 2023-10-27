@@ -1,0 +1,12 @@
+{
+  "extends": "@grafana/tsconfig",
+  "include": ["src/**/*.ts*"],
+  "exclude": ["dist/**/*", "src/QueryEditor/InputGroup.story.internal.tsx"],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "declarationDir": "./compiled",
+    "emitDeclarationOnly": true,
+    "isolatedModules": true,
+    "rootDirs": ["."]
+  }
+}
