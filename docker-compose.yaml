@@ -17,6 +17,8 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-llm-app
       - ./provisioning:/etc/grafana/provisioning
+      - ./llmexamples-app/dist:/var/lib/grafana/plugins/grafana-llmexamples-app
+      - ./llmexamples-app/provisioning:/etc/grafana/provisioning
 
   qdrant:
     image: qdrant/qdrant

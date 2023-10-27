@@ -1,7 +1,9 @@
 apiVersion: 1
 
 apps:
-  - type: grafana-llm-app
+  - type: 'grafana-llmexamples-app'
+    disabled: false
+  - type: 'grafana-llm-app'
     jsonData:
       vector:
         enabled: true
