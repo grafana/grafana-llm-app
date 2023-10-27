@@ -80,7 +80,7 @@ export function VectorConfig({ settings, secrets, secretsSet, onChange, onChange
               data-testid={testIds.appConfig.model}
               value={modelValues}
               placeholder={""}
-              onChange={e => onChange({ ...settings, model: e.currentTarget.value })}
+              onChange={e => onChange({ ...settings.vector, model: e.currentTarget.value })}
             />
           </Field>
 
