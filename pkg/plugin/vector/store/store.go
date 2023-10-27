@@ -49,10 +49,6 @@ type AuthSettings struct {
 type Settings struct {
 	Type VectorStoreType `json:"type"`
 
-	AuthType VectorStoreAuthType `json:"authType"`
-
-	AuthSettings AuthSettings `json:"authSettings"`
-
 	GrafanaVectorAPI GrafanaVectorAPISettings `json:"grafanaVectorAPI"`
 
 	Qdrant qdrantSettings `json:"qdrant"`
