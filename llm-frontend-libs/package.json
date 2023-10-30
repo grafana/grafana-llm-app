@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "yarn bundle -w",
     "build": "tsc -p ./tsconfig.json && rollup -c rollup.config.ts",
+    "build-dev": "tsc -p ./tsconfig.json && rollup -c rollup.config.ts && yarn bundle",
     "bundle": "rollup -c rollup.config.ts",
     "clean": "rimraf ./dist ./compiled",
     "typecheck": "tsc --emitDeclarationOnly false --noEmit",
