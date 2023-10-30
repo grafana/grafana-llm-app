@@ -25,13 +25,11 @@ export interface AuthSettings {
   basicAuthUser?: string;
 }
 
-interface OpenAIEmbedderSettings extends AuthSettings {}
-
 interface GrafanaVectorAPISettings extends AuthSettings {}
 
 interface EmbedderSettings {
   type?: EmbedderOptions;
-  openai?: OpenAIEmbedderSettings;
+  grafanaVectorAPI?: GrafanaVectorAPISettings;
 }
 
 interface QdrantSettings {
@@ -175,9 +173,9 @@ export function EmbedderConfig({
                 { label: 'No Auth', value: 'no-auth' },
                 { label: 'Basic Auth', value: 'basic-auth' },
               ]}
-              value={settings?.openai?.authType ?? 'no-auth'}
+              value={settings?.grafanaVectorAPI?.authType ?? 'no-auth'}
               onChange={(e) =>
-                e.value !== undefined && onChange({ ...settings, openai: { ...settings.openai, authType: e.value } })
+                e.value !== undefined && onChange({ ...settings, grafanaVectorAPI: { ...settings.grafanaVectorAPI, authType: e.value } })
               }
               width={60}
             />
@@ -185,19 +183,19 @@ export function EmbedderConfig({
           <InlineField label="URL" tooltip="Address of the Grafana Vector API" labelWidth={s.inlineFieldWidth}>
             <Input
               name="url"
-              value={settings?.openai?.url}
+              value={settings?.grafanaVectorAPI?.url}
               width={s.inlineFieldInputWidth}
               data-testid={testIds.appConfig.grafanaVectorApiUrl}
               placeholder={'http://vectorapi:8889'}
-              onChange={(e) => onChange({ ...settings, openai: { ...settings.openai, url: e.currentTarget.value } })}
+              onChange={(e) => onChange({ ...settings, grafanaVectorAPI: { ...settings.grafanaVectorAPI, url: e.currentTarget.value } })}
             />
           </InlineField>
-          {settings?.openai?.authType === 'basic-auth' && (
+          {settings?.grafanaVectorAPI?.authType === 'basic-auth' && (
             <BasicAuthConfig
-              settings={settings.openai}
+              settings={settings.grafanaVectorAPI}
               secrets={secrets}
               secretsSet={secretsSet}
-              onChange={(authSettings) => onChange({ ...settings, openai: authSettings })}
+              onChange={(authSettings) => onChange({ ...settings, grafanaVectorAPI: authSettings })}
               onChangeSecrets={onChangeSecrets}
               secretKey="vectorEmbedderBasicAuthPassword"
             />
