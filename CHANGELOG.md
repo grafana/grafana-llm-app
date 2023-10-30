@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Add basic auth to VectorAPI 
+
 ## 0.4.0
 
 * Add 'Enabled' switch for vector services to configuration UI
