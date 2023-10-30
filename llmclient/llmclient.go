@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	appResourcesPrefix = "/api/plugins/grafana-llm-app/resources"
+	appPrefix          = "/api/plugins/grafana-llm-app"
+	appResourcesPrefix = appPrefix + "/resources"
 )
 
 // OpenAI is an interface for talking to OpenAI via the Grafana LLM app.
@@ -98,7 +99,7 @@ type oldHealthCheckResponse struct {
 }
 
 func (o *openAI) Enabled(ctx context.Context) (bool, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", o.grafanaURL+appResourcesPrefix+"/health", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", o.grafanaURL+appPrefix+"/health", nil)
 	if err != nil {
 		return false, fmt.Errorf("create request: %w", err)
 	}
