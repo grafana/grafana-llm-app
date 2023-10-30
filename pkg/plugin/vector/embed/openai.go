@@ -137,6 +137,9 @@ func newOpenAIEmbedder(settings Settings, secrets map[string]string) Embedder {
 				BasicAuthPassword: secrets["vectorEmbedderBasicAuthPassword"],
 			},
 		}
+	default:
+		return nil
 	}
+
 	return &impl
 }
