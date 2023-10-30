@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0
+
 * Add basic auth to VectorAPI 
 
 ## 0.4.0
