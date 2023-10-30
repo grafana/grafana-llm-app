@@ -13,6 +13,11 @@ import (
 )
 
 type openAISettings struct {
+	URL      string `json:"url"`
+	AuthType string `json:"authType"`
+}
+
+type grafanaVectorAPISettings struct {
 	URL           string `json:"url"`
 	AuthType      string `json:"authType"`
 	BasicAuthUser string `json:"basicAuthUser"`
@@ -110,16 +115,28 @@ func (o *openAIClient) Health(ctx context.Context, model string) error {
 }
 
 // newOpenAIEmbedder creates a new Embedder using OpenAI's API.
-func newOpenAIEmbedder(settings openAISettings, secrets map[string]string) Embedder {
-	impl := openAIClient{
-		client:   &http.Client{},
-		url:      settings.URL,
-		authType: string(settings.AuthType),
-		authSettings: openAIEmbeddingsAuthSettings{
-			BasicAuthUser:     settings.BasicAuthUser,
-			BasicAuthPassword: secrets["vectorEmbedderBasicAuthPassword"],
-			OpenAIKey:         secrets["openAIKey"],
-		},
+func newOpenAIEmbedder(settings Settings, secrets map[string]string) Embedder {
+	var impl openAIClient
+	switch settings.Type {
+	case EmbedderOpenAI:
+		impl = openAIClient{
+			client:   &http.Client{},
+			url:      settings.OpenAI.URL,
+			authType: string(settings.OpenAI.AuthType),
+			authSettings: openAIEmbeddingsAuthSettings{
+				OpenAIKey: secrets["openAIKey"],
+			},
+		}
+	case EmbedderGrafanaVectorAPI:
+		impl = openAIClient{
+			client:   &http.Client{},
+			url:      settings.GrafanaVectorAPISettings.URL,
+			authType: string(settings.GrafanaVectorAPISettings.AuthType),
+			authSettings: openAIEmbeddingsAuthSettings{
+				BasicAuthUser:     settings.GrafanaVectorAPISettings.BasicAuthUser,
+				BasicAuthPassword: secrets["vectorEmbedderBasicAuthPassword"],
+			},
+		}
 	}
 	return &impl
 }
