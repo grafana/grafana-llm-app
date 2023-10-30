@@ -16,7 +16,7 @@ import (
 
 const (
 	appPrefix          = "/api/plugins/grafana-llm-app"
-	appResourcesPrefix = "/api/plugins/grafana-llm-app/resources"
+	appResourcesPrefix = appPrefix + "/resources"
 )
 
 // OpenAI is an interface for talking to OpenAI via the Grafana LLM app.
