@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { HealthCheckResult } from "@grafana/runtime";
-import { Alert, AlertVariant, VerticalGroup } from "@grafana/ui";
+import { HealthCheckResult } from '@grafana/runtime';
+import { Alert, AlertVariant, VerticalGroup } from '@grafana/ui';
 
 interface HealthCheckDetails {
   openAI: OpenAIHealthDetails | boolean;
@@ -43,7 +43,7 @@ interface VectorHealthDetails {
 
 const isHealthCheckDetails = (obj: unknown): obj is HealthCheckDetails => {
   return typeof obj === 'object' && obj !== null && 'openAI' in obj && 'vector' in obj && 'version' in obj;
-}
+};
 
 const alertVariants = new Set<AlertVariant>(['success', 'info', 'warning', 'error']);
 const isAlertVariant = (str: string): str is AlertVariant => alertVariants.has(str as AlertVariant);
@@ -66,7 +66,7 @@ const getAlertSeverity = (status: string, details: HealthCheckDetails): AlertVar
     return details.openAI.ok && vectorOk ? 'success' : 'warning';
   }
   return severity;
-}
+};
 
 export function ShowHealthCheckResult(props: HealthCheckResult) {
   let severity = getAlertVariant(props.status ?? 'error');
@@ -79,23 +79,27 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
   }
 
   severity = getAlertSeverity(props.status ?? 'error', props.details);
-  const showOpenAI = typeof props.details.openAI === 'boolean' || typeof props.details.openAI === 'object' && props.details.openAI.configured;
-  const showVector = typeof props.details.vector === 'boolean' || typeof props.details.vector === 'object' && props.details.vector.enabled;
+  const showOpenAI =
+    typeof props.details.openAI === 'boolean' ||
+    (typeof props.details.openAI === 'object' && props.details.openAI.configured);
+  const showVector =
+    typeof props.details.vector === 'boolean' ||
+    (typeof props.details.vector === 'object' && props.details.vector.enabled);
   return (
     <VerticalGroup>
       {showOpenAI && <ShowOpenAIHealth openAI={props.details.openAI} />}
       {showVector && <ShowVectorHealth vector={props.details.vector} />}
-    </VerticalGroup >
+    </VerticalGroup>
   );
 }
 
 function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean }) {
   if (typeof openAI === 'boolean') {
     const severity = openAI ? 'success' : 'error';
-    const message = openAI ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.'
+    const message = openAI ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
     return <Alert title={message} severity={severity} />;
   }
-  const message = openAI.ok ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.'
+  const message = openAI.ok ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
   const severity = openAI.ok ? 'success' : 'error';
   return (
     <Alert severity={severity} title={message}>
@@ -108,20 +112,20 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
         ))}
       </div>
     </Alert>
-  )
+  );
 }
 
 function ShowVectorHealth({ vector }: { vector: VectorHealthDetails | boolean }) {
   if (typeof vector === 'boolean') {
     const severity = vector ? 'success' : 'error';
-    const message = vector ? 'Vector service health check succeeded!' : 'Vector service health check failed.'
+    const message = vector ? 'Vector service health check succeeded!' : 'Vector service health check failed.';
     return <Alert title={message} severity={severity} />;
   }
   const severity = vector.ok ? 'success' : 'error';
-  const message = vector.ok ? 'Vector service health check succeeded!' : 'Vector service health check failed.'
+  const message = vector.ok ? 'Vector service health check succeeded!' : 'Vector service health check failed.';
   return (
     <Alert title={message} severity={severity}>
       {vector.error && <div>Error: {vector.error}</div>}
     </Alert>
-  )
+  );
 }

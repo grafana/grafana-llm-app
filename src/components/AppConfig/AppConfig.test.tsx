@@ -22,7 +22,7 @@ describe('Components/AppConfig', () => {
               enabled: true,
               store: {
                 type: 'qdrant',
-              }
+              },
             },
           },
         },

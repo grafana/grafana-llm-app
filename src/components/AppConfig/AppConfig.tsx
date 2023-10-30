@@ -14,17 +14,17 @@ import { ShowHealthCheckResult } from './HealthCheck';
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
-};
+}
 
 export type Secrets = {
   openAIKey?: string;
   vectorStoreBasicAuthPassword?: string;
   vectorEmbedderBasicAuthPassword?: string;
-}
+};
 
 export type SecretsSet = {
   [Property in keyof Secrets]: boolean;
-}
+};
 
 function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
   return {
@@ -34,7 +34,7 @@ function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
   };
 }
 
-export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> { }
+export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> {}
 
 export const AppConfig = ({ plugin }: AppConfigProps) => {
   const s = useStyles2(getStyles);
@@ -51,16 +51,15 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
   return (
     <div data-testid={testIds.appConfig.container}>
-
       <OpenAIConfig
         settings={settings.openAI ?? {}}
-        onChange={openAI => {
-          setSettings({ ...settings, openAI })
+        onChange={(openAI) => {
+          setSettings({ ...settings, openAI });
           setUpdated(true);
         }}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
-        onChangeSecrets={secrets => {
+        onChangeSecrets={(secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
           // Mark each secret as not configured. This will cause it to be included
@@ -80,7 +79,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           setSettings({ ...settings, vector });
           setUpdated(true);
         }}
-        onChangeSecrets={secrets => {
+        onChangeSecrets={(secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
           // Mark each secret as not configured. This will cause it to be included
@@ -92,8 +91,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         }}
       />
 
-      {isUpdating ? <LoadingPlaceholder text="Running health check..." /> : healthCheck && (
-        <ShowHealthCheckResult {...healthCheck} />
+      {isUpdating ? (
+        <LoadingPlaceholder text="Running health check..." />
+      ) : (
+        healthCheck && <ShowHealthCheckResult {...healthCheck} />
       )}
       <div className={s.marginTop}>
         <Button
@@ -155,5 +156,5 @@ const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckR
   const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/health`,
   });
-  return lastValueFrom(response) as Promise<FetchResponse<HealthCheckResult>>
-}
+  return lastValueFrom(response) as Promise<FetchResponse<HealthCheckResult>>;
+};
