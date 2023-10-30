@@ -33,7 +33,7 @@ describe('Components/App', () => {
   });
 
   test('renders without an error"', async () => {
-    const getMock = jest.fn().mockResolvedValue({ data: "models response" });
+    const getMock = jest.fn().mockResolvedValue({ data: 'models response' });
     setBackendSrv({ ...origBackendSrv, get: getMock });
     render(
       <BrowserRouter>
@@ -42,7 +42,7 @@ describe('Components/App', () => {
     );
 
     await waitFor(() => {
-        expect(screen.queryByText(/models response/i)).toBeInTheDocument();
-        });
+      expect(screen.queryByText(/models response/i)).toBeInTheDocument();
     });
+  });
 });

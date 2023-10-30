@@ -1,6 +1,6 @@
 import React from 'react';
 import { testIds } from '../components/testIds';
-import { useAsync } from "react-use";
+import { useAsync } from 'react-use';
 import { getBackendSrv, PluginPage } from '@grafana/runtime';
 
 export function Models() {
@@ -30,9 +30,7 @@ export function Models() {
     <PluginPage>
       <div data-testid={testIds.models.container}>
         <h1>Available Models</h1>
-        <pre>
-          {JSON.stringify(value, null, 2)}
-        </pre>
+        <pre>{JSON.stringify(value, null, 2)}</pre>
       </div>
     </PluginPage>
   );

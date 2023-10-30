@@ -1,10 +1,14 @@
-import React from "react";
+import React from 'react';
 
-import { IconButton, InlineField, InlineFieldRow, Input, Select } from "@grafana/ui";
+import { IconButton, InlineField, InlineFieldRow, Input, Select } from '@grafana/ui';
 
 export type AzureModelDeployments = Array<[string, string]>;
 
-export function AzureModelDeploymentConfig({ modelMapping, modelNames, onChange }: {
+export function AzureModelDeploymentConfig({
+  modelMapping,
+  modelNames,
+  onChange,
+}: {
   modelMapping: AzureModelDeployments;
   modelNames: string[];
   onChange: (modelMapping: AzureModelDeployments) => void;
@@ -14,7 +18,7 @@ export function AzureModelDeploymentConfig({ modelMapping, modelNames, onChange 
       <IconButton
         name="plus"
         aria-label="Add model mapping"
-        onClick={e => {
+        onClick={(e) => {
           e.preventDefault();
           onChange([...modelMapping, ['', '']]);
         }}
@@ -26,27 +30,25 @@ export function AzureModelDeploymentConfig({ modelMapping, modelNames, onChange 
           deployment={deployment}
           modelNames={modelNames}
           onChange={(model, deployment) => {
-            onChange([
-              ...modelMapping.slice(0, i),
-              [model, deployment],
-              ...modelMapping.slice(i + 1),
-            ]);
+            onChange([...modelMapping.slice(0, i), [model, deployment], ...modelMapping.slice(i + 1)]);
           }}
-          onRemove={() => onChange([
-            ...modelMapping.slice(0, i),
-            ...modelMapping.slice(i + 1),
-          ])}
+          onRemove={() => onChange([...modelMapping.slice(0, i), ...modelMapping.slice(i + 1)])}
         />
-      )
-      )}
+      ))}
     </>
   );
 }
 
-function ModelMappingField({ model, deployment, modelNames, onChange, onRemove }: {
+function ModelMappingField({
+  model,
+  deployment,
+  modelNames,
+  onChange,
+  onRemove,
+}: {
   model: string;
   deployment: string;
-  modelNames: string[],
+  modelNames: string[];
   onChange: (model: string, deployment: string) => void;
   onRemove: () => void;
 }): JSX.Element {
@@ -55,12 +57,9 @@ function ModelMappingField({ model, deployment, modelNames, onChange, onRemove }
       <InlineField label="Model">
         <Select
           placeholder="model label"
-          options={modelNames
-            .filter(n => n !== deployment && n !== '')
-            .map(value => ({ label: value, value }))
-          }
+          options={modelNames.filter((n) => n !== deployment && n !== '').map((value) => ({ label: value, value }))}
           value={model}
-          onChange={event => event.value !== undefined && onChange(event.value, deployment)}
+          onChange={(event) => event.value !== undefined && onChange(event.value, deployment)}
         />
       </InlineField>
       <InlineField label="Deployment">
@@ -69,18 +68,17 @@ function ModelMappingField({ model, deployment, modelNames, onChange, onRemove }
           name="AzureDeployment"
           placeholder="deployment name"
           value={deployment}
-          onChange={event => event.currentTarget.value !== undefined && onChange(model, event.currentTarget.value)}
+          onChange={(event) => event.currentTarget.value !== undefined && onChange(model, event.currentTarget.value)}
         />
       </InlineField>
       <IconButton
         name="trash-alt"
         aria-label="Remove model mapping"
-        onClick={e => {
+        onClick={(e) => {
           e.preventDefault();
-          onRemove()
+          onRemove();
         }}
       />
     </InlineFieldRow>
   );
 }
-
