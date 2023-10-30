@@ -71,7 +71,7 @@ export function VectorConfig({ settings, secrets, secretsSet, onChange, onChange
     ) {
       onChange({ ...settings.vector, model: VECTORAPI_DEFAULT_MODEL });
     }
-  }, [settings?.vector, settings?.vector?.embed?.type]);
+  }, [settings?.vector, settings?.vector?.embed?.type, onChange]);
 
   return (
     <FieldSet label="Vector Settings">
