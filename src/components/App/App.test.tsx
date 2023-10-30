@@ -4,6 +4,7 @@ import { AppRootProps, PluginType } from '@grafana/data';
 import { render, screen, waitFor } from '@testing-library/react';
 import { App } from './App';
 import { BackendSrv, getBackendSrv, setBackendSrv } from '@grafana/runtime';
+import '@testing-library/jest-dom';
 
 describe('Components/App', () => {
   let props: AppRootProps;
