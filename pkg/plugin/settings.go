@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
+	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
@@ -46,6 +47,10 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	if settings.OpenAI.URL == "" {
 		settings.OpenAI.URL = "https://api.openai.com"
 	}
+	if settings.Vector.Embed.Type == embed.EmbedderOpenAI {
+		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
+		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
+	}
 
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
@@ -57,5 +62,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	}
 
 	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
+
 	return settings
 }

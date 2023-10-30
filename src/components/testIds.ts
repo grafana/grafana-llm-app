@@ -11,6 +11,8 @@ export const testIds = {
     grafanaVectorApiUrl: 'data-testid ac-grafana-vector-api-url',
     model: 'data-testid ac-vector-model',
     submit: 'data-testid ac-submit-form',
+    basicAuthUsername: "data-testid ac-basic-auth-username",
+    basicAuthPassword: "data-testid ac-basic-auth-password",
   },
   models: {
     container: 'data-testid models-container',

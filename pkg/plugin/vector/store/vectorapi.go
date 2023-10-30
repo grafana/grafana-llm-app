@@ -11,22 +11,43 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-type grafanaVectorAPISettings struct {
-	URL string `json:"url"`
+type GrafanaVectorAPISettings struct {
+	URL           string `json:"url"`
+	AuthType      string `json:"authType"`
+	BasicAuthUser string `json:"basicAuthUser"`
+}
+
+type grafanaVectorAPIAuthSettings struct {
+	BasicAuthUser     string
+	BasicAuthPassword string
 }
 
 type grafanaVectorAPI struct {
-	client *http.Client
-	url    string
+	client       *http.Client
+	url          string
+	authType     VectorStoreAuthType
+	authSettings grafanaVectorAPIAuthSettings
+}
+
+func (g *grafanaVectorAPI) setAuth(req *http.Request) {
+	switch g.authType {
+	case VectorStoreAuthTypeBasicAuth:
+		req.SetBasicAuth(g.authSettings.BasicAuthUser, g.authSettings.BasicAuthPassword)
+	}
 }
 
 func (g *grafanaVectorAPI) CollectionExists(ctx context.Context, collection string) (bool, error) {
-	resp, err := g.client.Get(g.url + "/v1/collections/" + collection)
+	req, err := http.NewRequest("GET", g.url+"/v1/collections/"+collection, nil)
+	if err != nil {
+		return false, fmt.Errorf("get collection: %w", err)
+	}
+	g.setAuth(req)
+	resp, err := g.client.Do(req)
 	if err != nil {
 		return false, fmt.Errorf("get collection: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("get collections: %s", resp.Status)
+		return false, fmt.Errorf("get collection: %s", resp.Status)
 	}
 	return true, nil
 }
@@ -47,7 +68,14 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
-	resp, err := g.client.Post(g.url+"/v1/collections/"+collection+"/query", "application/json", bytes.NewReader(reqJSON))
+
+	req, err := http.NewRequest("POST", g.url+"/v1/collections/"+collection+"/query", bytes.NewReader(reqJSON))
+	if err != nil {
+		return nil, fmt.Errorf("get collections: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	g.setAuth(req)
+	resp, err := g.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("post collections: %w", err)
 	}
@@ -87,7 +115,12 @@ func (g *grafanaVectorAPI) Search(ctx context.Context, collection string, vector
 }
 
 func (g *grafanaVectorAPI) Health(ctx context.Context) error {
-	resp, err := g.client.Get(g.url + "/healthz")
+	req, err := http.NewRequest("GET", g.url+"/healthz", nil)
+	if err != nil {
+		return fmt.Errorf("get health: %w", err)
+	}
+	g.setAuth(req)
+	resp, err := g.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("get health: %w", err)
 	}
@@ -97,9 +130,14 @@ func (g *grafanaVectorAPI) Health(ctx context.Context) error {
 	return nil
 }
 
-func newGrafanaVectorAPI(s grafanaVectorAPISettings, secrets map[string]string) ReadVectorStore {
+func newGrafanaVectorAPI(s GrafanaVectorAPISettings, secrets map[string]string) (ReadVectorStore, error) {
 	return &grafanaVectorAPI{
-		client: &http.Client{},
-		url:    s.URL,
-	}
+		client:   &http.Client{},
+		url:      s.URL,
+		authType: VectorStoreAuthType(s.AuthType),
+		authSettings: grafanaVectorAPIAuthSettings{
+			BasicAuthUser:     s.BasicAuthUser,
+			BasicAuthPassword: secrets["vectorStoreBasicAuthPassword"],
+		},
+	}, nil
 }

@@ -18,6 +18,8 @@ export interface AppPluginSettings {
 
 export type Secrets = {
   openAIKey?: string;
+  vectorStoreBasicAuthPassword?: string;
+  vectorEmbedderBasicAuthPassword?: string;
 }
 
 export type SecretsSet = {
@@ -27,6 +29,8 @@ export type SecretsSet = {
 function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
   return {
     openAIKey: secureJsonFields.openAIKey ?? false,
+    vectorEmbedderBasicAuthPassword: secureJsonFields.vectorEmbedderBasicAuthPassword ?? false,
+    vectorStoreBasicAuthPassword: secureJsonFields.vectorStoreBasicAuthPassword ?? false,
   };
 }
 
@@ -69,9 +73,21 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       />
 
       <VectorConfig
-        settings={settings.vector}
+        settings={settings}
+        secrets={newSecrets}
+        secretsSet={configuredSecrets}
         onChange={(vector) => {
           setSettings({ ...settings, vector });
+          setUpdated(true);
+        }}
+        onChangeSecrets={secrets => {
+          // Update the new secrets.
+          setNewSecrets(secrets);
+          // Mark each secret as not configured. This will cause it to be included
+          // in the request body when the user clicks "Save settings".
+          for (const key of Object.keys(secrets)) {
+            setConfiguredSecrets({ ...configuredSecrets, [key]: false });
+          }
           setUpdated(true);
         }}
       />
@@ -121,6 +137,8 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   marginTop: css`
     margin-top: ${theme.spacing(3)};
   `,
+  inlineFieldWidth: 15,
+  inlineFieldInputWidth: 40,
 });
 
 export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
