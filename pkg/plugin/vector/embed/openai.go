@@ -33,6 +33,7 @@ type openAIClient struct {
 	client       *http.Client
 	url          string
 	authType     string
+	providerType EmbedderType
 	authSettings openAIEmbeddingsAuthSettings
 }
 
@@ -57,6 +58,17 @@ func (o *openAIClient) setAuth(req *http.Request) {
 		req.Header.Add("Authorization", "Bearer "+o.authSettings.OpenAIKey)
 	}
 
+}
+
+func (o *openAIClient) getProviderString() string {
+	switch o.providerType {
+	case EmbedderOpenAI:
+		return "OpenAI"
+	case EmbedderGrafanaVectorAPI:
+		return "Grafana Vector API"
+	default:
+		return "Unknown"
+	}
 }
 
 func (o *openAIClient) Embed(ctx context.Context, model string, payload string) ([]float32, error) {
@@ -92,7 +104,7 @@ func (o *openAIClient) Embed(ctx context.Context, model string, payload string) 
 		}
 	}()
 	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("got non-2xx status from OpenAI: %s", resp.Status)
+		return nil, fmt.Errorf("got non-2xx status from %s: %s", o.getProviderString(), resp.Status)
 	}
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024*2))
 	if err != nil {
@@ -120,18 +132,20 @@ func newOpenAIEmbedder(settings Settings, secrets map[string]string) Embedder {
 	switch settings.Type {
 	case EmbedderOpenAI:
 		impl = openAIClient{
-			client:   &http.Client{},
-			url:      settings.OpenAI.URL,
-			authType: string(settings.OpenAI.AuthType),
+			client:       &http.Client{},
+			url:          settings.OpenAI.URL,
+			authType:     string(settings.OpenAI.AuthType),
+			providerType: settings.Type,
 			authSettings: openAIEmbeddingsAuthSettings{
 				OpenAIKey: secrets["openAIKey"],
 			},
 		}
 	case EmbedderGrafanaVectorAPI:
 		impl = openAIClient{
-			client:   &http.Client{},
-			url:      settings.GrafanaVectorAPISettings.URL,
-			authType: string(settings.GrafanaVectorAPISettings.AuthType),
+			client:       &http.Client{},
+			url:          settings.GrafanaVectorAPISettings.URL,
+			authType:     string(settings.GrafanaVectorAPISettings.AuthType),
+			providerType: settings.Type,
 			authSettings: openAIEmbeddingsAuthSettings{
 				BasicAuthUser:     settings.GrafanaVectorAPISettings.BasicAuthUser,
 				BasicAuthPassword: secrets["vectorEmbedderBasicAuthPassword"],
