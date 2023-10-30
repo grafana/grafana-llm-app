@@ -43,7 +43,7 @@ func TestEmbeddingSettingLogic(t *testing.T) {
 					"vector": {
 						"embed": {
 							"type": "grafana/vectorapi",
-							"openai": {
+							"grafanaVectorAPI": {
 								"url": "https://api.example.com",
 								"authType": "no-auth"
 							}
@@ -62,7 +62,7 @@ func TestEmbeddingSettingLogic(t *testing.T) {
 					"vector": {
 						"embed": {
 							"type": "grafana/vectorapi",
-							"openai": {
+							"grafanaVectorAPI": {
 								"url": "https://api.example.com",
 								"authType": "basic-auth",
 								"basicAuthUser": "test"
@@ -80,18 +80,29 @@ func TestEmbeddingSettingLogic(t *testing.T) {
 			settings := loadSettings(tc.settings)
 
 			// Assert that the settings are loaded correctly
-			if settings.Vector.Embed.OpenAI.URL != tc.embeddingURL {
-				t.Errorf("expected embedding URL to be %s, got %s", tc.embeddingURL, settings.Vector.Embed.OpenAI.URL)
-			}
+			if settings.Vector.Embed.Type == "openai" {
+				if settings.Vector.Embed.OpenAI.URL != tc.embeddingURL {
+					t.Errorf("expected embedding URL to be %s, got %s", tc.embeddingURL, settings.Vector.Embed.OpenAI.URL)
+				}
 
-			if settings.Vector.Embed.OpenAI.AuthType != tc.embeddingAuthType {
-				t.Errorf("expected embedding auth type to be %s, got %s", tc.embeddingAuthType, settings.Vector.Embed.OpenAI.AuthType)
-			}
+				if settings.Vector.Embed.OpenAI.AuthType != tc.embeddingAuthType {
+					t.Errorf("expected embedding auth type to be %s, got %s", tc.embeddingAuthType, settings.Vector.Embed.OpenAI.AuthType)
+				}
+			} else if settings.Vector.Embed.Type == "grafana/vectorapi" {
+				if settings.Vector.Embed.GrafanaVectorAPISettings.URL != tc.embeddingURL {
+					t.Errorf("expected embedding URL to be %s, got %s", tc.embeddingURL, settings.Vector.Embed.GrafanaVectorAPISettings.URL)
+				}
 
-			if settings.Vector.Embed.OpenAI.BasicAuthUser != tc.embeddingBasicAuthUser {
-				t.Errorf("expected embedding basic auth user to be %s, got %s", tc.embeddingBasicAuthUser, settings.Vector.Embed.OpenAI.BasicAuthUser)
-			}
+				if settings.Vector.Embed.GrafanaVectorAPISettings.AuthType != tc.embeddingAuthType {
+					t.Errorf("expected embedding auth type to be %s, got %s", tc.embeddingAuthType, settings.Vector.Embed.GrafanaVectorAPISettings.AuthType)
+				}
 
+				if settings.Vector.Embed.GrafanaVectorAPISettings.BasicAuthUser != tc.embeddingBasicAuthUser {
+					t.Errorf("expected embedding basic auth user to be %s, got %s", tc.embeddingBasicAuthUser, settings.Vector.Embed.GrafanaVectorAPISettings.BasicAuthUser)
+				}
+			} else {
+				t.Errorf("expected embedding type to be openai or grafana/vectorapi, got %s", settings.Vector.Embed.Type)
+			}
 		})
 	}
 }

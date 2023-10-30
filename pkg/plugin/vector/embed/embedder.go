@@ -21,7 +21,8 @@ type Embedder interface {
 type Settings struct {
 	Type EmbedderType `json:"type"`
 
-	OpenAI openAISettings `json:"openai"`
+	OpenAI                   openAISettings           `json:"openai"`
+	GrafanaVectorAPISettings grafanaVectorAPISettings `json:"grafanaVectorAPI"`
 }
 
 // NewEmbedder creates a new embedder.
@@ -29,5 +30,5 @@ func NewEmbedder(s Settings, secrets map[string]string) (Embedder, error) {
 	log.DefaultLogger.Debug("Creating OpenAI embedder")
 	// Grafana Vector API embedder is OpenAI compatible so we can reuse the client
 	// The EmbedderType is used in settings.load_settings to duplicate the correct OpenAI settings
-	return newOpenAIEmbedder(s.OpenAI, secrets), nil
+	return newOpenAIEmbedder(s, secrets), nil
 }
