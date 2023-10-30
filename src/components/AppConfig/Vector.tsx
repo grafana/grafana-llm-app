@@ -51,6 +51,9 @@ export interface Props<T> {
   onChange: (settings: T) => void;
 }
 
+const OPENAI_DEFAULT_MODEL = 'text-embedding-ada-002';
+const VECTORAPI_DEFAULT_MODEL = 'BAAI/bge-small-en-v1.5';
+
 export function VectorConfig({ settings, secrets, secretsSet, onChange, onChangeSecrets }: {
   settings?: AppPluginSettings;
   secrets: Secrets;
@@ -58,7 +61,18 @@ export function VectorConfig({ settings, secrets, secretsSet, onChange, onChange
   onChange: (settings: VectorSettings) => void;
   onChangeSecrets: (secrets: Secrets) => void;
 }) {
-  const modelValues = settings?.vector?.embed?.type === "openai" ? "text-embedding-ada-002" : settings?.vector?.embed?.type === "grafana/vectorapi" ? (settings?.vector?.model ?? "BAAI/bge-small-en-v1.5"): ""
+  // update the model value if the embedder type changes
+  React.useEffect(() => {
+    if (settings?.vector?.embed?.type === 'openai' && settings?.vector?.model !== OPENAI_DEFAULT_MODEL) {
+      onChange({ ...settings.vector, model: OPENAI_DEFAULT_MODEL });
+    } else if (
+      settings?.vector?.embed?.type === 'grafana/vectorapi' &&
+      (settings?.vector?.model === undefined || settings?.vector?.model === OPENAI_DEFAULT_MODEL)
+    ) {
+      onChange({ ...settings.vector, model: VECTORAPI_DEFAULT_MODEL });
+    }
+  }, [settings?.vector, settings?.vector?.embed?.type]);
+
   return (
     <FieldSet label="Vector Settings">
 
@@ -78,9 +92,9 @@ export function VectorConfig({ settings, secrets, secretsSet, onChange, onChange
               width={60}
               name="model"
               data-testid={testIds.appConfig.model}
-              value={modelValues}
-              placeholder={""}
-              onChange={e => onChange({ ...settings.vector, model: e.currentTarget.value })}
+              value={settings?.vector?.model}
+              placeholder={settings?.vector?.model}
+              onChange={(e) => onChange({ ...settings.vector, model: e.currentTarget.value })}
             />
           </Field>
 
