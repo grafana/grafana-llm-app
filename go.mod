@@ -1,6 +1,8 @@
 module github.com/grafana/grafana-llm-app
 
-go 1.19
+go 1.21
+
+toolchain go1.21.1
 
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.188.3
