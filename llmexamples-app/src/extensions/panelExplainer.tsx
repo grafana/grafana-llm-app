@@ -5,7 +5,7 @@ import { getBackendSrv } from '@grafana/runtime';
 import { useAsync } from 'react-use';
 import { Spinner } from '@grafana/ui';
 import { Dashboard } from '@grafana/schema';
-import { llms } from '@grafana/experimental';
+import { llms } from '@sandersaarond/llm';
 
 interface ExplainPanelModalProps {
   context: PluginExtensionPanelContext,

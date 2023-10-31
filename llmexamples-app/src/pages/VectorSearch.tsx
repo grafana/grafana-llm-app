@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAsync } from 'react-use';
 
-import { llms } from '@grafana/experimental';
+import { llms } from '@sandersaarond/llm';
 import { PluginPage } from "@grafana/runtime";
 import { Button, Input, Spinner } from "@grafana/ui";
 
