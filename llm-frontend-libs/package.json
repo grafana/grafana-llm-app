@@ -1,7 +1,7 @@
 {
-  "name": "@grafana/experimental",
-  "version": "1.7.4",
-  "description": "Experimental Grafana components and APIs",
+  "name": "@sandersaarond/llm",
+  "version": "0.5.0",
+  "description": "Grafana components for interacting with LLM plugin",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "module": "./dist/esm/index.js",
@@ -22,7 +22,7 @@
     "./CHANGELOG.md",
     "LICENSE"
   ],
-  "repository": "github:grafana/grafana-experimental",
+  "repository": "git+https://github.com/grafana/grafana-llm-app.git",
   "author": "Grafana Labs <team@grafana.com> (https://grafana.com)",
   "license": "Apache-2.0",
   "peerDependencies": {

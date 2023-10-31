@@ -60,7 +60,7 @@
   "dependencies": {
     "@emotion/css": "^11.1.3",
     "@grafana/data": "^10.0.0",
-    "@grafana/experimental": "file:../llm-frontend-libs",
+    "@sandersaarond/llm": "file:../llm-frontend-libs",
     "@grafana/runtime": "^10.0.0",
     "@grafana/ui": "^10.0.0",
     "react": "17.0.2",
