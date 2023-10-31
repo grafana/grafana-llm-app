@@ -5,7 +5,7 @@ import { getBackendSrv } from '@grafana/runtime';
 import { useAsync } from 'react-use';
 import { Spinner } from '@grafana/ui';
 import { Dashboard } from '@grafana/schema';
-import { llms } from '@sandersaarond/llm';
+import { openai } from '@sandersaarond/llm';
 
 interface ExplainPanelModalProps {
   context: PluginExtensionPanelContext,
@@ -20,7 +20,7 @@ const ExplainPanelModal = ({ context }: ExplainPanelModalProps) => {
 
     // Check if the LLM plugin is enabled and configured.
     // If not, we won't be able to make requests, so return early.
-    const enabled = await llms.openai.enabled();
+    const enabled = await openai.enabled();
     if (!enabled) {
       return { enabled };
     }
@@ -36,7 +36,7 @@ const ExplainPanelModal = ({ context }: ExplainPanelModalProps) => {
     // of the data, somehow.
     const userPrompt = JSON.stringify(panelJSON, null, 2);
     // Stream the completions. Each element is the next stream chunk.
-    llms.openai.streamChatCompletions({
+    openai.streamChatCompletions({
       model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: panelExplainerPrompt },
@@ -44,7 +44,7 @@ const ExplainPanelModal = ({ context }: ExplainPanelModalProps) => {
       ]
     })
       // Accumulate the stream chunks into a single string.
-      .pipe(llms.openai.accumulateContent())
+      .pipe(openai.accumulateContent())
       // Subscribe to the stream and update the state for each returned value.
       .subscribe(setStreamState);
     return { enabled: true };

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAsync } from 'react-use';
 
-import { llms } from '@sandersaarond/llm';
+import { vector } from '@sandersaarond/llm';
 import { PluginPage } from "@grafana/runtime";
 import { Button, Input, Spinner } from "@grafana/ui";
 
@@ -23,7 +23,7 @@ export function VectorSearch(): JSX.Element {
 
   const { loading, error, value } = useAsync(async () => {
     const value = {
-      enabled: await llms.vector.enabled(),
+      enabled: await vector.enabled(),
     };
     if (!value.enabled) {
       return value;
@@ -32,7 +32,7 @@ export function VectorSearch(): JSX.Element {
       return value;
     }
 
-    const results = await llms.vector.search<DashboardSearchResult>({
+    const results = await vector.search<DashboardSearchResult>({
       query: searchTerm,
       collection: dashboardsCollection,
       topK: 5,

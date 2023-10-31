@@ -169,7 +169,7 @@ const MyComponent = (): JSX.Element => {
   const [reply, setReply] = useState('');
 
   const { loading, error } = useAsync(async () => {
-    const enabled = await llms.openai.enabled();
+    const enabled = await openai.enabled();
     if (!enabled) {
       return false;
     }
@@ -177,7 +177,7 @@ const MyComponent = (): JSX.Element => {
       return;
     }
     // Stream the completions. Each element is the next stream chunk.
-    const stream = llms.openai.streamChatCompletions({
+    const stream = openai.streamChatCompletions({
       model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: 'You are a cynical assistant.' },
