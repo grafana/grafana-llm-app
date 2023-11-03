@@ -50,7 +50,8 @@ func NewOpenAI(grafanaURL, grafanaAPIKey string) OpenAI {
 // NewOpenAIWithClient creates a new OpenAI client talking to the Grafana LLM app installed
 // on the given Grafana instance, using the given HTTP client.
 func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAI {
-	url := strings.TrimRight(grafanaURL, "/") + appResourcesPrefix + "/openai/v1"
+	grafanaURL = strings.TrimRight(grafanaURL, "/")
+	url := grafanaURL + appResourcesPrefix + "/openai/v1"
 	cfg := openai.DefaultConfig(grafanaAPIKey)
 	cfg.BaseURL = url
 	cfg.HTTPClient = httpClient
