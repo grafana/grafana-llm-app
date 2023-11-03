@@ -305,8 +305,13 @@ To use the example app in conjunction with the LLM plugin:
 3. Follow the instructions in the llm example app to run the app
 
 ## Release process
+
+### Plugin Release
 - Bump version in package.json (e.g., 0.2.0 to 0.2.1)
 - Add notes to changelog describing changes since last release
 - Merge PR for a branch containing those changes into main
 - Go to drone [here](https://drone.grafana.net/grafana/grafana-llm-app) and identify the build corresponding to the merge into main
 - Promote to target 'publish'
+
+### llmclient Release
+- Push a new tag to the repo (e.g., `git tag -a llmclient/v0.X.X -m "llmclient v0.X.X release"`)
