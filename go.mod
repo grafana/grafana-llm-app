@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
-	github.com/grafana/grafana-plugin-sdk-go v0.188.3
+	github.com/grafana/grafana-plugin-sdk-go v0.189.0
 	github.com/launchdarkly/eventsource v1.7.1
 	github.com/qdrant/go-client v1.6.0
 	google.golang.org/grpc v1.59.0
