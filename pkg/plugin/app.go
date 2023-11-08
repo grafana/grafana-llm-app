@@ -31,7 +31,8 @@ type App struct {
 
 	healthCheckClient healthCheckClient
 	healthCheckMutex  sync.Mutex
-	healthCheckResult *backend.CheckHealthResult
+	healthOpenAI      *openAIHealthDetails
+	healthVector      *vectorHealthDetails
 	settings          Settings
 }
 
