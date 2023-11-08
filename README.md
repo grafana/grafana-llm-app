@@ -210,7 +210,7 @@ const MyComponent = (): JSX.Element => {
 
 The `messages` parameter is the same as OpenAI's concept of [`messages`](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
 
-The `.subscribe` method can take [a few different forms](https://github.com/ReactiveX/rxjs/blob/e47129bd77a9b6f897550d3fcffb9d53e98b03a9/packages/rxjs/src/internal/Observable.ts#L23). The "callback form" shown here is the more concise form. Another form allows more specific callbacks based on conditions, e.g. `error` or `complete` which can be useful if you want to do specific UI actions like showing a loading indiciator.
+The `.subscribe` method can take [a few different forms](https://github.com/ReactiveX/rxjs/blob/e47129bd77a9b6f897550d3fcffb9d53e98b03a9/packages/rxjs/src/internal/Observable.ts#L23). The "callback form" shown here is the more concise form. Another form allows more specific callbacks based on conditions, e.g. `error` or `complete` which can be useful if you want to do specific UI actions like showing a loading indicator.
 
 ## Developing this plugin
 
