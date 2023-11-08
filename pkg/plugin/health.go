@@ -79,7 +79,13 @@ func (a *App) testOpenAIModel(ctx context.Context, url *url.URL, model string) e
 	return nil
 }
 
+// openAIHealth checks the health of the OpenAI configuration and caches the
+// result if successful. The caller must lock a.healthCheckMutex.
 func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
+	if a.healthOpenAI != nil {
+		return *a.healthOpenAI, nil
+	}
+
 	d := openAIHealthDetails{
 		OK:         true,
 		Configured: a.settings.OpenAI.apiKey != "",
@@ -114,9 +120,16 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 		d.OK = false
 		d.Error = "No models are working"
 	}
+
+	// Only cache result if openAI is ok to use.
+	if d.OK {
+		a.healthOpenAI = &d
+	}
 	return d, nil
 }
 
+// testVectorService checks the health of VectorAPI and caches the result if
+// successful. The caller must lock a.healthCheckMutex.
 func (a *App) testVectorService(ctx context.Context) error {
 	if a.vectorService == nil {
 		return fmt.Errorf("vector service not configured")
@@ -129,6 +142,10 @@ func (a *App) testVectorService(ctx context.Context) error {
 }
 
 func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
+	if a.healthVector != nil {
+		return *a.healthVector
+	}
+
 	d := vectorHealthDetails{
 		Enabled: a.settings.Vector.Enabled,
 		OK:      true,
@@ -142,6 +159,11 @@ func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 		d.OK = false
 		d.Error = err.Error()
 	}
+
+	// Only cache if the health check succeeded.
+	if d.OK {
+		a.healthVector = &d
+	}
 	return d
 }
 
@@ -150,15 +172,18 @@ func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
-	if a.healthCheckResult != nil {
-		return a.healthCheckResult, nil
-	}
+
 	openAI, err := a.openAIHealth(ctx)
 	if err != nil {
 		openAI.OK = false
 		openAI.Error = err.Error()
 	}
+
 	vector := a.vectorHealth(ctx)
+	if vector.Error == "" {
+		a.healthVector = &vector
+	}
+
 	details := healthCheckDetails{
 		OpenAI:  openAI,
 		Vector:  vector,
@@ -171,9 +196,8 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 			Message: "failed to marshal details",
 		}, nil
 	}
-	a.healthCheckResult = &backend.CheckHealthResult{
+	return &backend.CheckHealthResult{
 		Status:      backend.HealthStatusOk,
 		JSONDetails: body,
-	}
-	return a.healthCheckResult, nil
+	}, nil
 }
