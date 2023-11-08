@@ -156,7 +156,6 @@ Then in your components you can use the `llm` object from `@grafana/experimental
 ```typescript
 import React, { useState } from 'react';
 import { useAsync } from 'react-use';
-import { scan } from 'rxjs/operators';
 
 import { llms } from '@grafana/experimental';
 import { PluginPage } from '@grafana/runtime';
@@ -177,16 +176,15 @@ const MyComponent = (): JSX.Element => {
       return;
     }
     // Stream the completions. Each element is the next stream chunk.
-    const stream = llms.openai.streamChatCompletions({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a cynical assistant.' },
-        { role: 'user', content: message },
-      ],
-    }).pipe(
-      // Accumulate the stream chunks into a single string.
-      scan((acc, delta) => acc + delta, '')
-    );
+    const stream = llms.openai
+      .streamChatCompletions({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a cynical assistant.' },
+          { role: 'user', content: message },
+        ],
+      })
+      .pipe(llms.openai.accumulateContent());
     // Subscribe to the stream and update the state for each returned value.
     return stream.subscribe(setReply);
   }, [message]);
@@ -198,19 +196,21 @@ const MyComponent = (): JSX.Element => {
 
   return (
     <div>
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.currentTarget.value)}
-        placeholder="Enter a message"
-      />
+      <Input value={input} onChange={(e) => setInput(e.currentTarget.value)} placeholder="Enter a message" />
       <br />
-      <Button type="submit" onClick={() => setMessage(input)}>Submit</Button>
+      <Button type="submit" onClick={() => setMessage(input)}>
+        Submit
+      </Button>
       <br />
       <div>{loading ? <Spinner /> : reply}</div>
     </div>
   );
-}
+};
 ```
+
+The `messages` parameter is the same as OpenAI's concept of [`messages`](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
+
+The `.subscribe` method can take [a few different forms](https://github.com/ReactiveX/rxjs/blob/e47129bd77a9b6f897550d3fcffb9d53e98b03a9/packages/rxjs/src/internal/Observable.ts#L23). The "callback form" shown here is the more concise form. Another form allows more specific callbacks based on conditions, e.g. `error` or `complete` which can be useful if you want to do specific UI actions like showing a loading indicator.
 
 ## Developing this plugin
 
