@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.1
+
+* Fix issue where temporary errors were cached, causing /health to fail permanently.
+
 ## 0.5.0
 
 * Add basic auth to VectorAPI 
