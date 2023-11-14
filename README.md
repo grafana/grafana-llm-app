@@ -110,16 +110,23 @@ The vector services of the plugin allow certain AI-based features to perform sem
     - `authType` - the type of authentication to use, either `no-auth` or `basic-auth`.
     - `basicAuthUser` - the username to use if `authType` is `basic-auth`.
 
-**Qdrant example**
+#### Note
+- Currently Azure OpenAI is not supported as an embedder.
+- Grafana Vector API used in `embedding` and `store` can be optionally different
+
+**Qdrant Store + OpenAI Embedder example**
 
 ```yaml
 apiVersion: 1
 
 apps:
-  - type: 'grafana-llm-app'
-    disabled: false
+  - type: grafana-llm-app
     jsonData:
-      vector: 
+      openAI:
+        provider: openai
+        url: https://api.openai.com
+        organizationId: $OPENAI_ORGANIZATION_ID
+      vector:
         enabled: true
         model: text-embedding-ada-002
         embed:
@@ -127,12 +134,50 @@ apps:
         store:
           type: qdrant
           qdrant:
-            address: localhost:6334
-            secure: true
+            address: qdrant:6334
+
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
-      vectorStoreBasicAuthPassword: $STORE_PASSWORD
-      vectorEmbedderBasicAuthPassword: $EMBEDDER_PASSWORD 
+```
+
+**Grafana VectorAPI Store + Grafana VectorAPI Embedder example**
+
+```yaml
+apps:
+  - type: grafana-llm-app
+    jsonData:
+      openAI:
+        provider: openai
+        url: https://api.openai.com
+        organizationId: $OPENAI_ORGANIZATION_ID
+      # openAI:
+        # provider: azure
+        # url: https://<resource>.openai.azure.com
+        # azureModelMapping:
+        #   - ["gpt-3.5-turbo", "gpt-35-turbo"]
+      vector:
+        enabled: true
+        model: BAAI/bge-small-en-v1.5
+        embed:
+          type: grafana/vectorapi
+          grafanaVectorAPI:
+            url: vectorapi:8889
+            authType: no-auth
+            # authType: basic-auth
+            # basicAuthUser: <user>
+        store:
+          type: grafana/vectorapi
+          grafanaVectorAPI:
+            url: vectorapi:8889
+            authType: no-auth
+            # authType: basic-auth
+            # basicAuthUser: <user>
+
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
+      # openAIKey: $AZURE_OPENAI_API_KEY
+      # vectorEmbedderBasicAuthPassword: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
+      # vectorStoreBasicAuthPassword: $VECTOR_STORE_BASIC_AUTH_PASSWORD
 ```
 
 ## Adding LLM features to your plugin or Grafana core
