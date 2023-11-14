@@ -96,8 +96,6 @@ The vector services of the plugin allow certain AI-based features to perform sem
   - `model` - the name of the model to use to calculate embeddings for searches. This must match the model used when storing the data, or the embeddings will be meaningless.
 - 'embedding' vector settings (`embed`):
   - `type` - the type of embedding service, either `openai` or `grafana/vectorapi` to use Grafana's own vector API.
-  - `openai`, if `type` is `openai`, with keys:
-    - `url` - the URL to the OpenAI instance.
   - `grafanaVectorAPI` - custom settings for OpenAI embeddings, with keys:
     - `url` - the URL to the OpenAI instance.
     - `authType` - the type of authentication to use, either `no-auth` or `basic-auth`.
