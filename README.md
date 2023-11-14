@@ -95,13 +95,13 @@ The vector services of the plugin allow certain AI-based features to perform sem
   - `enabled` - whether to enable or disable vector services overall
   - `model` - the name of the model to use to calculate embeddings for searches. This must match the model used when storing the data, or the embeddings will be meaningless.
 - 'embedding' vector settings (`embed`):
-  - `type` - the type of embedding service, either `openai` or `grafana/vectorapi` to use Grafana's own vector API.
+  - `type` - the type of embedding service, either `openai` or `grafana/vectorapi` to use [Grafana's own vector API](https://github.com/grafana/vectorapi).
   - `grafanaVectorAPI`, if `type` is `grafana/vectorapi`, with keys:
     - `url` - the URL of the Grafana VectorAPI instance.
     - `authType` - the type of authentication to use, either `no-auth` or `basic-auth`.
     - `basicAuthUser` - the username to use if `authType` is `basic-auth`.
 - 'store' vector settings (`store`):
-  - `type` - the type of vector store to connect to, either `qdrant` to use [Qdrant](https://qdrant.tech) or `grafana/vectorapi` to use Grafana's own vector API.
+  - `type` - the type of vector store to connect to, either `qdrant` to use [Qdrant](https://qdrant.tech) or `grafana/vectorapi` to use [Grafana's own vector API](https://github.com/grafana/vectorapi).
   - `qdrant`, if `type` is `qdrant`, with keys:
     - `address` - the address of the Qdrant server. Note that this uses a gRPC connection.
     - `secure` - boolean, whether to use a secure connection. If you're using a secure connection you can set the `qdrantApiKey` field in `secureJsonData` to provide an API key with each request.
