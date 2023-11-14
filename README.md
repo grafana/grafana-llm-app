@@ -114,7 +114,7 @@ The vector services of the plugin allow certain AI-based features to perform sem
 - Currently Azure OpenAI is not supported as an embedder.
 - Grafana Vector API used in `embedding` and `store` can be optionally different
 
-**Qdrant Store + OpenAI Embedder example**
+**OpenAI Embedder + Qdrant Store example**
 
 ```yaml
 apiVersion: 1
@@ -139,6 +139,8 @@ apps:
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
 ```
+
+- Note: openai embed type uses the setting from `openAI` automatically
 
 **Grafana VectorAPI Store + Grafana VectorAPI Embedder example**
 
