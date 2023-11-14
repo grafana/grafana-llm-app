@@ -3,6 +3,15 @@ apiVersion: 1
 apps:
   - type: grafana-llm-app
     jsonData:
+      openAI:
+        provider: openai
+        url: https://api.openai.com
+        organizationId: $OPENAI_ORGANIZATION_ID
+      # openAI:
+        # provider: azure
+        # url: https://<resource>.openai.azure.com
+        # azureModelMapping:
+        #   - ["gpt-3.5-turbo", "gpt-35-turbo"]
       vector:
         enabled: true
         model: text-embedding-ada-002
@@ -12,11 +21,6 @@ apps:
           type: qdrant
           qdrant:
             address: qdrant:6334
-      # openAI:
-        # provider: azure
-        # url: https://<resource>.openai.azure.com
-        # azureModelMapping:
-        #   - ["gpt-3.5-turbo", "gpt-35-turbo"]
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
