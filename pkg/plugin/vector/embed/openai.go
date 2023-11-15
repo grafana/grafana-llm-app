@@ -13,8 +13,8 @@ import (
 )
 
 type openAISettings struct {
-	URL      string `json:"url"`
-	AuthType string `json:"authType"`
+	URL      string
+	AuthType string
 }
 
 type grafanaVectorAPISettings struct {

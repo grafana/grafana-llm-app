@@ -21,7 +21,7 @@ type Embedder interface {
 type Settings struct {
 	Type EmbedderType `json:"type"`
 
-	OpenAI                   openAISettings           `json:"openai"`
+	OpenAI                   openAISettings
 	GrafanaVectorAPISettings grafanaVectorAPISettings `json:"grafanaVectorAPI"`
 }
 
