@@ -12,26 +12,44 @@ services:
       GF_LOG_LEVEL: debug
       OPENAI_ORGANIZATION_ID: $OPENAI_ORGANIZATION_ID
       OPENAI_API_KEY: $OPENAI_API_KEY
+      VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
+      VECTOR_STORE_BASIC_AUTH_PASSWORD: $VECTOR_STORE_BASIC_AUTH_PASSWORD
     ports:
       - 3000:3000/tcp
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-llm-app
-      - ./provisioning:/etc/grafana/provisioning
+      # For grafana/vectorapi embedder or store
+      - ./provisioning/plugins/grafana-vector-api/:/etc/grafana/provisioning/plugins/
+      # For openai embedder and qdrant store
+      # - ./provisioning/plugins/openai-qdrant/:/etc/grafana/provisioning/plugins/
 
-  qdrant:
-    image: qdrant/qdrant
-    volumes:
-      - qdrant-storage:/qdrant/storage
-
-  # vectorapi:
-  #   image: vectorapi:latest
-  #   environment:
-  #     PORT: 8889
-  #   ports:
-  #     - 8889:8889
+  # For openai embedder and qdrant store
+  # qdrant:
+  #   image: qdrant/qdrant
   #   volumes:
-  #     - sentence-transformers:/app/.sentence_transfomers
+  #     - qdrant-storage:/qdrant/storage
+
+  # For grafana/vectorapi embedder or store
+  db:
+    image: ankane/pgvector:v0.5.1
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+
+  # For grafana/vectorapi embedder or store
+  vectorapi:
+    image: grafana/vectorapi
+    environment:
+      PORT: 8889
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - 8889:8889
+    volumes:
+      - sentence-transformers:/app/.sentence_transfomers
 
 volumes:
-  # sentence-transformers:
-  qdrant-storage:
+  sentence-transformers:
+  # For grafana/vectorapi embedder or store
+  # qdrant-storage:

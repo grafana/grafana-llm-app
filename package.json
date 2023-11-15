@@ -70,5 +70,5 @@
     "rxjs": "7.8.1",
     "tslib": "2.6.2"
   },
-  "packageManager": "npm@8.19.3"
+  "packageManager": "yarn@1.22.10"
 }
