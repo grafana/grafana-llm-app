@@ -89,58 +89,32 @@ where:
 
 ### Provisioning vector services
 
-The vector services of the plugin allow certain AI-based features to perform semantic search to improve the responses given by LLMs. Configuration is in roughly three parts:
+The vector services of the plugin allow some AI-based features (initially, the PromQL query advisor) to use semantic search to send better context to LLMs (and improve responses). Configuration is in roughly three parts:
 
 - 'global' vector settings:
   - `enabled` - whether to enable or disable vector services overall
   - `model` - the name of the model to use to calculate embeddings for searches. This must match the model used when storing the data, or the embeddings will be meaningless.
 - 'embedding' vector settings (`embed`):
-  - `type` - the type of embedding service, either `openai` or `grafana/vectorapi` to use [Grafana's own vector API](https://github.com/grafana/vectorapi).
+  - `type` - the type of embedding service, either `openai` or `grafana/vectorapi` to use [Grafana's own vector API](https://github.com/grafana/vectorapi) (recommended if you're just starting out).
   - `grafanaVectorAPI`, if `type` is `grafana/vectorapi`, with keys:
     - `url` - the URL of the Grafana VectorAPI instance.
     - `authType` - the type of authentication to use, either `no-auth` or `basic-auth`.
     - `basicAuthUser` - the username to use if `authType` is `basic-auth`.
 - 'store' vector settings (`store`):
-  - `type` - the type of vector store to connect to, either `qdrant` to use [Qdrant](https://qdrant.tech) or `grafana/vectorapi` to use [Grafana's own vector API](https://github.com/grafana/vectorapi).
-  - `qdrant`, if `type` is `qdrant`, with keys:
-    - `address` - the address of the Qdrant server. Note that this uses a gRPC connection.
-    - `secure` - boolean, whether to use a secure connection. If you're using a secure connection you can set the `qdrantApiKey` field in `secureJsonData` to provide an API key with each request.
+  - `type` - the type of vector store to connect to. We recommend starting out with `grafana/vectorapi` to use [Grafana's own vector API](https://github.com/grafana/vectorapi) for a quick start. We also support `qdrant` for [Qdrant](https://qdrant.tech).
   - `grafanaVectorAPI`, if `type` is `grafana/vectorapi`, with keys:
     - `url` - the URL of the Grafana VectorAPI instance.
     - `authType` - the type of authentication to use, either `no-auth` or `basic-auth`.
     - `basicAuthUser` - the username to use if `authType` is `basic-auth`.
+  - `qdrant`, if `type` is `qdrant`, with keys:
+    - `address` - the address of the Qdrant server. Note that this uses a gRPC connection.
+    - `secure` - boolean, whether to use a secure connection. If you're using a secure connection you can set the `qdrantApiKey` field in `secureJsonData` to provide an API key with each request.
 
 #### Note
 - Currently Azure OpenAI is not supported as an embedder.
-- Grafana Vector API used in `embedding` and `store` can be optionally different
+- Grafana Vector API used in `embedding` and `store` can be optionally different.
+- If you want to enable the PromQL Query Advisor, set up the [Grafana vector API](https://github.com/grafana/vectorapi) - we'll walk you through loading the data you need for that feature. If you're interested in building your own vector-based features on the Grafana platform, we do also support OpenAI embeddings and Qdrant.
 
-**OpenAI Embedder + Qdrant Store example**
-
-```yaml
-apiVersion: 1
-
-apps:
-  - type: grafana-llm-app
-    jsonData:
-      openAI:
-        provider: openai
-        url: https://api.openai.com
-        organizationId: $OPENAI_ORGANIZATION_ID
-      vector:
-        enabled: true
-        model: text-embedding-ada-002
-        embed:
-          type: openai
-        store:
-          type: qdrant
-          qdrant:
-            address: qdrant:6334
-
-    secureJsonData:
-      openAIKey: $OPENAI_API_KEY
-```
-
-- Note: openai embed type uses the setting from `openAI` automatically
 
 **Grafana VectorAPI Store + Grafana VectorAPI Embedder example**
 
@@ -181,6 +155,34 @@ apps:
       # vectorEmbedderBasicAuthPassword: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
       # vectorStoreBasicAuthPassword: $VECTOR_STORE_BASIC_AUTH_PASSWORD
 ```
+
+**OpenAI Embedder + Qdrant Store example**
+
+```yaml
+apiVersion: 1
+
+apps:
+  - type: grafana-llm-app
+    jsonData:
+      openAI:
+        provider: openai
+        url: https://api.openai.com
+        organizationId: $OPENAI_ORGANIZATION_ID
+      vector:
+        enabled: true
+        model: text-embedding-ada-002
+        embed:
+          type: openai
+        store:
+          type: qdrant
+          qdrant:
+            address: qdrant:6334
+
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
+```
+
+- Note: openai embed type uses the setting from `openAI` automatically
 
 ## Adding LLM features to your plugin or Grafana core
 
