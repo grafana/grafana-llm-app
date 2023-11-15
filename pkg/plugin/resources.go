@@ -72,6 +72,18 @@ func newOpenAIProxy(settings Settings) http.Handler {
 	}
 }
 
+func newPulzeProxy(settings Settings) http.Handler {
+	director := func(req *http.Request) {
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
+		req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
+		req.Header.Add("Pulze-Labels", '"{\"org_id\": \"' + settings.OpenAI.OrganizationID + '\"}"')
+	}
+	return &openAIProxy{
+		settings: settings,
+		rp:       &httputil.ReverseProxy{Director: director},
+	}
+}
+
 // azureOpenAIProxy is a reverse proxy for Azure OpenAI API calls.
 // It modifies the request to point to the configured Azure OpenAI API, returning
 // a 400 error if the URL in settings cannot be parsed or if the request refers
@@ -217,6 +229,8 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 		mux.Handle("/openai/", newOpenAIProxy(settings))
 	case openAIProviderAzure:
 		mux.Handle("/openai/", newAzureOpenAIProxy(settings))
+	case openAIProviderPulze:
+		mux.Handle("/openai/", newPulzeProxy(settings))
 	default:
 		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
 	}

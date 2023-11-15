@@ -16,6 +16,7 @@ type openAIProvider string
 const (
 	openAIProviderOpenAI openAIProvider = "openai"
 	openAIProviderAzure  openAIProvider = "azure"
+	openAIProviderPulze  openAIProvider = "pulze"
 )
 
 type OpenAISettings struct {
@@ -55,6 +56,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 	case openAIProviderAzure:
+	case openAIProviderPulze:
 	default:
 		// Default to OpenAI if an unknown provider was specified.
 		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)

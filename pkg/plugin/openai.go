@@ -21,6 +21,9 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 		req.Header.Set("OpenAI-Organization", a.settings.OpenAI.OrganizationID)
 	case openAIProviderAzure:
 		req.Header.Set("api-key", a.settings.OpenAI.apiKey)
+	case openAIProviderPulze:
+		req.Header.set("Authorization", "Bearer "+settings.OpenAI.apiKey)
+		req.Header.set("Pulze-Labels", '"{\"org_id\": \"' + settings.OpenAI.OrganizationID + '\"}"')
 	}
 	return req, nil
 }
