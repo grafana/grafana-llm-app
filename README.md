@@ -176,7 +176,7 @@ apps:
         store:
           type: qdrant
           qdrant:
-            address: <qdrant-grpc-address> # e.g. qdrant:6334
+            address: <qdrant-grpc-address> # e.g. localhost:6334
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
