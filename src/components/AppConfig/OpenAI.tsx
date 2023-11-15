@@ -51,6 +51,7 @@ export function OpenAIConfig({
             [
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
+              { label: 'Pulze', value: 'pulze' },
             ] as Array<SelectableValue<OpenAIProvider>>
           }
           value={settings.provider ?? 'openai'}
