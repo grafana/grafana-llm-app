@@ -10,6 +10,7 @@ import { testIds } from '../testIds';
 import { OpenAIConfig, OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 import { ShowHealthCheckResult } from './HealthCheck';
+import { DevSandbox } from './DevSandbox';
 
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
@@ -51,6 +52,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
   return (
     <div data-testid={testIds.appConfig.container}>
+      {process.env.NODE_ENV === 'development' && <DevSandbox/>}
       <OpenAIConfig
         settings={settings.openAI ?? {}}
         onChange={(openAI) => {
