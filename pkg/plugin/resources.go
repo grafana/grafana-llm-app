@@ -14,12 +14,12 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-// modifyURL modifies the request URL to point to the configured OpenAI API.
-func modifyURL(openAI OpenAISettings, req *http.Request) error {
-	u, err := url.Parse(openAI.URL)
+// modifyURL modifies the request URL to point to the configured provider API.
+func modifyURL(provider ProviderSettings, req *http.Request) error {
+	u, err := url.Parse(provider.URL)
 	if err != nil {
-		log.DefaultLogger.Error("Unable to parse OpenAI URL", "err", err)
-		return fmt.Errorf("parse OpenAI URL: %w", err)
+		log.DefaultLogger.Error("Unable to parse provider URL", "err", err)
+		return fmt.Errorf("parse provider URL: %w", err)
 	}
 	req.URL.Scheme = u.Scheme
 	req.URL.Host = u.Host
@@ -38,7 +38,7 @@ type openAIProxy struct {
 }
 
 func (a *openAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := modifyURL(a.settings.OpenAI, req)
+	err := modifyURL(a.settings.Provider, req)
 	if err != nil {
 		// Attempt to write the error as JSON.
 		jd, err := json.Marshal(map[string]string{"error": err.Error()})
@@ -63,8 +63,8 @@ func (a *openAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func newOpenAIProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
-		req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
-		req.Header.Add("OpenAI-Organization", settings.OpenAI.OrganizationID)
+		req.Header.Add("Authorization", "Bearer "+settings.Provider.apiKey)
+		req.Header.Add("OpenAI-Organization", settings.Provider.OrganizationID)
 	}
 	return &openAIProxy{
 		settings: settings,
@@ -74,9 +74,9 @@ func newOpenAIProxy(settings Settings) http.Handler {
 
 func newPulzeProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
-		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
-		req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
-		req.Header.Add("Pulze-Labels", '"{\"org_id\": \"' + settings.OpenAI.OrganizationID + '\"}"')
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/pulze")
+		req.Header.Add("Authorization", "Bearer "+settings.Provider.apiKey)
+		req.Header.Add("Pulze-Labels", fmt.Sprintf(`{"org_id": "%s"}`, settings.Provider.OrganizationID))
 	}
 	return &openAIProxy{
 		settings: settings,
@@ -97,7 +97,7 @@ type azureOpenAIProxy struct {
 }
 
 func (a *azureOpenAIProxy) modifyRequest(req *http.Request) error {
-	err := modifyURL(a.settings.OpenAI, req)
+	err := modifyURL(a.settings.Provider, req)
 	if err != nil {
 		return fmt.Errorf("modify url: %w", err)
 	}
@@ -113,9 +113,9 @@ func (a *azureOpenAIProxy) modifyRequest(req *http.Request) error {
 	}
 
 	// Find the deployment for the model.
-	// Models are mapped to deployments in settings.OpenAI.AzureMapping.
+	// Models are mapped to deployments in settings.Provider.AzureMapping.
 	var deployment string = ""
-	for _, v := range a.settings.OpenAI.AzureMapping {
+	for _, v := range a.settings.Provider.AzureMapping {
 		if val, ok := requestBody["model"].(string); ok && val == v[0] {
 			deployment = v[1]
 			break
@@ -128,7 +128,7 @@ func (a *azureOpenAIProxy) modifyRequest(req *http.Request) error {
 
 	// We've got a deployment, so finish modifying the request.
 	req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/openai/v1/"))
-	req.Header.Add("api-key", a.settings.OpenAI.apiKey)
+	req.Header.Add("api-key", a.settings.Provider.apiKey)
 	req.URL.RawQuery = "api-version=2023-03-15-preview"
 
 	// Remove extra fields
@@ -224,15 +224,15 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
-	switch settings.OpenAI.Provider {
+	switch settings.Provider.Provider {
 	case openAIProviderOpenAI:
 		mux.Handle("/openai/", newOpenAIProxy(settings))
 	case openAIProviderAzure:
 		mux.Handle("/openai/", newAzureOpenAIProxy(settings))
 	case openAIProviderPulze:
-		mux.Handle("/openai/", newPulzeProxy(settings))
+		mux.Handle("/pulze/", newPulzeProxy(settings))
 	default:
-		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
+		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.Provider.Provider)
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 }

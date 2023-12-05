@@ -7,17 +7,17 @@ import { FetchResponse, getBackendSrv, HealthCheckResult } from '@grafana/runtim
 import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
-import { OpenAIConfig, OpenAISettings } from './OpenAI';
+import { ProviderConfig, ProviderSettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 import { ShowHealthCheckResult } from './HealthCheck';
 
 export interface AppPluginSettings {
-  openAI?: OpenAISettings;
+  provider?: ProviderSettings;
   vector?: VectorSettings;
 }
 
 export type Secrets = {
-  openAIKey?: string;
+  providerKey?: string;
   vectorStoreBasicAuthPassword?: string;
   vectorEmbedderBasicAuthPassword?: string;
 };
@@ -28,7 +28,7 @@ export type SecretsSet = {
 
 function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
   return {
-    openAIKey: secureJsonFields.openAIKey ?? false,
+    providerKey: secureJsonFields.providerKey ?? false,
     vectorEmbedderBasicAuthPassword: secureJsonFields.vectorEmbedderBasicAuthPassword ?? false,
     vectorStoreBasicAuthPassword: secureJsonFields.vectorStoreBasicAuthPassword ?? false,
   };
@@ -51,10 +51,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
   return (
     <div data-testid={testIds.appConfig.container}>
-      <OpenAIConfig
-        settings={settings.openAI ?? {}}
-        onChange={(openAI) => {
-          setSettings({ ...settings, openAI });
+      <ProviderConfig
+        settings={settings.provider ?? {}}
+        onChange={(provider) => {
+          setSettings({ ...settings, provider });
           setUpdated(true);
         }}
         secrets={newSecrets}

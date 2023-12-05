@@ -4,29 +4,29 @@ import { HealthCheckResult } from '@grafana/runtime';
 import { Alert, AlertVariant, VerticalGroup } from '@grafana/ui';
 
 interface HealthCheckDetails {
-  openAI: OpenAIHealthDetails | boolean;
+  provider: ProviderHealthDetails | boolean;
   vector: VectorHealthDetails | boolean;
   version: string;
 }
 
-interface OpenAIHealthDetails {
-  // Whether the minimum required OpenAI settings have been provided.
+interface ProviderHealthDetails {
+  // Whether the minimum required provider settings have been provided.
   configured: boolean;
-  // Whether we can call the OpenAI API with the provided settings.
+  // Whether we can call the provider API with the provided settings.
   ok: boolean;
-  // If set, the error returned when trying to call the OpenAI API.
+  // If set, the error returned when trying to call the provider API.
   // Will be undefined if ok is true.
   error?: string;
   // A map of model names to their health details.
-  // The health check attempts to call the OpenAI API with each
+  // The health check attempts to call the provider API with each
   // of a few models and records the result of each call here.
-  models: Record<string, OpenAIModelHealthDetails>;
+  models: Record<string, ProviderModelHealthDetails>;
 }
 
-interface OpenAIModelHealthDetails {
-  // Whether we can use this model in calls to OpenAI.
+interface ProviderModelHealthDetails {
+  // Whether we can use this model in calls to provider.
   ok: boolean;
-  // If set, the error returned when trying to call the OpenAI API.
+  // If set, the error returned when trying to call the provider API.
   // Will be undefined if ok is true.
   error?: string;
 }
@@ -42,7 +42,7 @@ interface VectorHealthDetails {
 }
 
 const isHealthCheckDetails = (obj: unknown): obj is HealthCheckDetails => {
-  return typeof obj === 'object' && obj !== null && 'openAI' in obj && 'vector' in obj && 'version' in obj;
+  return typeof obj === 'object' && obj !== null && 'provider' in obj && 'vector' in obj && 'version' in obj;
 };
 
 const alertVariants = new Set<AlertVariant>(['success', 'info', 'warning', 'error']);
@@ -61,9 +61,9 @@ const getAlertSeverity = (status: string, details: HealthCheckDetails): AlertVar
   if (!isHealthCheckDetails(details)) {
     return 'success';
   }
-  if (typeof details.openAI === 'object' && typeof details.vector === 'object') {
+  if (typeof details.provider === 'object' && typeof details.vector === 'object') {
     const vectorOk = !details.vector.enabled || details.vector.ok;
-    return details.openAI.ok && vectorOk ? 'success' : 'warning';
+    return details.provider.ok && vectorOk ? 'success' : 'warning';
   }
   return severity;
 };
@@ -79,33 +79,45 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
   }
 
   severity = getAlertSeverity(props.status ?? 'error', props.details);
-  const showOpenAI =
-    typeof props.details.openAI === 'boolean' ||
-    (typeof props.details.openAI === 'object' && props.details.openAI.configured);
+  const showProvider =
+  typeof props.details.provider === 'boolean' ||
+  (typeof props.details.provider === 'object' && (props.details.provider.configured || !props.details.provider.ok));
   const showVector =
     typeof props.details.vector === 'boolean' ||
     (typeof props.details.vector === 'object' && props.details.vector.enabled);
   return (
     <VerticalGroup>
-      {showOpenAI && <ShowOpenAIHealth openAI={props.details.openAI} />}
+      {showProvider && <ShowProviderHealth provider={props.details.provider} />}
       {showVector && <ShowVectorHealth vector={props.details.vector} />}
     </VerticalGroup>
   );
 }
 
-function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean }) {
-  if (typeof openAI === 'boolean') {
-    const severity = openAI ? 'success' : 'error';
-    const message = openAI ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
+function ShowProviderHealth({ provider }: { provider: ProviderHealthDetails | boolean }) {
+  if (typeof provider === 'boolean') {
+    const severity = provider ? 'success' : 'error';
+    const message = provider ? 'Provider health check succeeded!' : 'Provider health check failed.';
     return <Alert title={message} severity={severity} />;
   }
-  const message = openAI.ok ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
-  const severity = openAI.ok ? 'success' : 'error';
+
+  let providerDetails: any = {}; // Using 'any' to accommodate the dynamic nature
+
+  for (const key in provider) {
+    if (provider.hasOwnProperty(key)) {
+      providerDetails = provider[key as keyof ProviderHealthDetails];
+      break; // Assuming there's only one provider detail object to consider
+    }
+  }
+
+  // Assuming providerDetails now has a similar structure to ProviderHealthDetails
+  const message = providerDetails.ok ? 'Provider health check succeeded!' : 'Provider health check failed.';
+  const severity = providerDetails.ok ? 'success' : 'error';
+
   return (
     <Alert severity={severity} title={message}>
       <b>Models</b>
       <div>
-        {Object.entries(openAI.models).map(([model, details], i) => (
+        {providerDetails.models && Object.entries(providerDetails.models as Record<string, ProviderModelHealthDetails>).map(([model, details], i) => (
           <li key={i}>
             {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
           </li>
@@ -114,6 +126,10 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
     </Alert>
   );
 }
+
+
+
+
 
 function ShowVectorHealth({ vector }: { vector: VectorHealthDetails | boolean }) {
   if (typeof vector === 'boolean') {

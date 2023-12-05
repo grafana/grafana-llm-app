@@ -7,28 +7,31 @@ import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 import { SelectableValue } from '@grafana/data';
 
-export type OpenAIProvider = 'openai' | 'azure';
+export type Provider = 'openai' | 'azure' | 'pulze';
+export type PulzeModel = 'pulze' | 'pulze-v0' | 'openai/gpt-4';
 
-export interface OpenAISettings {
-  // The URL to reach OpenAI.
+export interface ProviderSettings {
+  // The URL to reach provider.
   url?: string;
-  // The organization ID for OpenAI.
+  // The organization ID for provider.
   organizationId?: string;
-  // Whether to use Azure OpenAI.
-  provider?: OpenAIProvider;
+  // Available providers.
+  provider?: Provider;
+  // Available Pulze models.
+  pulzeModel?: PulzeModel;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
 }
 
-export function OpenAIConfig({
+export function ProviderConfig({
   settings,
   secrets,
   secretsSet,
   onChange,
   onChangeSecrets,
 }: {
-  settings: OpenAISettings;
-  onChange: (settings: OpenAISettings) => void;
+  settings: ProviderSettings;
+  onChange: (settings: ProviderSettings) => void;
   secrets: Secrets;
   secretsSet: SecretsSet;
   onChangeSecrets: (secrets: Secrets) => void;
@@ -43,8 +46,8 @@ export function OpenAIConfig({
     });
   };
   return (
-    <FieldSet label="OpenAI Settings">
-      <Field label="OpenAI Provider">
+    <FieldSet label="LLM Settings">
+      <Field label="LLM Provider">
         <Select
           data-testid={testIds.appConfig.openAIProvider}
           options={
@@ -52,7 +55,7 @@ export function OpenAIConfig({
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
               { label: 'Pulze', value: 'pulze' },
-            ] as Array<SelectableValue<OpenAIProvider>>
+            ] as Array<SelectableValue<Provider>>
           }
           value={settings.provider ?? 'openai'}
           onChange={(e) => onChange({ ...settings, provider: e.value })}
@@ -60,7 +63,7 @@ export function OpenAIConfig({
         />
       </Field>
       <Field
-        label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'OpenAI API URL'}
+        label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'Provider API URL'}
         className={s.marginTop}
       >
         <Input
@@ -69,27 +72,52 @@ export function OpenAIConfig({
           data-testid={testIds.appConfig.openAIUrl}
           value={settings.url}
           placeholder={
-            settings.provider === 'azure' ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`
+            settings.provider === 'azure'
+              ? `https://<resource-name>.openai.azure.com`
+              : settings.provider === 'pulze'
+                ? 'https://api.pulze.ai'
+                : `https://api.openai.com`
           }
           onChange={onChangeField}
         />
       </Field>
 
       <Field
-        label={settings.provider === 'azure' ? 'Azure OpenAI Key' : 'OpenAI API Key'}
-        description={settings.provider === 'azure' ? 'Your Azure OpenAI Key' : 'Your OpenAI API Key'}
+        label={settings.provider === 'azure' ? 'Azure OpenAI Key' : 'Provider API Key'}
+        description={settings.provider === 'azure' ? 'Your Azure OpenAI Key' : 'Your Provider API Key'}
       >
         <SecretInput
           width={60}
-          data-testid={testIds.appConfig.openAIKey}
-          name="openAIKey"
-          value={secrets.openAIKey}
-          isConfigured={secretsSet.openAIKey ?? false}
+          data-testid={testIds.appConfig.providerKey}
+          name="ProviderKey"
+          value={secrets.providerKey}
+          isConfigured={secretsSet.providerKey ?? false}
           placeholder={settings.provider === 'azure' ? '' : 'sk-...'}
-          onChange={(e) => onChangeSecrets({ ...secrets, openAIKey: e.currentTarget.value })}
-          onReset={() => onChangeSecrets({ ...secrets, openAIKey: '' })}
+          onChange={(e) => onChangeSecrets({ ...secrets, providerKey: e.currentTarget.value })}
+          onReset={() => onChangeSecrets({ ...secrets, providerKey: '' })}
         />
       </Field>
+
+      {settings.provider === 'pulze' && (
+        <Field
+          label="Pulze Default Model"
+          description="Select the default model with which Pulze will do the request."
+        >
+        <Select
+          data-testid={testIds.appConfig.openAIProvider}
+          options={
+            [
+              { label: 'Pulze', value: 'pulze' },
+              { label: 'Pulze-V0', value: 'pulze-v0' },
+              { label: 'OpenAI/gpt-4', value: 'openai/gpt-4' },
+            ] as Array<SelectableValue<PulzeModel>>
+          }
+          value={settings.pulzeModel ?? 'pulze'}
+          onChange={(e) => onChange({ ...settings, pulzeModel: e.value })}
+          width={60}
+        />
+        </Field>
+      )}
 
       {settings.provider !== 'azure' && (
         <Field label="OpenAI API Organization ID" description="Your OpenAI API Organization ID">
