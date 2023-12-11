@@ -5,7 +5,7 @@ import { Field, FieldSet, Input, SecretInput, Select, useStyles2 } from '@grafan
 import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
-import { SelectableValue } from '@grafana/data';
+// import { SelectableValue } from '@grafana/data';
 
 export type OpenAIProvider = 'openai' | 'azure';
 
@@ -51,7 +51,7 @@ export function OpenAIConfig({
             [
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
-            ] as Array<SelectableValue<OpenAIProvider>>
+            ] as any[]
           }
           value={settings.provider ?? 'openai'}
           onChange={(e) => onChange({ ...settings, provider: e.value })}

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { IconButton, InlineField, InlineFieldRow, Input, Select } from '@grafana/ui';
 
-export type AzureModelDeployments = Array<[string, string]>;
+export type AzureModelDeployments = any[];
 
 export function AzureModelDeploymentConfig({
   modelMapping,
