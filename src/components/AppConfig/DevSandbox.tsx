@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { Button, FieldSet, Input, Modal, Spinner } from "@grafana/ui";
 import { useAsync } from "react-use";
 import { finalize } from "rxjs";
-import { openai } from "@grafana/llm";
+// import { openai } from "@grafana/llm";
+import { llms } from "@grafana/experimental";
+
+const openai = llms.openai;
 
 const BasicChatTest = () => {
   // The current input value.
@@ -20,8 +23,11 @@ const BasicChatTest = () => {
   const { loading, error, value } = useAsync(async () => {
     // Check if the LLM plugin is enabled and configured.
     // If not, we won't be able to make requests, so return early.
+    console.log("Logging works");
     const openAIHealthDetails = await openai.enabled();
+    console.log("openAIHealthDetails: ", openAIHealthDetails);
     const enabled = openAIHealthDetails;
+    console.log("enabled: ", enabled);
     if (!enabled) {
       return { enabled };
     }
