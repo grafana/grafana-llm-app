@@ -12,8 +12,8 @@ jobs:
           node-version: '16'
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --frozen-lockfile
       - name: Build plugin
-        run: npm run build
+        run: yarn run build
       - name: Compatibility check
         run: npx @grafana/levitate@latest is-compatible --path src/module.ts --target @grafana/data,@grafana/ui,@grafana/runtime
