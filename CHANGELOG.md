@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.3
+
+* Switch to yarn build, marked as version in case of compatibility issues
+
 ## 0.5.2
 
 * Allow Qdrant API key to be configured in config UI, not just when provisioning
