@@ -11,6 +11,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Install Yarn
+        run: npm install -g yarn@4
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Build plugin
