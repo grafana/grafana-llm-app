@@ -18,6 +18,12 @@
   },
   "author": "Grafana",
   "license": "Apache-2.0",
+  "peerDependencies": {
+    "@emotion/css": "^11.11.2",
+    "@grafana/data": "10.2.2",
+    "@grafana/runtime": "10.2.2",
+    "@grafana/ui": "10.2.2"
+  },
   "devDependencies": {
     "@babel/core": "^7.23.5",
     "@grafana/e2e": "10.2.2",
@@ -28,7 +34,7 @@
     "@swc/helpers": "^0.5.3",
     "@swc/jest": "^0.2.29",
     "@testing-library/jest-dom": "^6.1.5",
-    "@testing-library/react": "^14.1.2",
+    "@testing-library/react": "^12.1.4",
     "@types/jest": "^29.5.10",
     "@types/lodash": "^4.14.202",
     "@types/node": "^18.15.11",
@@ -65,20 +71,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@emotion/css": "^11.11.2",
-    "@grafana/data": "10.2.2",
-    "@grafana/llm": "file:../grafana-llm-frontend",
-    "@grafana/experimental": "1.7.4",
-    "@grafana/runtime": "10.2.2",
-    "@grafana/ui": "10.2.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.1",
-    "react-use": "^17.4.2",
     "tslib": "2.6.2"
-  },
-  "resolutions": {
-    "react": "^17.0.2"
   },
   "packageManager": "yarn@1.22.10"
 }
