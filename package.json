@@ -9,7 +9,7 @@
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
-    "lint:fix": "yarn run lint -- --fix",
+    "lint:fix": "yarn run lint --fix",
     "e2e": "yarn run cypress install && yarn run grafana-e2e run",
     "e2e:update": "yarn run cypress install && yarn run grafana-e2e run --update-screenshots",
     "server": "docker compose up --build",
@@ -76,5 +76,5 @@
     "rxjs": "7.8.1",
     "tslib": "2.6.2"
   },
-  "packageManager": "yarn@1.22.20"
+  "packageManager": "yarn@4.0.2"
 }
