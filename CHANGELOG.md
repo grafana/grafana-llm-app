@@ -4,7 +4,7 @@
 
 ## 0.5.3
 
-* Switch to yarn build, marked as version in case of compatibility issues
+* Switch to yarn build, update to Grafana 10.2 for all dependencies.
 
 ## 0.5.2
 
