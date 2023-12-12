@@ -12,7 +12,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - name: Install Yarn
-        run: npm install -g yarn@4
+        run: yarn set version berry
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Build plugin
