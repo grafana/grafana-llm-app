@@ -46,26 +46,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:7.23.0":
-  version: 7.23.0
-  resolution: "@babel/core@npm:7.23.0"
+"@babel/core@npm:7.23.2":
+  version: 7.23.2
+  resolution: "@babel/core@npm:7.23.2"
   dependencies:
     "@ampproject/remapping": "npm:^2.2.0"
     "@babel/code-frame": "npm:^7.22.13"
     "@babel/generator": "npm:^7.23.0"
     "@babel/helper-compilation-targets": "npm:^7.22.15"
     "@babel/helper-module-transforms": "npm:^7.23.0"
-    "@babel/helpers": "npm:^7.23.0"
+    "@babel/helpers": "npm:^7.23.2"
     "@babel/parser": "npm:^7.23.0"
     "@babel/template": "npm:^7.22.15"
-    "@babel/traverse": "npm:^7.23.0"
+    "@babel/traverse": "npm:^7.23.2"
     "@babel/types": "npm:^7.23.0"
     convert-source-map: "npm:^2.0.0"
     debug: "npm:^4.1.0"
     gensync: "npm:^1.0.0-beta.2"
     json5: "npm:^2.2.3"
     semver: "npm:^6.3.1"
-  checksum: ba3604b28de28cdb07d7829f67127b03ad2e826c4e28a0560a037c8bbe16b8dc8cdb8baf344e916ad3c28c63aab88c1a1a38f5e3df6047ab79c910b41bb3a4e8
+  checksum: 14ad6e0a3ac0085dc008e7fb0c8513f0a3e39f2ab883a964a89ef1311338d49cf085c94cb6165c07fdec0fdcc6e865ce4811253c479f9f45ac375226dfe3ad3b
   languageName: node
   linkType: hard
 
@@ -342,7 +342,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/helpers@npm:^7.23.0, @babel/helpers@npm:^7.23.6":
+"@babel/helpers@npm:^7.23.2, @babel/helpers@npm:^7.23.6":
   version: 7.23.6
   resolution: "@babel/helpers@npm:7.23.6"
   dependencies:
@@ -1349,7 +1349,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/traverse@npm:^7.23.0, @babel/traverse@npm:^7.23.6":
+"@babel/traverse@npm:^7.23.2, @babel/traverse@npm:^7.23.6":
   version: 7.23.6
   resolution: "@babel/traverse@npm:7.23.6"
   dependencies:
@@ -2246,15 +2246,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/e2e@npm:10.2.2":
-  version: 10.2.2
-  resolution: "@grafana/e2e@npm:10.2.2"
+"@grafana/e2e-selectors@npm:10.2.3":
+  version: 10.2.3
+  resolution: "@grafana/e2e-selectors@npm:10.2.3"
   dependencies:
-    "@babel/core": "npm:7.23.0"
+    "@grafana/tsconfig": "npm:^1.2.0-rc1"
+    tslib: "npm:2.6.0"
+    typescript: "npm:5.2.2"
+  checksum: 62f509cce8ffed18ae516e5937195cad318bd2f920f425eed3d0f165e12e427fe782ce310dde92b5b28c0f2c085acbf428480afa3b79614eff0da70670a54b9e
+  languageName: node
+  linkType: hard
+
+"@grafana/e2e@npm:10.2.3":
+  version: 10.2.3
+  resolution: "@grafana/e2e@npm:10.2.3"
+  dependencies:
+    "@babel/core": "npm:7.23.2"
     "@babel/preset-env": "npm:7.23.2"
     "@cypress/webpack-preprocessor": "npm:5.17.1"
-    "@grafana/e2e-selectors": "npm:10.2.2"
-    "@grafana/schema": "npm:10.2.2"
+    "@grafana/e2e-selectors": "npm:10.2.3"
+    "@grafana/schema": "npm:10.2.3"
     "@grafana/tsconfig": "npm:^1.2.0-rc1"
     "@mochajs/json-file-reporter": "npm:^1.2.0"
     babel-loader: "npm:9.1.3"
@@ -2272,12 +2283,12 @@ __metadata:
     tracelib: "npm:1.0.1"
     ts-loader: "npm:8.4.0"
     tslib: "npm:2.6.0"
-    typescript: "npm:4.8.4"
+    typescript: "npm:5.2.2"
     uuid: "npm:9.0.0"
     yaml: "npm:^2.0.0"
   bin:
     grafana-e2e: bin/grafana-e2e.js
-  checksum: 300b4f74ed375dbed39853827d19caac062461122526f3a571ad8a54be1bbdf122d25d4632c4852b322f9660f4d426a31c4334550bdf7d8bd339b6a85bccb1c9
+  checksum: 9c5c02c89805b428b6f6e41a48878578716e3cc2fb67c9ed6be8d3aa2112492a40e034b6b1ff23eee67ffbb96cb8aee629c473680d54e9a259e7f3a0874ae396
   languageName: node
   linkType: hard
 
@@ -2346,6 +2357,15 @@ __metadata:
   dependencies:
     tslib: "npm:2.6.0"
   checksum: c00b71e3f353de385dc10055b62c791c576345456813361b30aee3fd38da93c7e1c398ccb56a6d798fb95f2899aade2fc7ca704c71f2d37b9e05665b051efdc5
+  languageName: node
+  linkType: hard
+
+"@grafana/schema@npm:10.2.3":
+  version: 10.2.3
+  resolution: "@grafana/schema@npm:10.2.3"
+  dependencies:
+    tslib: "npm:2.6.0"
+  checksum: 81b8dc66464f695187405de25565630a5d81f683257231d914bdac0c24fa66746053dd66cb382d38889041dcfbcb17d66d94ae4928d8b7eb104fff129de5941c
   languageName: node
   linkType: hard
 
@@ -10397,8 +10417,8 @@ __metadata:
     "@babel/core": "npm:^7.23.5"
     "@emotion/css": "npm:^11.1.3"
     "@grafana/data": "npm:10.2.2"
-    "@grafana/e2e": "npm:10.2.2"
-    "@grafana/e2e-selectors": "npm:10.2.2"
+    "@grafana/e2e": "npm:10.2.3"
+    "@grafana/e2e-selectors": "npm:10.2.3"
     "@grafana/eslint-config": "npm:^6.0.1"
     "@grafana/runtime": "npm:10.2.2"
     "@grafana/tsconfig": "npm:^1.2.0-rc1"
@@ -14518,6 +14538,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typescript@npm:5.2.2":
+  version: 5.2.2
+  resolution: "typescript@npm:5.2.2"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 91ae3e6193d0ddb8656d4c418a033f0f75dec5e077ebbc2bd6d76439b93f35683936ee1bdc0e9cf94ec76863aa49f27159b5788219b50e1cd0cd6d110aa34b07
+  languageName: node
+  linkType: hard
+
 "typescript@npm:5.3.3":
   version: 5.3.3
   resolution: "typescript@npm:5.3.3"
@@ -14535,6 +14565,16 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: eecab597a5a8c6e7f14804f1447cfce02e214e32c02efcfe5219c94290e3d572490e8a0d8033fd075ac429d35babf85182541a50c50bfb0c21df33c59fb9bf82
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@npm%3A5.2.2#optional!builtin<compat/typescript>":
+  version: 5.2.2
+  resolution: "typescript@patch:typescript@npm%3A5.2.2#optional!builtin<compat/typescript>::version=5.2.2&hash=f3b441"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 062c1cee1990e6b9419ce8a55162b8dc917eb87f807e4de0327dbc1c2fa4e5f61bc0dd4e034d38ff541d1ed0479b53bcee8e4de3a4075c51a1724eb6216cb6f5
   languageName: node
   linkType: hard
 
