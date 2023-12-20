@@ -137,14 +137,14 @@ apps:
         embed:
           type: grafana/vectorapi
           grafanaVectorAPI:
-            url: vectorapi:8889
+            url: <vectorapi-url> # e.g. http://localhost:8889
             authType: no-auth
             # authType: basic-auth
             # basicAuthUser: <user>
         store:
           type: grafana/vectorapi
           grafanaVectorAPI:
-            url: vectorapi:8889
+            url: <vectorapi-url> # e.g. http://localhost:8889
             authType: no-auth
             # authType: basic-auth
             # basicAuthUser: <user>
@@ -176,7 +176,7 @@ apps:
         store:
           type: qdrant
           qdrant:
-            address: qdrant:6334
+            address: <qdrant-grpc-address> # e.g. localhost:6334
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
@@ -287,7 +287,7 @@ The `.subscribe` method can take [a few different forms](https://github.com/Reac
 1. Install dependencies
 
    ```bash
-   npm run install
+   npm install
    ```
 
 2. Build plugin in development mode and run in watch mode
