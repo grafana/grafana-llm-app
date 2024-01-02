@@ -38,7 +38,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "cspell": "8.3.0",
     "css-loader": "^6.7.3",
-    "cypress": "^13.6.2",
+    "cypress": "9.5.1",
     "eslint": "^8.55.0",
     "eslint-plugin-jsdoc": "^46.9.0",
     "eslint-plugin-react": "^7.33.2",
