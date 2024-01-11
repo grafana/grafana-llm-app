@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "lint:fix": "yarn run lint --fix",
-    "e2e": "yarn run cypress install && yarn run grafana-e2e run",
-    "e2e:update": "yarn run cypress install && yarn run grafana-e2e run --update-screenshots",
+    "e2e": "yarn run cypress install --force && yarn run grafana-e2e run",
+    "e2e:update": "yarn run cypress install --force && yarn run grafana-e2e run --update-screenshots",
     "server": "docker compose up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\""
