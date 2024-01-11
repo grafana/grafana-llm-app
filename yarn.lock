@@ -10457,6 +10457,7 @@ __metadata:
     copy-webpack-plugin: "npm:^11.0.0"
     cspell: "npm:8.3.0"
     css-loader: "npm:^6.7.3"
+    cypress: "npm:9.5.1"
     eslint: "npm:^8.55.0"
     eslint-plugin-jsdoc: "npm:^46.9.0"
     eslint-plugin-react: "npm:^7.33.2"
