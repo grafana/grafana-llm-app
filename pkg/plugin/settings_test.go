@@ -77,7 +77,10 @@ func TestEmbeddingSettingLogic(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			settings := loadSettings(tc.settings)
+			settings, err := loadSettings(tc.settings)
+			if err != nil {
+				t.Errorf("loadSettings failed: %s", err)
+			}
 
 			// Assert that the settings are loaded correctly
 			if settings.Vector.Embed.Type == "openai" {
@@ -102,6 +105,66 @@ func TestEmbeddingSettingLogic(t *testing.T) {
 				}
 			} else {
 				t.Errorf("expected embedding type to be openai or grafana/vectorapi, got %s", settings.Vector.Embed.Type)
+			}
+		})
+	}
+}
+
+func TestManagedLLMSettingsLogic(t *testing.T) {
+
+	// Set up and run test cases
+	for _, tc := range []struct {
+		name           string
+		settings       backend.AppInstanceSettings
+		llmGatewayURL  string
+		llmOptInStatus bool
+	}{
+		{
+			name: "grafana-llm-gateway-no-explicit-opt-in",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"llmGatewayUrl": "https://llm-gateway-prod-api-eu-west.grafana.net"
+				}`),
+			},
+			llmGatewayURL:  "https://llm-gateway-prod-api-eu-west.grafana.net",
+			llmOptInStatus: false,
+		},
+		{
+			name: "grafana-llm-gateway-explicit-opt-in",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"llmGatewayUrl": "https://llm-gateway-prod-api-eu-west.grafana.net",
+					"llmOptInStatus": true
+				}`),
+			},
+			llmGatewayURL:  "https://llm-gateway-prod-api-eu-west.grafana.net",
+			llmOptInStatus: true,
+		},
+		{
+			name: "grafana-llm-gateway-explicit-opt-out",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"llmGatewayUrl": "https://llm-gateway-prod-api-eu-west.grafana.net",
+					"llmOptInStatus": false
+				}`),
+			},
+			llmGatewayURL:  "https://llm-gateway-prod-api-eu-west.grafana.net",
+			llmOptInStatus: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings, err := loadSettings(tc.settings)
+			if err != nil {
+				t.Errorf("loadSettings failed: %s", err)
+			}
+
+			// Assert that the settings are loaded correctly
+			if settings.LLMGatewayURL != tc.llmGatewayURL {
+				t.Errorf("expected llm gateway URL to be %s, got %s", tc.llmGatewayURL, settings.LLMGatewayURL)
+			}
+
+			if settings.LLMOptInStatus != tc.llmOptInStatus {
+				t.Errorf("expected llm opt in status to be %t, got %t", tc.llmOptInStatus, settings.LLMOptInStatus)
 			}
 		})
 	}
