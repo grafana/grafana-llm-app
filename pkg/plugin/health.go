@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
@@ -50,7 +49,7 @@ func getVersion() string {
 	return buildInfo.Version
 }
 
-func (a *App) testOpenAIModel(ctx context.Context, url *url.URL, model string) error {
+func (a *App) testOpenAIModel(ctx context.Context, model string, orgID int64) error {
 	body := map[string]interface{}{
 		"model": model,
 		"messages": []map[string]interface{}{
@@ -60,7 +59,7 @@ func (a *App) testOpenAIModel(ctx context.Context, url *url.URL, model string) e
 			},
 		},
 	}
-	req, err := a.newOpenAIChatCompletionsRequest(ctx, url, body)
+	req, err := a.newOpenAIChatCompletionsRequest(ctx, body, orgID)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -81,7 +80,7 @@ func (a *App) testOpenAIModel(ctx context.Context, url *url.URL, model string) e
 
 // openAIHealth checks the health of the OpenAI configuration and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
-func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
+func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest) (openAIHealthDetails, error) {
 	if a.healthOpenAI != nil {
 		return *a.healthOpenAI, nil
 	}
@@ -91,17 +90,14 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 		Configured: a.settings.OpenAI.apiKey != "",
 		Models:     map[string]openAIModelHealth{},
 	}
-	u, err := url.Parse(a.settings.OpenAI.URL)
-	if err != nil {
-		return d, fmt.Errorf("Unable to parse OpenAI URL: %w", err)
-	}
+	orgID := req.PluginContext.OrgID
 
 	for _, model := range openAIModels {
 		health := openAIModelHealth{OK: false, Error: "OpenAI not configured"}
 		if d.Configured {
 			health.OK = true
 			health.Error = ""
-			err := a.testOpenAIModel(ctx, u, model)
+			err := a.testOpenAIModel(ctx, model, orgID)
 			if err != nil {
 				health.OK = false
 				health.Error = err.Error()
@@ -173,7 +169,7 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
 
-	openAI, err := a.openAIHealth(ctx)
+	openAI, err := a.openAIHealth(ctx, req)
 	if err != nil {
 		openAI.OK = false
 		openAI.Error = err.Error()

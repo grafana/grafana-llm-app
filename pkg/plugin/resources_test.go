@@ -104,8 +104,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 
-		openAIsettings OpenAISettings
-		apiKey         string
+		settings Settings
+		apiKey   string
 
 		method string
 		path   string
@@ -124,9 +124,11 @@ func TestCallOpenAIProxy(t *testing.T) {
 		{
 			name: "openai",
 
-			openAIsettings: OpenAISettings{
-				OrganizationID: "myOrg",
-				Provider:       openAIProviderOpenAI,
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderOpenAI,
+				},
 			},
 			apiKey: "abcd1234",
 
@@ -146,13 +148,16 @@ func TestCallOpenAIProxy(t *testing.T) {
 		{
 			name: "azure",
 
-			openAIsettings: OpenAISettings{
-				OrganizationID: "myOrg",
-				Provider:       openAIProviderAzure,
-				AzureMapping: [][]string{
-					{"gpt-3.5-turbo", "gpt-35-turbo"},
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderAzure,
+					AzureMapping: [][]string{
+						{"gpt-3.5-turbo", "gpt-35-turbo"},
+					},
 				},
 			},
+
 			apiKey: "abcd1234",
 
 			method: http.MethodPost,
@@ -171,11 +176,13 @@ func TestCallOpenAIProxy(t *testing.T) {
 		{
 			name: "azure invalid deployment",
 
-			openAIsettings: OpenAISettings{
-				OrganizationID: "myOrg",
-				Provider:       openAIProviderAzure,
-				AzureMapping: [][]string{
-					{"gpt-3.5-turbo", "gpt-35-turbo"},
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderAzure,
+					AzureMapping: [][]string{
+						{"gpt-3.5-turbo", "gpt-35-turbo"},
+					},
 				},
 			},
 			apiKey: "abcd1234",
@@ -189,6 +196,77 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			expStatus: http.StatusBadRequest,
 		},
+		{
+			name: "grafana-managed llm gateway - opt in not set",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: openAIProviderGrafana,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+				"X-Scope-OrgID": {"0"},
+			},
+			expReqPath: "/openai/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "grafana-managed llm gateway - opt in set to true",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: openAIProviderGrafana,
+				},
+				LLMOptInStatus: true,
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+				"X-Scope-OrgID": {"0"},
+			},
+			expReqPath: "/openai/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "grafana-managed llm gateway - opt in set to false",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: openAIProviderGrafana,
+				},
+				LLMOptInStatus: false,
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+				"X-Scope-OrgID": {"0"},
+			},
+			expReqPath: "/openai/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
@@ -196,11 +274,14 @@ func TestCallOpenAIProxy(t *testing.T) {
 			server := newMockOpenAIServer(t)
 
 			// Update the OpenAI URL with the mock server's URL.
-			tc.openAIsettings.URL = server.server.URL
+			if tc.settings.OpenAI.Provider == openAIProviderGrafana {
+				tc.settings.LLMGatewayURL = server.server.URL
+			} else {
+				tc.settings.OpenAI.URL = server.server.URL
+			}
 
 			// Initialize app
-			settings := Settings{OpenAI: tc.openAIsettings}
-			jsonData, err := json.Marshal(settings)
+			jsonData, err := json.Marshal(tc.settings)
 			if err != nil {
 				t.Fatalf("json marshal: %s", err)
 			}
