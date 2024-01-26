@@ -203,9 +203,6 @@ func TestCallOpenAIProxy(t *testing.T) {
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
-				LLMGateway: LLMGatewaySettings{
-					APIKey: "abcd1234",
-				},
 			},
 			apiKey: "abcd1234",
 
@@ -230,7 +227,6 @@ func TestCallOpenAIProxy(t *testing.T) {
 					Provider: openAIProviderGrafana,
 				},
 				LLMGateway: LLMGatewaySettings{
-					APIKey:      "abcd1234",
 					OptInStatus: true,
 				},
 			},
@@ -257,7 +253,6 @@ func TestCallOpenAIProxy(t *testing.T) {
 					Provider: openAIProviderGrafana,
 				},
 				LLMGateway: LLMGatewaySettings{
-					APIKey:      "abcd1234",
 					OptInStatus: false,
 				}},
 			apiKey: "abcd1234",
@@ -293,10 +288,12 @@ func TestCallOpenAIProxy(t *testing.T) {
 			if err != nil {
 				t.Fatalf("json marshal: %s", err)
 			}
+			// Set the API keys
 			appSettings := backend.AppInstanceSettings{
 				JSONData: jsonData,
 				DecryptedSecureJSONData: map[string]string{
-					"openAIKey": tc.apiKey,
+					"openAIKey":     tc.apiKey,
+					"llmGatewayKey": tc.apiKey,
 				},
 			}
 			inst, err := NewApp(ctx, appSettings)

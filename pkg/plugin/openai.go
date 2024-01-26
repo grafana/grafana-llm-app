@@ -23,7 +23,7 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 	case openAIProviderAzure:
 		req.Header.Set("api-key", a.settings.OpenAI.apiKey)
 	case openAIProviderGrafana:
-		req.Header.Add("Authorization", "Bearer "+a.settings.LLMGateway.APIKey)
+		req.Header.Add("Authorization", "Bearer "+a.settings.LLMGateway.apiKey)
 		req.Header.Add("X-Scope-OrgID", strconv.FormatInt(orgID, 10))
 	}
 	return req, nil

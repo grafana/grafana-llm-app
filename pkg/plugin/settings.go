@@ -12,6 +12,7 @@ import (
 )
 
 const openAIKey = "openAIKey"
+const llmGatewayKey = "llmGatewayKey"
 
 type openAIProvider string
 
@@ -35,12 +36,12 @@ type LLMGatewaySettings struct {
 	// the request to our llm-gateway.
 	URL string `json:"url"`
 
-	//apiKey is the api key needed to authenticate requests to the LLM gateway
-	APIKey string `json:"apiKey"`
-
 	// optInStatus indicates if customer has enabled the Grafana Managed Key LLM.
 	// If not specified, this is unmarshalled to false.
 	OptInStatus bool `json:"optInStatus"`
+
+	//apiKey is the api key needed to authenticate requests to the LLM gateway. Stored securely.
+	apiKey string
 }
 
 type Settings struct {
@@ -99,6 +100,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	}
 
 	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
+	settings.LLMGateway.apiKey = appSettings.DecryptedSecureJSONData[llmGatewayKey]
 
 	return &settings, nil
 }

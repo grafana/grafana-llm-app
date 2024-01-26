@@ -204,9 +204,9 @@ func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request)
 func newGrafanaOpenAIProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
 		var orgID int64
-		orgID = int64(0)
+		orgID = int64(0) // FIXME!
 
-		req.Header.Add("Authorization", "Bearer "+settings.LLMGateway.APIKey)
+		req.Header.Add("Authorization", "Bearer "+settings.LLMGateway.apiKey)
 		req.Header.Add("X-Scope-OrgID", strconv.FormatInt(orgID, 10))
 	}
 
