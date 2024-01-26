@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"encoding/json"
+	"os"
+	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
@@ -80,8 +82,16 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	case openAIProviderOpenAI:
 	case openAIProviderAzure:
 	case openAIProviderGrafana:
-		// Override the URL to point to llm-gateway TEMPORARY!!
-		// settings.LLMGatewayURL = "http://llm-gateway:4033"
+		if settings.LLMGateway.URL == "" {
+			// Attempt to get the LLM Gateway URL from the LLM_GATEWAY_URL environment variable.
+			settings.LLMGateway.URL = strings.TrimRight(os.Getenv("LLM_GATEWAY_URL"), "/")
+			log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, trying LLM_GATEWAY_URL env var", "LLM_GATEWAY_URL", settings.LLMGateway.URL)
+		}
+		if settings.LLMGateway.URL == "" {
+			// For debugging purposes only.
+			settings.LLMGateway.URL = "http://llm-gateway:4033"
+			log.DefaultLogger.Warn("Could not get LLM_GATEWAY_URL, using default", "default", settings.LLMGateway.URL)
+		}
 	default:
 		// Default to Grafana-provided OpenAI if an unknown provider was specified.
 		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)
