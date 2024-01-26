@@ -23,7 +23,7 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 	case openAIProviderAzure:
 		req.Header.Set("api-key", a.settings.OpenAI.apiKey)
 	case openAIProviderGrafana:
-		req.Header.Add("Authorization", "Bearer orgs/1") // TODO
+		req.Header.Add("Authorization", "Bearer "+a.settings.LLMGateway.APIKey)
 		req.Header.Add("X-Scope-OrgID", strconv.FormatInt(orgID, 10))
 	}
 	return req, nil
@@ -63,11 +63,11 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 
 	case openAIProviderGrafana:
 		// Ensure Grafana-managed OpenAI has been opted-in before permitting use
-		if a.settings.LLMOptInStatus != true {
+		if a.settings.LLMGateway.OptInStatus != true {
 			return nil, fmt.Errorf("Grafana Provided LLM access is not permitted. We require explicit Opt-In of the feature to continue")
 		}
 
-		url, err = url.Parse(a.settings.LLMGatewayURL)
+		url, err = url.Parse(a.settings.LLMGateway.URL)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to parse LLM Gateway URL: %w", err)
 		}

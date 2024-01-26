@@ -123,7 +123,9 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 			name: "grafana-llm-gateway-no-explicit-opt-in",
 			settings: backend.AppInstanceSettings{
 				JSONData: []byte(`{
-					"llmGatewayUrl": "https://llm-gateway-prod-api-eu-west.grafana.net"
+					"llmGateway": {
+						"url": "https://llm-gateway-prod-api-eu-west.grafana.net"
+					}
 				}`),
 			},
 			llmGatewayURL:  "https://llm-gateway-prod-api-eu-west.grafana.net",
@@ -133,8 +135,10 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 			name: "grafana-llm-gateway-explicit-opt-in",
 			settings: backend.AppInstanceSettings{
 				JSONData: []byte(`{
-					"llmGatewayUrl": "https://llm-gateway-prod-api-eu-west.grafana.net",
-					"llmOptInStatus": true
+					"llmGateway": {
+						"url": "https://llm-gateway-prod-api-eu-west.grafana.net",
+						"optInStatus": true
+					}
 				}`),
 			},
 			llmGatewayURL:  "https://llm-gateway-prod-api-eu-west.grafana.net",
@@ -144,8 +148,10 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 			name: "grafana-llm-gateway-explicit-opt-out",
 			settings: backend.AppInstanceSettings{
 				JSONData: []byte(`{
-					"llmGatewayUrl": "https://llm-gateway-prod-api-eu-west.grafana.net",
-					"llmOptInStatus": false
+					"llmGateway": {
+						"url": "https://llm-gateway-prod-api-eu-west.grafana.net",
+						"optInStatus": false
+					}
 				}`),
 			},
 			llmGatewayURL:  "https://llm-gateway-prod-api-eu-west.grafana.net",
@@ -159,12 +165,12 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 			}
 
 			// Assert that the settings are loaded correctly
-			if settings.LLMGatewayURL != tc.llmGatewayURL {
-				t.Errorf("expected llm gateway URL to be %s, got %s", tc.llmGatewayURL, settings.LLMGatewayURL)
+			if settings.LLMGateway.URL != tc.llmGatewayURL {
+				t.Errorf("expected llm gateway URL to be %s, got %s", tc.llmGatewayURL, settings.LLMGateway.URL)
 			}
 
-			if settings.LLMOptInStatus != tc.llmOptInStatus {
-				t.Errorf("expected llm opt in status to be %t, got %t", tc.llmOptInStatus, settings.LLMOptInStatus)
+			if settings.LLMGateway.OptInStatus != tc.llmOptInStatus {
+				t.Errorf("expected llm opt in status to be %t, got %t", tc.llmOptInStatus, settings.LLMGateway.OptInStatus)
 			}
 		})
 	}

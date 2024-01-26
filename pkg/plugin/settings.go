@@ -27,18 +27,26 @@ type OpenAISettings struct {
 	apiKey         string
 }
 
+// LLMGatewaySettings contains the cnfiguration for the  Grafana Managed Key LLM solution.
+type LLMGatewaySettings struct {
+	// This is the URL of the LLM endpoint of the machine learning backend which proxies
+	// the request to our llm-gateway.
+	URL string `json:"url"`
+
+	//apiKey is the api key needed to authenticate requests to the LLM gateway
+	APIKey string `json:"apiKey"`
+
+	// optInStatus indicates if customer has enabled the Grafana Managed Key LLM.
+	// If not specified, this is unmarshalled to false.
+	OptInStatus bool `json:"optInStatus"`
+}
+
 type Settings struct {
 	OpenAI OpenAISettings `json:"openAI"`
 
 	Vector vector.VectorSettings `json:"vector"`
 
-	// LLMGatewayURL is the URL of the LLM endpoint of the machine learning backend which
-	// proxies the request to our llm-gateway. This is the Grafana Managed Key LLM solution.
-	LLMGatewayURL string `json:"llmGatewayUrl"`
-
-	// LLMOptInStatus indicates if customer has enabled the Grafana Managed Key LLM.
-	// If not specified, this is unmarshalled to false.
-	LLMOptInStatus bool `json:"llmOptInStatus"`
+	LLMGateway LLMGatewaySettings `json:"llmGateway"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
@@ -48,10 +56,13 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 			Provider: openAIProviderOpenAI,
 		},
 	}
-	err := json.Unmarshal(appSettings.JSONData, &settings)
-	if err != nil {
-		log.DefaultLogger.Error(err.Error())
-		return nil, err
+
+	if len(appSettings.JSONData) != 0 {
+		err := json.Unmarshal(appSettings.JSONData, &settings)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return nil, err
+		}
 	}
 
 	// We need to handle the case where the user has customized the URL,

@@ -203,6 +203,9 @@ func TestCallOpenAIProxy(t *testing.T) {
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
+				LLMGateway: LLMGatewaySettings{
+					APIKey: "abcd1234",
+				},
 			},
 			apiKey: "abcd1234",
 
@@ -226,7 +229,10 @@ func TestCallOpenAIProxy(t *testing.T) {
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
-				LLMOptInStatus: true,
+				LLMGateway: LLMGatewaySettings{
+					APIKey:      "abcd1234",
+					OptInStatus: true,
+				},
 			},
 			apiKey: "abcd1234",
 
@@ -250,8 +256,10 @@ func TestCallOpenAIProxy(t *testing.T) {
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
-				LLMOptInStatus: false,
-			},
+				LLMGateway: LLMGatewaySettings{
+					APIKey:      "abcd1234",
+					OptInStatus: false,
+				}},
 			apiKey: "abcd1234",
 
 			method: http.MethodPost,
@@ -273,9 +281,9 @@ func TestCallOpenAIProxy(t *testing.T) {
 			// Start up a mock server that just captures the request and sends a 200 OK response.
 			server := newMockOpenAIServer(t)
 
-			// Update the OpenAI URL with the mock server's URL.
+			// Update the OpenAI/LLMGateway URL with the mock server's URL.
 			if tc.settings.OpenAI.Provider == openAIProviderGrafana {
-				tc.settings.LLMGatewayURL = server.server.URL
+				tc.settings.LLMGateway.URL = server.server.URL
 			} else {
 				tc.settings.OpenAI.URL = server.server.URL
 			}

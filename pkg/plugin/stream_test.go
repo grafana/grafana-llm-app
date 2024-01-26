@@ -83,8 +83,10 @@ func TestRunStream(t *testing.T) {
 		{
 			name: "grafana managed key but no opt in raises error",
 			settings: Settings{
-				OpenAI:         OpenAISettings{Provider: openAIProviderGrafana},
-				LLMOptInStatus: false,
+				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
+				LLMGateway: LLMGatewaySettings{
+					OptInStatus: false,
+				},
 			},
 			statusCode: http.StatusUnauthorized,
 
@@ -94,8 +96,10 @@ func TestRunStream(t *testing.T) {
 		{
 			name: "grafana managed key with opt in succeeds",
 			settings: Settings{
-				OpenAI:         OpenAISettings{Provider: openAIProviderGrafana},
-				LLMOptInStatus: true,
+				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
+				LLMGateway: LLMGatewaySettings{
+					OptInStatus: true,
+				},
 			},
 			statusCode: http.StatusPartialContent,
 
@@ -112,7 +116,7 @@ func TestRunStream(t *testing.T) {
 			// Initialize app (need to set OpenAISettings:URL in here)
 			settings := tc.settings
 			if settings.OpenAI.Provider == openAIProviderGrafana {
-				settings.LLMGatewayURL = server.server.URL
+				settings.LLMGateway.URL = server.server.URL
 			} else {
 				settings.OpenAI.URL = server.server.URL
 			}

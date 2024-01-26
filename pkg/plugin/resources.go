@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
@@ -177,7 +178,7 @@ type grafanaOpenAIProxy struct {
 }
 
 func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := modifyURL(a.settings.LLMGatewayURL+"/openai", req) // GER: FIXME - not durable to / added
+	err := modifyURL(a.settings.LLMGateway.URL+"/openai", req) // GER: FIXME - not durable to / added
 	if err != nil {
 		// Attempt to write the error as JSON.
 		jd, err := json.Marshal(map[string]string{"error": err.Error()})
@@ -202,8 +203,11 @@ func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request)
 
 func newGrafanaOpenAIProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
-		req.Header.Add("Authorization", "Bearer "+"orgs/1") // GER: WHERE I GET THIS? From Settings?
-		req.Header.Add("X-Scope-OrgID", "0")                // GER: WHERE I GET THIS? Passthrough?
+		var orgID int64
+		orgID = int64(0)
+
+		req.Header.Add("Authorization", "Bearer "+settings.LLMGateway.APIKey)
+		req.Header.Add("X-Scope-OrgID", strconv.FormatInt(orgID, 10))
 	}
 
 	return &grafanaOpenAIProxy{
