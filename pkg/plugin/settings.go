@@ -1,7 +1,9 @@
 package plugin
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"os"
 	"strings"
 
@@ -13,6 +15,7 @@ import (
 
 const openAIKey = "openAIKey"
 const llmGatewayKey = "llmGatewayKey"
+const encodedTenantAndTokenKey = "base64EncodedAccessToken"
 
 type openAIProvider string
 
@@ -30,7 +33,7 @@ type OpenAISettings struct {
 	apiKey         string
 }
 
-// LLMGatewaySettings contains the cnfiguration for the  Grafana Managed Key LLM solution.
+// LLMGatewaySettings contains the configuration for the Grafana Managed Key LLM solution.
 type LLMGatewaySettings struct {
 	// This is the URL of the LLM endpoint of the machine learning backend which proxies
 	// the request to our llm-gateway.
@@ -44,11 +47,26 @@ type LLMGatewaySettings struct {
 	apiKey string
 }
 
+// Settings contains the plugin's settings and secrets required by the plugin backend.
 type Settings struct {
+	// Tenant is the stack ID (Hosted Grafana ID) of the instance this plugin
+	// is running on.
+	Tenant string
+
+	// GrafanaComAPIKey is a grafana.com Editor API key used to interact with the grafana.com API.
+	//
+	// It is created by the grafana.com API when the plugin is first provisioned for a tenant.
+	//
+	// It is used when persisting the plugin's settings after setup.
+	GrafanaComAPIKey string
+
+	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
+	// VectorDB settings. May rely on OpenAI settings.
 	Vector vector.VectorSettings `json:"vector"`
 
+	// LLMGateway provides Grafana-managed OpenAI.
 	LLMGateway LLMGatewaySettings `json:"llmGateway"`
 }
 
@@ -99,8 +117,31 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.OpenAI.Provider = openAIProviderGrafana
 	}
 
+	// Read user's OpenAI key & the LLMGateway key
 	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
 	settings.LLMGateway.apiKey = appSettings.DecryptedSecureJSONData[llmGatewayKey]
+
+	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
+	encodedTenantAndToken, ok := appSettings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
+	if ok {
+		token, err := base64.StdEncoding.DecodeString(encodedTenantAndToken)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return nil, err
+		}
+		tokenParts := strings.Split(strings.TrimSpace(string(token)), ":")
+		if len(tokenParts) != 2 {
+			return nil, errors.New("invalid access token")
+		}
+		settings.Tenant = strings.TrimSpace(tokenParts[0])
+		if settings.Tenant == "" {
+			return nil, errors.New("invalid tenant")
+		}
+		settings.GrafanaComAPIKey = strings.TrimSpace(tokenParts[1])
+		if settings.GrafanaComAPIKey == "" {
+			return nil, errors.New("invalid grafana.com API key")
+		}
+	}
 
 	return &settings, nil
 }

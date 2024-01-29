@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
@@ -197,17 +196,13 @@ func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request)
 			log.DefaultLogger.Error("Unable to write error response", "err", err)
 		}
 	}
-	log.DefaultLogger.Error("FFF", "err", req.URL)
 	a.rp.ServeHTTP(w, req)
 }
 
 func newGrafanaOpenAIProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
-		var orgID int64
-		orgID = int64(0) // FIXME!
-
 		req.Header.Add("Authorization", "Bearer "+settings.LLMGateway.apiKey)
-		req.Header.Add("X-Scope-OrgID", strconv.FormatInt(orgID, 10))
+		req.Header.Add("X-Scope-OrgID", settings.Tenant)
 	}
 
 	return &grafanaOpenAIProxy{

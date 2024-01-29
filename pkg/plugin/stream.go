@@ -36,9 +36,8 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 	// set stream to true
 	requestBody["stream"] = true
-	orgID := req.PluginContext.OrgID
 
-	httpReq, err := a.newOpenAIChatCompletionsRequest(ctx, requestBody, orgID)
+	httpReq, err := a.newOpenAIChatCompletionsRequest(ctx, requestBody, a.settings.Tenant)
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}

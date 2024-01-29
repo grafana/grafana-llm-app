@@ -8,10 +8,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
-func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, url url.URL, body io.Reader, orgID int64) (*http.Request, error) {
+func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, url url.URL, body io.Reader, tenant string) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url.String(), body)
 	if err != nil {
 		return nil, err
@@ -24,12 +23,12 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 		req.Header.Set("api-key", a.settings.OpenAI.apiKey)
 	case openAIProviderGrafana:
 		req.Header.Add("Authorization", "Bearer "+a.settings.LLMGateway.apiKey)
-		req.Header.Add("X-Scope-OrgID", strconv.FormatInt(orgID, 10))
+		req.Header.Add("X-Scope-OrgID", tenant)
 	}
 	return req, nil
 }
 
-func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[string]interface{}, orgID int64) (*http.Request, error) {
+func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[string]interface{}, tenant string) (*http.Request, error) {
 	var url *url.URL
 	var err error
 
@@ -81,7 +80,7 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 	if err != nil {
 		return nil, fmt.Errorf("marshal request body: %w", err)
 	}
-	req, err := a.newAuthenticatedOpenAIRequest(ctx, http.MethodPost, *url, bytes.NewReader(bodyBytes), orgID)
+	req, err := a.newAuthenticatedOpenAIRequest(ctx, http.MethodPost, *url, bytes.NewReader(bodyBytes), tenant)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
