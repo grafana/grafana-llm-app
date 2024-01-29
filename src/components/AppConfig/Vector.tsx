@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Checkbox, Field, FieldSet, InlineField, Input, Select, useStyles2, Label } from '@grafana/ui';
+import { Checkbox, Field, FieldSet, InlineField, Input, Select, useStyles2, Label, SecretInput } from '@grafana/ui';
 
 import { testIds } from 'components/testIds';
 import { Secrets, SecretsSet, getStyles } from './AppConfig';
@@ -200,7 +200,7 @@ export function EmbedderConfig({
   );
 }
 
-function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
+function QdrantConfig({ settings, secrets, secretsSet, onChange, onChangeSecrets }: Props<QdrantSettings> & SecretProps) {
   const s = useStyles2(getStyles);
   return (
     <>
@@ -222,6 +222,19 @@ function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
           onChange={(e) => onChange({ ...settings, secure: e.currentTarget.checked })}
         />
       </Field>
+      {settings?.secure && (
+        <Field label="API key" description="API key for the qdrant gRPC server">
+          <SecretInput
+            name="qdrantApiKey"
+            width={s.inlineFieldInputWidth}
+            data-testid={testIds.appConfig.qdrantApiKey}
+            onChange={(e) => onChangeSecrets({ ...secrets, qdrantApiKey: e.currentTarget.value })}
+            onReset={() => onChangeSecrets({ ...secrets, qdrantApiKey: '' })}
+            isConfigured={secretsSet.qdrantApiKey ?? false}
+            value={secrets.qdrantApiKey}
+          />
+        </Field>
+      )}
     </>
   );
 }
@@ -271,7 +284,10 @@ function StoreConfig({
       {settings?.type === 'qdrant' && (
         <QdrantConfig
           settings={settings.qdrant}
+          secrets={secrets}
+          secretsSet={secretsSet}
           onChange={(qdrant) => onChange({ ...settings, qdrant })}
+          onChangeSecrets={onChangeSecrets}
         />
       )}
       {settings?.type === 'grafana/vectorapi' && (
