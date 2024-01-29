@@ -25,12 +25,23 @@ const (
 	openAIProviderGrafana openAIProvider = "grafana" // via llm-gateway
 )
 
+// OpenAISettings contains the user-specified OpenAI connection details
 type OpenAISettings struct {
-	URL            string         `json:"url"`
-	OrganizationID string         `json:"organizationId"`
-	Provider       openAIProvider `json:"provider"`
-	AzureMapping   [][]string     `json:"azureModelMapping"`
-	apiKey         string
+	// The URL to the OpenAI provider
+	URL string `json:"url"`
+
+	// The OrgID to be passed to OpenAI in requests
+	OrganizationID string `json:"organizationId"`
+
+	// What OpenAI provider the user selected. Note this can specify using the LLMGateway
+	Provider openAIProvider `json:"provider"`
+
+	// Model mappings required for Azure's OpenAI
+	AzureMapping [][]string `json:"azureModelMapping"`
+
+	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
+	// provider (excluding the LLMGateway). Stored securely.
+	apiKey string
 }
 
 // LLMGatewaySettings contains the configuration for the Grafana Managed Key LLM solution.
@@ -76,6 +87,9 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 			URL:      "https://api.openai.com",
 			Provider: openAIProviderOpenAI,
 		},
+		LLMGateway: LLMGatewaySettings{
+			OptInStatus: false, // always assume opted-out unless specified
+		},
 	}
 
 	if len(appSettings.JSONData) != 0 {
@@ -97,20 +111,22 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
 
+	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
+	if settings.LLMGateway.URL == "" {
+		// Attempt to get the LLM Gateway URL from the LLM_GATEWAY_URL environment variable.
+		settings.LLMGateway.URL = strings.TrimRight(os.Getenv("LLM_GATEWAY_URL"), "/")
+		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, trying LLM_GATEWAY_URL env var", "LLM_GATEWAY_URL", settings.LLMGateway.URL)
+	}
+	if settings.LLMGateway.URL == "" {
+		// For debugging purposes only.
+		settings.LLMGateway.URL = "http://llm-gateway:4033"
+		log.DefaultLogger.Warn("Could not get LLM_GATEWAY_URL, using default", "default", settings.LLMGateway.URL)
+	}
+
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 	case openAIProviderAzure:
 	case openAIProviderGrafana:
-		if settings.LLMGateway.URL == "" {
-			// Attempt to get the LLM Gateway URL from the LLM_GATEWAY_URL environment variable.
-			settings.LLMGateway.URL = strings.TrimRight(os.Getenv("LLM_GATEWAY_URL"), "/")
-			log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, trying LLM_GATEWAY_URL env var", "LLM_GATEWAY_URL", settings.LLMGateway.URL)
-		}
-		if settings.LLMGateway.URL == "" {
-			// For debugging purposes only.
-			settings.LLMGateway.URL = "http://llm-gateway:4033"
-			log.DefaultLogger.Warn("Could not get LLM_GATEWAY_URL, using default", "default", settings.LLMGateway.URL)
-		}
 	default:
 		// Default to Grafana-provided OpenAI if an unknown provider was specified.
 		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)
