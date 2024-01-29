@@ -151,9 +151,7 @@ export function EmbedderConfig({
             placeholder="Select Embedder Provider"
             value={settings?.type}
             width={60}
-            onChange={(e) => {
-              onChange({ ...settings, type: e.value });
-            }}
+            onChange={(e) => onChange({ type: e.value })}
           />
           {settings?.type === 'openai' && <Label> Using configured OpenAI as embedder provider </Label>}
         </>
