@@ -72,7 +72,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       />
 
       <VectorConfig
-        settings={settings}
+        settings={settings.vector}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
         onChange={(vector) => {
