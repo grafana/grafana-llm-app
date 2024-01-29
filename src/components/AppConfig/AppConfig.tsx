@@ -3,17 +3,25 @@ import { lastValueFrom } from 'rxjs';
 
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, KeyValue, PluginConfigPageProps, PluginMeta } from '@grafana/data';
-import { FetchResponse, getBackendSrv, HealthCheckResult } from '@grafana/runtime';
+import { FetchResponse, HealthCheckResult, getBackendSrv } from '@grafana/runtime';
 import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
-import { OpenAIConfig, OpenAISettings } from './OpenAI';
-import { VectorConfig, VectorSettings } from './Vector';
 import { ShowHealthCheckResult } from './HealthCheck';
+import { LLMConfig } from './LLMConfig';
+import { OpenAISettings } from './OpenAI';
+import { VectorConfig, VectorSettings } from './Vector';
 
+///////////////////////
+export interface LLMGatewaySettings {
+  // Opt-in to LLMGateway?
+  llmGatewayOptIn?: boolean;
+}
+//////////////////////
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
+  llmGateway?: LLMGatewaySettings;
 }
 
 export type Secrets = {
@@ -51,10 +59,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
   return (
     <div data-testid={testIds.appConfig.container}>
-      <OpenAIConfig
-        settings={settings.openAI ?? {}}
-        onChange={(openAI) => {
-          setSettings({ ...settings, openAI });
+      <LLMConfig
+        settings={settings}
+        onChange={(newSettings) => {
+          setSettings(newSettings);
           setUpdated(true);
         }}
         secrets={newSecrets}
