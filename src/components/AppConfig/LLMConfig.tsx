@@ -5,11 +5,21 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { Alert, Button, Card, Field, FieldSet, Icon, Modal, useStyles2 } from '@grafana/ui';
 
 import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
-import { OpenAIConfig } from './OpenAI';
+import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 
-export type OpenAIProvider = 'openai' | 'azure' | 'grafana';
+// LLMOptions are the 3 possible UI options for LLMs.
+export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
 
-export type OpenAIEnabledState = 'grafana-provided' | 'openai' | 'disabled';
+// This maps the current settings to decide what UI selection (LLMOptions) to show
+function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
+  if (settings.openAI?.provider === 'azure' || settings.openAI?.provider === 'openai') {
+    return 'openai';
+  } else if (settings.openAI?.provider === 'grafana' && settings.llmGateway?.optInStatus) {
+    return 'grafana-provided';
+  } else {
+    return 'disabled';
+  }
+}
 
 export function LLMConfig({
   settings,
@@ -26,6 +36,14 @@ export function LLMConfig({
 }) {
   const s = useStyles2(getStyles);
 
+  // llmOption is the currently chosen LLM option in the UI
+  const [llmOption, setLLMOption] = useState<LLMOptions>(getLLMOptionFromSettings(settings));
+  // previousOpenAIProvider caches the value of the openAI provider, as it is overwritten by the grafana option
+  const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<OpenAIProvider>();
+  // optIn indicates if the user has opted in to Grafana-managed OpenAI
+  const [optIn, setOptIn] = useState<boolean>(settings.llmGateway?.optInStatus || false);
+
+  // 2 modals: opt-in and opt-out
   const [optInModalIsOpen, setOptInModalIsOpen] = useState<boolean>(false);
   const [optOutModalIsOpen, setOptOutModalIsOpen] = useState<boolean>(false);
   const showOptInModal = () => {
@@ -34,7 +52,7 @@ export function LLMConfig({
   const dismissOptInModal = () => {
     setOptInModalIsOpen(false);
     // TODO: Reset scroll position of the T&Cs.
-    setUseLLMGateway('disabled');
+    setLLMOption('disabled');
   };
   const showOptOutModal = () => {
     setOptOutModalIsOpen(true);
@@ -46,16 +64,50 @@ export function LLMConfig({
   const doOptIn = () => {
     setOptIn(true);
     setOptInModalIsOpen(false);
+
+    onChange({ ...settings, openAI: { provider: 'grafana' }, llmGateway: { optInStatus: true } });
   };
 
   const doOptOut = () => {
     setOptIn(false);
     dismissOptOutModal();
-    setUseLLMGateway('disabled');
+
+    onChange({ ...settings, openAI: { provider: undefined }, llmGateway: { optInStatus: false } });
+    setLLMOption('disabled');
   };
 
-  const [useLLMGateway, setUseLLMGateway] = useState<OpenAIEnabledState>('disabled');
-  const [optIn, setOptIn] = useState<boolean>(false);
+  // Handlers for when different LLM options are chosen in the UI
+  const selectLLMDisabled = () => {
+    // Cache if OpenAI or Azure is used, so can restore
+    if (previousOpenAIProvider !== undefined) {
+      setPreviousOpenAIProvider(settings.openAI?.provider);
+    }
+
+    onChange({ ...settings, openAI: { provider: undefined } });
+    setLLMOption('disabled');
+  };
+
+  const selectGrafanaManaged = () => {
+    // Cache if OpenAI or Azure is used, so can restore
+    if (previousOpenAIProvider !== undefined) {
+      setPreviousOpenAIProvider(settings.openAI?.provider);
+    }
+    if (settings.llmGateway?.optInStatus) {
+      // as already opted-in, can immediately use this setting. Otherwise requires Opt-In to use.
+      onChange({ ...settings, openAI: { provider: 'grafana' } });
+    }
+
+    setLLMOption('grafana-provided');
+  };
+
+  const selectOpenAI = () => {
+    // Restore the provider
+    const newSettings = { ...settings, openAI: { provider: previousOpenAIProvider } };
+    onChange(newSettings);
+
+    onChange({ ...settings, openAI: { provider: 'openai' } });
+    setLLMOption('openai');
+  };
 
   return (
     <>
@@ -131,19 +183,19 @@ export function LLMConfig({
         onDismiss={dismissOptOutModal}
         onClickBackdrop={dismissOptOutModal}
       >
-        By opting out, you will disable all Grafana&rsquo;s LLM features. Are you sure you want to continue?
+        This will disable all Grafana&rsquo;s LLM features. Are you sure you want to continue?
         <Modal.ButtonRow>
           <Button variant="secondary" fill="outline" onClick={dismissOptOutModal}>
             Cancel
           </Button>
-          <Button onClick={doOptOut}>Opt-out</Button>
+          <Button onClick={doOptOut}>Disable</Button>
         </Modal.ButtonRow>
       </Modal>
 
       <FieldSet label="OpenAI Settings" className={s.sidePadding}>
         <Card
-          isSelected={useLLMGateway === 'grafana-provided'}
-          onClick={() => setUseLLMGateway('grafana-provided')}
+          isSelected={llmOption === 'grafana-provided'}
+          onClick={selectGrafanaManaged}
           className={s.cardWithoutBottomMargin}
         >
           <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
@@ -154,20 +206,20 @@ export function LLMConfig({
             <Icon name="grafana" size="lg" />
           </Card.Figure>
         </Card>
-        {useLLMGateway === 'grafana-provided' && (
+        {llmOption === 'grafana-provided' && (
           <div className={s.optionDetails}>
             <Field>
               {optIn ? (
                 <>
                   <p>
-                    You <b>have</b> opted-in to the Grafana-managed OpenAI.
+                    You <b>have</b> enabled the Grafana-managed OpenAI.
                   </p>
                   <p>
                     This means some data from your Grafana instance is being sent to OpenAI. Note that usage limits will
                     apply.
                   </p>
                   <p>
-                    If you would like to opt-out, click here:&nbsp;
+                    If you would like to disable this, click here:&nbsp;
                     <Button onClick={showOptOutModal} variant="destructive" size="sm">
                       Disable OpenAI access via Grafana
                     </Button>
@@ -185,11 +237,7 @@ export function LLMConfig({
             </Field>
           </div>
         )}
-        <Card
-          isSelected={useLLMGateway === 'openai'}
-          onClick={() => setUseLLMGateway('openai')}
-          className={s.cardWithoutBottomMargin}
-        >
+        <Card isSelected={llmOption === 'openai'} onClick={selectOpenAI} className={s.cardWithoutBottomMargin}>
           <Card.Heading>Use your own OpenAI account</Card.Heading>
           <Card.Description>Enable LLM features in Grafana using your own OpenAI details</Card.Description>
           <Card.Figure>
@@ -197,7 +245,7 @@ export function LLMConfig({
           </Card.Figure>
         </Card>
 
-        {useLLMGateway === 'openai' && (
+        {llmOption === 'openai' && (
           <div className={s.optionDetails}>
             <OpenAIConfig
               settings={settings.openAI ?? {}}
@@ -209,11 +257,7 @@ export function LLMConfig({
           </div>
         )}
 
-        <Card
-          isSelected={useLLMGateway === 'disabled'}
-          onClick={() => setUseLLMGateway('disabled')}
-          className={s.cardWithoutBottomMargin}
-        >
+        <Card isSelected={llmOption === 'disabled'} onClick={selectLLMDisabled} className={s.cardWithoutBottomMargin}>
           <Card.Heading>Disable all LLM features in Grafana</Card.Heading>
           <Card.Figure>
             <Icon name="times" size="lg" />

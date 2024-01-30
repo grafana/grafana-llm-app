@@ -7,7 +7,7 @@ import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 
-export type OpenAIProvider = 'openai' | 'azure';
+export type OpenAIProvider = 'openai' | 'azure' | 'grafana';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
