@@ -126,47 +126,55 @@ export function LLMConfig({
 
         <p>To proceed please agree to the following terms & conditions:</p>
         <div className={s.divWithScrollbar}>
-          <h4>Terms for using Grafana-managed OpenAI</h4>
+          <h4>FIXME! Terms &amp; Conditions for the Grafana-managed OpenAI</h4>
+
+          <h5>1. Acceptance of Terms</h5>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-            dolore magna aliqua. Facilisi etiam dignissim diam quis. Eget lorem dolor sed viverra ipsum nunc. Netus et
-            malesuada fames ac turpis egestas. Integer malesuada nunc vel risus commodo. Mattis aliquam faucibus purus
-            in.
+            By using the Grafana-managed OpenAI proxy service (the &quot;Service&quot;), you agree to be bound by these
+            Terms & Conditions (&quot;Terms&quot;). If you do not agree with these Terms, do not use the Service. The
+            Service acts as a bridge, forwarding your requests to OpenAI and returning responses. It&apos;s designed to
+            enhance your Grafana platform experience by leveraging OpenAI&apos;s capabilities.
           </p>
+
+          <h5>2. Privacy & Data Exposure</h5>
           <p>
-            Gravida dictum fusce ut placerat orci nulla pellentesque dignissim enim. Pharetra et ultrices neque ornare
-            aenean euismod elementum nisi quis. Eget mi proin sed libero enim sed faucibus turpis. Egestas dui id ornare
-            arcu. Sed faucibus turpis in eu mi bibendum. Vestibulum mattis ullamcorper velit sed ullamcorper morbi
-            tincidunt ornare. In iaculis nunc sed augue lacus viverra vitae congue eu. Quisque id diam vel quam
-            elementum pulvinar etiam non. Augue neque gravida in fermentum et sollicitudin ac. Pretium viverra
-            suspendisse potenti nullam ac tortor vitae purus faucibus.
+            Understand that by using the Service, certain data from your Grafana instance, including but not limited to,
+            metrics, logs, and dashboard configurations, may be exposed to OpenAI to fulfill your requests. Although we
+            strive to ensure the confidentiality and security of your data, by agreeing to these Terms, you grant us
+            permission to share this data with OpenAI as necessary. We encourage you to review both our privacy policy
+            and that of OpenAI to understand how your data is handled.
           </p>
+
+          <h5>3. Usage Restrictions</h5>
           <p>
-            Auctor neque vitae tempus quam pellentesque nec nam aliquam sem. Id diam vel quam elementum. Congue quisque
-            egestas diam in arcu cursus. Fringilla ut morbi tincidunt augue interdum velit euismod in pellentesque.
-            Potenti nullam ac tortor vitae purus faucibus. Nunc consequat interdum varius sit amet mattis vulputate enim
-            nulla. Mauris commodo quis imperdiet massa tincidunt nunc pulvinar sapien et. Nam aliquam sem et tortor
-            consequat id porta nibh. Pharetra convallis posuere morbi leo urna molestie at elementum. Gravida cum sociis
-            natoque penatibus et. Et netus et malesuada fames ac turpis egestas. Turpis egestas sed tempus urna et. Enim
-            blandit volutpat maecenas volutpat blandit aliquam. Donec ac odio tempor orci dapibus.
+            The Service is provided for your personal and internal business use only. You are prohibited from using the
+            Service for any illegal or unauthorized purpose. Additionally, you must not attempt to gain unauthorized
+            access to the Service, other accounts, computer systems, or networks connected to the Service through
+            hacking, password mining, or any other means.
           </p>
+
+          <h5>4. Service Modifications and Availability</h5>
           <p>
-            Orci dapibus ultrices in iaculis nunc sed augue. Facilisis gravida neque convallis a cras semper auctor.
-            Odio tempor orci dapibus ultrices in. Id nibh tortor id aliquet lectus proin nibh nisl condimentum. Sit amet
-            massa vitae tortor condimentum lacinia quis vel. Ac orci phasellus egestas tellus rutrum tellus. Lacus
-            vestibulum sed arcu non odio euismod lacinia. Aliquet eget sit amet tellus cras. Tortor pretium viverra
-            suspendisse potenti nullam. Risus at ultrices mi tempus. Risus at ultrices mi tempus imperdiet. Mattis enim
-            ut tellus elementum sagittis vitae. Nunc sed velit dignissim sodales ut eu sem. Enim nunc faucibus a
-            pellentesque sit.
+            We reserve the right at any time and from time to time to modify or discontinue, temporarily or permanently,
+            the Service (or any part thereof) with or without notice. You agree that we shall not be liable to you or to
+            any third party for any modification, suspension, or discontinuance of the Service. We do not guarantee the
+            availability of the Service and it may be subject to downtimes and periodic maintenance.
           </p>
+
+          <h5>5. Limitation of Liability</h5>
           <p>
-            Tincidunt arcu non sodales neque sodales ut etiam sit. Ut faucibus pulvinar elementum integer enim neque
-            volutpat ac. Facilisis sed odio morbi quis commodo odio aenean sed adipiscing. Dignissim enim sit amet
-            venenatis urna cursus. Lacus luctus accumsan tortor posuere ac ut. Habitant morbi tristique senectus et.
-            Turpis cursus in hac habitasse platea. Commodo odio aenean sed adipiscing diam donec adipiscing tristique
-            risus. Turpis tincidunt id aliquet risus feugiat in ante metus dictum. Accumsan tortor posuere ac ut
-            consequat semper viverra. Et molestie ac feugiat sed lectus vestibulum mattis ullamcorper velit. Sed nisi
-            lacus sed viverra.
+            To the fullest extent permitted by law, in no event will we, our affiliates, officers, employees, agents,
+            suppliers, or licensors be liable for any indirect, incidental, special, consequential, or exemplary
+            damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible
+            losses (even if we have been advised of the possibility of such damages), resulting from the use or the
+            inability to use the Service.
+          </p>
+
+          <h5>6. Changes to Terms</h5>
+          <p>
+            We reserve the right, at our sole discretion, to change, modify, add, or remove portions of these Terms at
+            any time. It is your responsibility to check these Terms periodically for changes. Your continued use of the
+            Service following the posting of changes will mean that you accept and agree to the changes.
           </p>
         </div>
         <Modal.ButtonRow>
