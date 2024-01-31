@@ -13,10 +13,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 )
 
-// Define models for each provider.
+// Define models for each provider to be included in the health check.
 var providerModels = map[string][]string{
-	"openAI": []string{"gpt-3.5-turbo", "gpt-4"},
-	"pulze":  []string{"openai/gpt-4", "pulze"},
+	"openai": {"gpt-3.5-turbo", "gpt-4"},
+	"pulze":  {"pulze", "openai/gpt-4"},
 }
 
 type healthCheckClient interface {
@@ -42,9 +42,9 @@ type vectorHealthDetails struct {
 }
 
 type healthCheckDetails struct {
-	Provider map[string]providerHealthDetails `json:"provider"`
-	Vector   vectorHealthDetails              `json:"vector"`
-	Version  string                           `json:"version"`
+	Provider providerHealthDetails `json:"provider"`
+	Vector   vectorHealthDetails   `json:"vector"`
+	Version  string                `json:"version"`
 }
 
 func getVersion() string {
@@ -57,10 +57,7 @@ func getVersion() string {
 
 // testModel simulates a health check for a specific model of a provider.
 func (a *App) testModel(ctx context.Context, url *url.URL, model string) error {
-	log.DefaultLogger.Debug("!!!! In testModel !!!!")
-
 	if url == nil {
-		log.DefaultLogger.Error("URL is nil in testModel")
 		return fmt.Errorf("URL is nil")
 	}
 
@@ -83,26 +80,24 @@ func (a *App) testModel(ctx context.Context, url *url.URL, model string) error {
 		return fmt.Errorf("make request: %w", err)
 	}
 	defer resp.Body.Close()
-	log.DefaultLogger.Debug("!!!! Request done !!!!")
 	if resp.StatusCode != http.StatusOK {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.DefaultLogger.Debug(fmt.Sprintf("error in status code: %#s", resp))
 			return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 		}
-		log.DefaultLogger.Debug(fmt.Sprintf("error in status code %d: %s", resp.StatusCode, respBody))
 		return fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, respBody)
 	}
-	log.DefaultLogger.Debug(fmt.Sprintf("Request received: %#s", resp))
 	return nil
 }
 
-// checkProviderHealth performs a health check for a specific provider.
-func (a *App) checkProviderHealth(ctx context.Context, provider string, models []string) (providerHealthDetails, error) {
+// providerHealth performs a health check for the selected provider and caches the
+// result if successful. The caller must lock a.healthCheckMutex.
+func (a *App) providerHealth(ctx context.Context, provider string, models []string) providerHealthDetails {
 	if a.healthProvider != nil {
-		return *a.healthProvider, nil
+		log.DefaultLogger.Debug("returning cached healthProvider:", a.healthProvider.Models)
+		return *a.healthProvider
 	}
-	log.DefaultLogger.Debug(fmt.Sprintf("in checkProviderHealth with %#s", models))
+	log.DefaultLogger.Debug(fmt.Sprintf("in checkProviderHealth with %s", models))
 
 	d := providerHealthDetails{
 		Configured: a.settings.Provider.apiKey != "",
@@ -111,15 +106,21 @@ func (a *App) checkProviderHealth(ctx context.Context, provider string, models [
 	}
 	u, err := url.Parse(a.settings.Provider.URL)
 	if err != nil {
-		return d, fmt.Errorf("Unable to parse Provider URL: %w", err)
+		d.OK = false
+		d.Error = fmt.Sprintf("Unable to parse provider URL: %s", err)
+		return d
 	}
 
 	for _, model := range models {
-		health := modelHealth{OK: true}
-		err := a.testModel(ctx, u, model) // Pass the appropriate URL for each provider
-		if err != nil {
-			health.OK = false
-			health.Error = err.Error()
+		health := modelHealth{OK: false, Error: "model not configured."}
+		if d.Configured {
+			health.OK = true
+			health.Error = ""
+			err := a.testModel(ctx, u, model)
+			if err != nil {
+				health.OK = false
+				health.Error = err.Error()
+			}
 		}
 		d.Models[model] = health
 	}
@@ -135,11 +136,11 @@ func (a *App) checkProviderHealth(ctx context.Context, provider string, models [
 		d.Error = "No models are working"
 	}
 
-	// Only cache result if openAI is ok to use.
+	// Only cache result if provider is ok to use.
 	if d.OK {
 		a.healthProvider = &d
 	}
-	return d, nil
+	return d
 }
 
 // testVectorService checks the health of VectorAPI and caches the result if successful.
@@ -154,7 +155,8 @@ func (a *App) testVectorService(ctx context.Context) error {
 	return nil
 }
 
-// vectorHealth performs a health check for the Vector service.
+// vectorHealth performs a health check for the Vector service and caches the
+// result if successful. The caller must lock a.healthCheckMutex.
 func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 	if a.healthVector != nil {
 		return *a.healthVector
@@ -181,31 +183,28 @@ func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 	return d
 }
 
-// CheckHealth handles health checks for all providers and the Vector service.
+// CheckHealth handles health checks for the selected provider and the Vector service.
 func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
 
-	details := healthCheckDetails{
-		Provider: make(map[string]providerHealthDetails),
-		Vector:   a.vectorHealth(ctx),
-		Version:  getVersion(),
+	log.DefaultLogger.Debug("CheckHealth", a.settings.Provider.Name, a.settings.Provider)
+
+	ps := string(a.settings.Provider.Name)
+	log.DefaultLogger.Debug("")
+	provider := a.providerHealth(ctx, ps, providerModels[ps])
+	if provider.Error == "" {
+		a.healthProvider = &provider
 	}
 
-	// Iterate through each provider and perform health checks.
-	for provider, models := range providerModels {
-		log.DefaultLogger.Debug(fmt.Sprintf("@@@ %#s %#s", provider, models))
-		log.DefaultLogger.Debug(fmt.Sprintf("@@@ %#s", a.settings.Provider.Provider))
-		if provider == string(a.settings.Provider.Provider) {
-			providerHealth, err := a.checkProviderHealth(ctx, provider, models)
-			if err != nil {
-				log.DefaultLogger.Error(fmt.Sprintf("Health check failed for provider %s: %s", provider, err))
-				// Handle the error according to your application logic.
-				// For instance, you can continue with the next provider or abort the entire process.
-				continue
-			}
-			details.Provider[provider] = providerHealth
-		}
+	vector := a.vectorHealth(ctx)
+	if vector.Error == "" {
+		a.healthVector = &vector
+	}
+	details := healthCheckDetails{
+		Provider: provider,
+		Vector:   vector,
+		Version:  getVersion(),
 	}
 
 	body, err := json.Marshal(details)

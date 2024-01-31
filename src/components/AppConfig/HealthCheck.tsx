@@ -80,8 +80,8 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
 
   severity = getAlertSeverity(props.status ?? 'error', props.details);
   const showProvider =
-  typeof props.details.provider === 'boolean' ||
-  (typeof props.details.provider === 'object' && (props.details.provider.configured || !props.details.provider.ok));
+    typeof props.details.provider === 'boolean' ||
+    (typeof props.details.provider === 'object' && (props.details.provider.configured || !props.details.provider.ok));
   const showVector =
     typeof props.details.vector === 'boolean' ||
     (typeof props.details.vector === 'object' && props.details.vector.enabled);
@@ -99,25 +99,14 @@ function ShowProviderHealth({ provider }: { provider: ProviderHealthDetails | bo
     const message = provider ? 'Provider health check succeeded!' : 'Provider health check failed.';
     return <Alert title={message} severity={severity} />;
   }
-
-  let providerDetails: any = {}; // Using 'any' to accommodate the dynamic nature
-
-  for (const key in provider) {
-    if (provider.hasOwnProperty(key)) {
-      providerDetails = provider[key as keyof ProviderHealthDetails];
-      break; // Assuming there's only one provider detail object to consider
-    }
-  }
-
-  // Assuming providerDetails now has a similar structure to ProviderHealthDetails
-  const message = providerDetails.ok ? 'Provider health check succeeded!' : 'Provider health check failed.';
-  const severity = providerDetails.ok ? 'success' : 'error';
-
+  const { message, severity }: { message: string; severity: AlertVariant } = provider.ok
+    ? { message: 'Provider health check succeeded!', severity: 'success' }
+    : { message: 'Provider health check failed!', severity: 'error' };
   return (
     <Alert severity={severity} title={message}>
       <b>Models</b>
       <div>
-        {providerDetails.models && Object.entries(providerDetails.models as Record<string, ProviderModelHealthDetails>).map(([model, details], i) => (
+        {Object.entries(provider.models).map(([model, details], i) => (
           <li key={i}>
             {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
           </li>
@@ -126,10 +115,6 @@ function ShowProviderHealth({ provider }: { provider: ProviderHealthDetails | bo
     </Alert>
   );
 }
-
-
-
-
 
 function ShowVectorHealth({ vector }: { vector: VectorHealthDetails | boolean }) {
   if (typeof vector === 'boolean') {

@@ -7,7 +7,7 @@ import { FetchResponse, getBackendSrv, HealthCheckResult } from '@grafana/runtim
 import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
-import { ProviderConfig, ProviderSettings } from './OpenAI';
+import { ProviderConfig, ProviderSettings } from './Provider';
 import { VectorConfig, VectorSettings } from './Vector';
 import { ShowHealthCheckResult } from './HealthCheck';
 
@@ -28,7 +28,7 @@ export type SecretsSet = {
 
 function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
   return {
-    providerKey: secureJsonFields.providerKey ?? false,
+    providerKey: secureJsonFields.providerKey ?? secureJsonFields.openAIKey ?? false,
     vectorEmbedderBasicAuthPassword: secureJsonFields.vectorEmbedderBasicAuthPassword ?? false,
     vectorStoreBasicAuthPassword: secureJsonFields.vectorStoreBasicAuthPassword ?? false,
   };
@@ -36,10 +36,22 @@ function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
 
 export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> {}
 
+// migration layer to convert old to new structure
+const initialJsonData = (jsonData: KeyValue<any>): AppPluginSettings => {
+  // destructure old fields and rename 'provider' to 'name'
+  const {provider: name, ...oldSettings} = jsonData.openAI ?? {}
+    // only use values from openAI if no provider configured
+  return {
+    provider: jsonData.provider ?? {...oldSettings, name},
+    vector: jsonData.vector,
+  };
+};
+
 export const AppConfig = ({ plugin }: AppConfigProps) => {
   const s = useStyles2(getStyles);
   const { enabled, pinned, jsonData, secureJsonFields } = plugin.meta;
-  const [settings, setSettings] = useState<AppPluginSettings>(jsonData ?? {});
+  const [settings, setSettings] = useState<AppPluginSettings>(initialJsonData(jsonData ?? {}));
+  console.log(settings);
   const [newSecrets, setNewSecrets] = useState<Secrets>({});
   // Whether each secret is already configured in the plugin backend.
   const [configuredSecrets, setConfiguredSecrets] = useState<SecretsSet>(initialSecrets(secureJsonFields ?? {}));
