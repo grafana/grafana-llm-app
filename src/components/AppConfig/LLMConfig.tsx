@@ -6,6 +6,7 @@ import { Alert, Button, Card, Field, FieldSet, Icon, Modal, useStyles2 } from '@
 
 import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
 import { OpenAIConfig, OpenAIProvider } from './OpenAI';
+import { OpenAILogo } from './OpenAILogo';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
 export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
@@ -261,7 +262,7 @@ export function LLMConfig({
           <Card.Heading>Use your own OpenAI account</Card.Heading>
           <Card.Description>Enable LLM features in Grafana using your own OpenAI details</Card.Description>
           <Card.Figure>
-            <Icon name="sitemap" size="lg" />
+            <OpenAILogo width={20} height={20} />
           </Card.Figure>
         </Card>
 
