@@ -51,7 +51,7 @@ type LLMGatewaySettings struct {
 	URL string `json:"url"`
 
 	// optInStatus indicates if customer has enabled the Grafana Managed Key LLM.
-	// If not specified, this is unmarshalled to false.
+	// If not specified, this will be false.
 	OptInStatus bool `json:"optInStatus"`
 
 	//apiKey is the api key needed to authenticate requests to the LLM gateway. Stored securely.
