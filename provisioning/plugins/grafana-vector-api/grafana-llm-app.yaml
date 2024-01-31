@@ -3,6 +3,7 @@ apiVersion: 1
 apps:
   - type: grafana-llm-app
     jsonData:
+      base64EncodedAccessTokenSet: True
       openAI:
         provider: openai
         url: https://api.openai.com
@@ -32,6 +33,8 @@ apps:
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
+      # mock EncodedAccessToken "thestack:thetoken"
+      base64EncodedAccessToken: dGhlc3RhY2s6dGhldG9rZW4=
       # openAIKey: $AZURE_OPENAI_API_KEY
       # vectorEmbedderBasicAuthPassword: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
       # vectorStoreBasicAuthPassword: $VECTOR_STORE_BASIC_AUTH_PASSWORD
