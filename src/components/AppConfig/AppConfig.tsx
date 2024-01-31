@@ -26,6 +26,7 @@ export interface AppPluginSettings {
 
 export type Secrets = {
   openAIKey?: string;
+  qdrantApiKey?: string;
   vectorStoreBasicAuthPassword?: string;
   vectorEmbedderBasicAuthPassword?: string;
 };
@@ -39,6 +40,7 @@ function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
     openAIKey: secureJsonFields.openAIKey ?? false,
     vectorEmbedderBasicAuthPassword: secureJsonFields.vectorEmbedderBasicAuthPassword ?? false,
     vectorStoreBasicAuthPassword: secureJsonFields.vectorStoreBasicAuthPassword ?? false,
+    qdrantApiKey: secureJsonFields.qdrantApiKey ?? false,
   };
 }
 
@@ -119,7 +121,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       />
 
       <VectorConfig
-        settings={settings}
+        settings={settings.vector}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
         onChange={(vector) => {
