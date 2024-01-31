@@ -15,7 +15,7 @@ export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
   if (settings.openAI?.provider === 'azure' || settings.openAI?.provider === 'openai') {
     return 'openai';
-  } else if (settings.openAI?.provider === 'grafana' && settings.llmGateway?.optInStatus) {
+  } else if (settings.openAI?.provider === 'grafana' && settings.llmGateway?.isOptedIn) {
     return 'grafana-provided';
   } else {
     return 'disabled';
@@ -43,7 +43,7 @@ export function LLMConfig({
   // previousOpenAIProvider caches the value of the openAI provider, as it is overwritten by the grafana option
   const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<OpenAIProvider>();
   // optIn indicates if the user has opted in to Grafana-managed OpenAI
-  const [optIn, setOptIn] = useState<boolean>(settings.llmGateway?.optInStatus || false);
+  const [optIn, setOptIn] = useState<boolean>(settings.llmGateway?.isOptedIn || false);
 
   // 2 modals: opt-in and opt-out
   const [optInModalIsOpen, setOptInModalIsOpen] = useState<boolean>(false);
@@ -70,7 +70,7 @@ export function LLMConfig({
     onChange({
       ...settings,
       openAI: { provider: 'grafana' },
-      llmGateway: { ...settings.llmGateway, optInStatus: true },
+      llmGateway: { ...settings.llmGateway, isOptedIn: true },
     });
   };
 
@@ -81,7 +81,7 @@ export function LLMConfig({
     onChange({
       ...settings,
       openAI: { provider: undefined },
-      llmGateway: { ...settings.llmGateway, optInStatus: false },
+      llmGateway: { ...settings.llmGateway, isOptedIn: false },
     });
     setLLMOption('disabled');
   };
@@ -102,7 +102,7 @@ export function LLMConfig({
     if (previousOpenAIProvider !== undefined) {
       setPreviousOpenAIProvider(settings.openAI?.provider);
     }
-    if (settings.llmGateway?.optInStatus) {
+    if (settings.llmGateway?.isOptedIn) {
       // as already opted-in, can immediately use this setting. Otherwise requires Opt-In to use.
       onChange({ ...settings, openAI: { provider: 'grafana' } });
     }

@@ -15,7 +15,7 @@ import { VectorConfig, VectorSettings } from './Vector';
 ///////////////////////
 export interface LLMGatewaySettings {
   // Opt-in to LLMGateway?
-  optInStatus?: boolean;
+  isOptedIn?: boolean;
   // URL for LLMGateway
   url?: string;
 }
@@ -63,7 +63,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
   const validateInputs = (): boolean => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
-    if (settings?.openAI?.provider === 'grafana' && !settings?.llmGateway?.optInStatus) {
+    if (settings?.openAI?.provider === 'grafana' && !settings?.llmGateway?.isOptedIn) {
       alert("You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana");
       return false;
     }
