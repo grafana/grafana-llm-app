@@ -30,6 +30,8 @@ apps:
             authType: no-auth
             # authType: basic-auth
             # basicAuthUser: <user>
+      llmGateway:
+        url: http://llm-gateway:4033
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY

@@ -16,6 +16,8 @@ import { VectorConfig, VectorSettings } from './Vector';
 export interface LLMGatewaySettings {
   // Opt-in to LLMGateway?
   optInStatus?: boolean;
+  // URL for LLMGateway
+  url?: string;
 }
 //////////////////////
 export interface AppPluginSettings {
@@ -102,13 +104,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     <div data-testid={testIds.appConfig.container}>
       <LLMConfig
         settings={settings}
-        onChange={(newSettings) => {
+        onChange={(newSettings: AppPluginSettings) => {
           setSettings(newSettings);
           setUpdated(true);
         }}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
-        onChangeSecrets={(secrets) => {
+        onChangeSecrets={(secrets: Secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
           // Mark each secret as not configured. This will cause it to be included

@@ -7,7 +7,7 @@ import { Alert, Button, Card, Field, FieldSet, Icon, Modal, useStyles2 } from '@
 import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
 import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 
-// LLMOptions are the 3 possible UI options for LLMs.
+// LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
 export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
@@ -35,6 +35,7 @@ export function LLMConfig({
   onChangeSecrets: (secrets: Secrets) => void;
 }) {
   const s = useStyles2(getStyles);
+  const llmGatewayEnabled = settings.llmGateway?.url !== undefined; // if URL specified, llm-gateway available
 
   // llmOption is the currently chosen LLM option in the UI
   const [llmOption, setLLMOption] = useState<LLMOptions>(getLLMOptionFromSettings(settings));
@@ -65,14 +66,22 @@ export function LLMConfig({
     setOptIn(true);
     setOptInModalIsOpen(false);
 
-    onChange({ ...settings, openAI: { provider: 'grafana' }, llmGateway: { optInStatus: true } });
+    onChange({
+      ...settings,
+      openAI: { provider: 'grafana' },
+      llmGateway: { ...settings.llmGateway, optInStatus: true },
+    });
   };
 
   const doOptOut = () => {
     setOptIn(false);
     dismissOptOutModal();
 
-    onChange({ ...settings, openAI: { provider: undefined }, llmGateway: { optInStatus: false } });
+    onChange({
+      ...settings,
+      openAI: { provider: undefined },
+      llmGateway: { ...settings.llmGateway, optInStatus: false },
+    });
     setLLMOption('disabled');
   };
 
@@ -201,20 +210,22 @@ export function LLMConfig({
       </Modal>
 
       <FieldSet label="OpenAI Settings" className={s.sidePadding}>
-        <Card
-          isSelected={llmOption === 'grafana-provided'}
-          onClick={selectGrafanaManaged}
-          className={s.cardWithoutBottomMargin}
-        >
-          <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
-          <Card.Description>
-            Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana
-          </Card.Description>
-          <Card.Figure>
-            <Icon name="grafana" size="lg" />
-          </Card.Figure>
-        </Card>
-        {llmOption === 'grafana-provided' && (
+        {llmGatewayEnabled && (
+          <Card
+            isSelected={llmOption === 'grafana-provided'}
+            onClick={selectGrafanaManaged}
+            className={s.cardWithoutBottomMargin}
+          >
+            <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
+            <Card.Description>
+              Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana
+            </Card.Description>
+            <Card.Figure>
+              <Icon name="grafana" size="lg" />
+            </Card.Figure>
+          </Card>
+        )}
+        {llmGatewayEnabled && llmOption === 'grafana-provided' && (
           <div className={s.optionDetails}>
             <Field>
               {optIn ? (
@@ -245,6 +256,7 @@ export function LLMConfig({
             </Field>
           </div>
         )}
+
         <Card isSelected={llmOption === 'openai'} onClick={selectOpenAI} className={s.cardWithoutBottomMargin}>
           <Card.Heading>Use your own OpenAI account</Card.Heading>
           <Card.Description>Enable LLM features in Grafana using your own OpenAI details</Card.Description>
@@ -267,6 +279,7 @@ export function LLMConfig({
 
         <Card isSelected={llmOption === 'disabled'} onClick={selectLLMDisabled} className={s.cardWithoutBottomMargin}>
           <Card.Heading>Disable all LLM features in Grafana</Card.Heading>
+          <Card.Description>&nbsp;</Card.Description>
           <Card.Figure>
             <Icon name="times" size="lg" />
           </Card.Figure>

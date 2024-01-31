@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"os"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -47,7 +46,7 @@ type OpenAISettings struct {
 // LLMGatewaySettings contains the configuration for the Grafana Managed Key LLM solution.
 type LLMGatewaySettings struct {
 	// This is the URL of the LLM endpoint of the machine learning backend which proxies
-	// the request to our llm-gateway.
+	// the request to our llm-gateway. If empty, the gateway is disabled.
 	URL string `json:"url"`
 
 	// optInStatus indicates if customer has enabled the Grafana Managed Key LLM.
@@ -113,24 +112,22 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 
 	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
 	if settings.LLMGateway.URL == "" {
-		// Attempt to get the LLM Gateway URL from the LLM_GATEWAY_URL environment variable.
-		settings.LLMGateway.URL = strings.TrimRight(os.Getenv("LLM_GATEWAY_URL"), "/")
-		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, trying LLM_GATEWAY_URL env var", "LLM_GATEWAY_URL", settings.LLMGateway.URL)
-	}
-	if settings.LLMGateway.URL == "" {
-		// For debugging purposes only.
-		settings.LLMGateway.URL = "http://llm-gateway:4033"
-		log.DefaultLogger.Warn("Could not get LLM_GATEWAY_URL, using default", "default", settings.LLMGateway.URL)
+		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, the LLM Gateway support is disabled")
 	}
 
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 	case openAIProviderAzure:
 	case openAIProviderGrafana:
+		if settings.LLMGateway.URL == "" {
+			// llm-gateway not available, this provider is invalid so switch to disabled
+			log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
+			settings.OpenAI.Provider = ""
+		}
 	default:
-		// Default to Grafana-provided OpenAI if an unknown provider was specified.
+		// Default to disabled LLM support if an unknown provider was specified.
 		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)
-		settings.OpenAI.Provider = openAIProviderGrafana
+		settings.OpenAI.Provider = ""
 	}
 
 	// Read user's OpenAI key & the LLMGateway key
