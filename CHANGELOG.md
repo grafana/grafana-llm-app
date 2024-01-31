@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.2
+
+* Allow Qdrant API key to be configured in config UI, not just when provisioning
+
 ## 0.5.1
 
 * Fix issue where temporary errors were cached, causing /health to fail permanently.
