@@ -33,25 +33,28 @@ type App struct {
 	healthCheckMutex  sync.Mutex
 	healthOpenAI      *openAIHealthDetails
 	healthVector      *vectorHealthDetails
-	settings          Settings
+	settings          *Settings
 }
 
 // NewApp creates a new example *App instance.
 func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
+	var err error
 
 	log.DefaultLogger.Debug("Loading settings")
-	app.settings = loadSettings(appSettings)
+	app.settings, err = loadSettings(appSettings)
+	if err != nil {
+		log.DefaultLogger.Error("Error loading settings", "err", err)
+		return nil, err
+	}
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
 	// to use a *http.ServeMux for resource calls, so we can map multiple routes
 	// to CallResource without having to implement extra logic.
 	mux := http.NewServeMux()
-	app.registerRoutes(mux, app.settings)
+	app.registerRoutes(mux, *app.settings)
 	app.CallResourceHandler = httpadapter.New(mux)
-
-	var err error
 
 	if app.settings.Vector.Enabled {
 		log.DefaultLogger.Debug("Creating vector service")

@@ -3,17 +3,27 @@ import { lastValueFrom } from 'rxjs';
 
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, KeyValue, PluginConfigPageProps, PluginMeta } from '@grafana/data';
-import { FetchResponse, getBackendSrv, HealthCheckResult } from '@grafana/runtime';
+import { FetchResponse, HealthCheckResult, getBackendSrv } from '@grafana/runtime';
 import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
-import { OpenAIConfig, OpenAISettings } from './OpenAI';
-import { VectorConfig, VectorSettings } from './Vector';
 import { ShowHealthCheckResult } from './HealthCheck';
+import { LLMConfig } from './LLMConfig';
+import { OpenAISettings } from './OpenAI';
+import { VectorConfig, VectorSettings } from './Vector';
 
+///////////////////////
+export interface LLMGatewaySettings {
+  // Opt-in to LLMGateway?
+  isOptIn?: boolean;
+  // URL for LLMGateway
+  url?: string;
+}
+//////////////////////
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
+  llmGateway?: LLMGatewaySettings;
 }
 
 export type Secrets = {
@@ -51,17 +61,56 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
 
+  const validateInputs = (): boolean => {
+    // Check if Grafana-provided OpenAI enabled, that it has been opted-in
+    if (settings?.openAI?.provider === 'grafana' && !settings?.llmGateway?.isOptIn) {
+      alert("You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana");
+      return false;
+    }
+    return true;
+  };
+
+  const doSave = async () => {
+    if (!validateInputs()) {
+      return;
+    }
+    setIsUpdating(true);
+    setHealthCheck(undefined);
+    let key: keyof SecretsSet;
+    const secureJsonData: Secrets = {};
+    for (key in configuredSecrets) {
+      // Only include secrets that are not already configured on the backend,
+      // otherwise we'll overwrite them.
+      if (!configuredSecrets[key]) {
+        secureJsonData[key] = newSecrets[key];
+      }
+    }
+    await updatePlugin(plugin.meta.id, {
+      enabled,
+      pinned,
+      jsonData: settings,
+      secureJsonData,
+    });
+    // If disabling LLM features, no health check needed
+    if (settings.openAI?.provider !== undefined) {
+      const result = await checkPluginHealth(plugin.meta.id);
+      setHealthCheck(result.data);
+    }
+    setIsUpdating(false);
+    setUpdated(true);
+  };
+
   return (
     <div data-testid={testIds.appConfig.container}>
-      <OpenAIConfig
-        settings={settings.openAI ?? {}}
-        onChange={(openAI) => {
-          setSettings({ ...settings, openAI });
+      <LLMConfig
+        settings={settings}
+        onChange={(newSettings: AppPluginSettings) => {
+          setSettings(newSettings);
           setUpdated(true);
         }}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
-        onChangeSecrets={(secrets) => {
+        onChangeSecrets={(secrets: Secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
           // Mark each secret as not configured. This will cause it to be included
@@ -99,33 +148,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         healthCheck && <ShowHealthCheckResult {...healthCheck} />
       )}
       <div className={s.marginTop}>
-        <Button
-          type="submit"
-          data-testid={testIds.appConfig.submit}
-          onClick={async () => {
-            setIsUpdating(true);
-            setHealthCheck(undefined);
-            let key: keyof SecretsSet;
-            const secureJsonData: Secrets = {};
-            for (key in configuredSecrets) {
-              // Only include secrets that are not already configured on the backend,
-              // otherwise we'll overwrite them.
-              if (!configuredSecrets[key]) {
-                secureJsonData[key] = newSecrets[key];
-              }
-            }
-            await updatePlugin(plugin.meta.id, {
-              enabled,
-              pinned,
-              jsonData: settings,
-              secureJsonData,
-            });
-            const result = await checkPluginHealth(plugin.meta.id);
-            setIsUpdating(false);
-            setHealthCheck(result.data);
-          }}
-          disabled={!updated || isUpdating}
-        >
+        <Button type="submit" data-testid={testIds.appConfig.submit} onClick={doSave} disabled={!updated || isUpdating}>
           Save &amp; test
         </Button>
       </div>

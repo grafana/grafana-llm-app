@@ -2,12 +2,12 @@ import React, { ChangeEvent } from 'react';
 
 import { Field, FieldSet, Input, SecretInput, Select, useStyles2 } from '@grafana/ui';
 
+import { SelectableValue } from '@grafana/data';
 import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
-import { SelectableValue } from '@grafana/data';
 
-export type OpenAIProvider = 'openai' | 'azure';
+export type OpenAIProvider = 'openai' | 'azure' | 'grafana';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
@@ -43,7 +43,7 @@ export function OpenAIConfig({
     });
   };
   return (
-    <FieldSet label="OpenAI Settings">
+    <FieldSet label="Your OpenAI Account details">
       <Field label="OpenAI Provider">
         <Select
           data-testid={testIds.appConfig.openAIProvider}

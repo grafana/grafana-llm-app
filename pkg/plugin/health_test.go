@@ -49,6 +49,11 @@ func TestCheckHealth(t *testing.T) {
 			name: "everything disabled",
 			settings: backend.AppInstanceSettings{
 				DecryptedSecureJSONData: map[string]string{},
+				JSONData: json.RawMessage(`{
+					"openai": {
+						"provider": "openai"
+					}
+				}`),
 			},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
@@ -63,6 +68,11 @@ func TestCheckHealth(t *testing.T) {
 			name: "openai enabled",
 			settings: backend.AppInstanceSettings{
 				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				JSONData: json.RawMessage(`{
+					"openai": {
+						"provider": "openai"
+					}
+				}`),
 			},
 			hcClient: &mockHealthCheckClient{
 				do: func(req *http.Request) (*http.Response, error) {

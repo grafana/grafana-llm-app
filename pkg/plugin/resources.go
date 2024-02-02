@@ -15,8 +15,8 @@ import (
 )
 
 // modifyURL modifies the request URL to point to the configured OpenAI API.
-func modifyURL(openAI OpenAISettings, req *http.Request) error {
-	u, err := url.Parse(openAI.URL)
+func modifyURL(openAIUrl string, req *http.Request) error {
+	u, err := url.Parse(openAIUrl)
 	if err != nil {
 		log.DefaultLogger.Error("Unable to parse OpenAI URL", "err", err)
 		return fmt.Errorf("parse OpenAI URL: %w", err)
@@ -38,7 +38,7 @@ type openAIProxy struct {
 }
 
 func (a *openAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := modifyURL(a.settings.OpenAI, req)
+	err := modifyURL(a.settings.OpenAI.URL, req)
 	if err != nil {
 		// Attempt to write the error as JSON.
 		jd, err := json.Marshal(map[string]string{"error": err.Error()})
@@ -85,7 +85,7 @@ type azureOpenAIProxy struct {
 }
 
 func (a *azureOpenAIProxy) modifyRequest(req *http.Request) error {
-	err := modifyURL(a.settings.OpenAI, req)
+	err := modifyURL(a.settings.OpenAI.URL, req)
 	if err != nil {
 		return fmt.Errorf("modify url: %w", err)
 	}
@@ -167,6 +167,50 @@ func newAzureOpenAIProxy(settings Settings) http.Handler {
 	}
 }
 
+// grafanaOpenAIProxy is a reverse proxy for OpenAI API calls, that proxies all
+// requests via the llm-gateway.
+type grafanaOpenAIProxy struct {
+	settings Settings
+	// rp is a reverse proxy handling the modified request. Use this rather than
+	// our own client, since it handles things like buffering.
+	rp *httputil.ReverseProxy
+}
+
+func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	err := modifyURL(a.settings.LLMGateway.URL+"/openai", req) // GER: FIXME - not durable to / added
+	if err != nil {
+		// Attempt to write the error as JSON.
+		jd, err := json.Marshal(map[string]string{"error": err.Error()})
+		if err != nil {
+			// We can't write JSON, so just write the error string.
+			w.WriteHeader(http.StatusInternalServerError)
+			_, err = w.Write([]byte(err.Error()))
+			if err != nil {
+				log.DefaultLogger.Error("Unable to write error response", "err", err)
+			}
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, err = w.Write(jd)
+		if err != nil {
+			log.DefaultLogger.Error("Unable to write error response", "err", err)
+		}
+	}
+	a.rp.ServeHTTP(w, req)
+}
+
+func newGrafanaOpenAIProxy(settings Settings) http.Handler {
+	director := func(req *http.Request) {
+		req.Header.Add("Authorization", "Bearer "+settings.LLMGateway.apiKey)
+		req.Header.Add("X-Scope-OrgID", settings.Tenant)
+	}
+
+	return &grafanaOpenAIProxy{
+		settings: settings,
+		rp:       &httputil.ReverseProxy{Director: director},
+	}
+}
+
 type vectorSearchRequest struct {
 	Query      string                 `json:"query"`
 	Collection string                 `json:"collection"`
@@ -217,6 +261,8 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 		mux.Handle("/openai/", newOpenAIProxy(settings))
 	case openAIProviderAzure:
 		mux.Handle("/openai/", newAzureOpenAIProxy(settings))
+	case openAIProviderGrafana:
+		mux.Handle("/openai/", newGrafanaOpenAIProxy(settings))
 	default:
 		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
 	}
