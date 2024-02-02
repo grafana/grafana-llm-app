@@ -229,7 +229,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 					Provider: openAIProviderGrafana,
 				},
 				LLMGateway: LLMGatewaySettings{
-					OptInStatus: true,
+					IsOptIn: true,
 				},
 			},
 			apiKey: "abcd1234",
@@ -256,7 +256,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 					Provider: openAIProviderGrafana,
 				},
 				LLMGateway: LLMGatewaySettings{
-					OptInStatus: false,
+					IsOptIn: false,
 				}},
 			apiKey: "abcd1234",
 

@@ -85,7 +85,7 @@ func TestRunStream(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
 				LLMGateway: LLMGatewaySettings{
-					OptInStatus: false,
+					IsOptIn: false,
 				},
 			},
 			statusCode: http.StatusUnauthorized,
@@ -98,7 +98,7 @@ func TestRunStream(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
 				LLMGateway: LLMGatewaySettings{
-					OptInStatus: true,
+					IsOptIn: true,
 				},
 			},
 			statusCode: http.StatusPartialContent,

@@ -62,7 +62,7 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 
 	case openAIProviderGrafana:
 		// Ensure Grafana-managed OpenAI has been opted-in before permitting use
-		if !a.settings.LLMGateway.OptInStatus {
+		if !a.settings.LLMGateway.IsOptIn {
 			return nil, fmt.Errorf("Grafana Provided LLM access is not permitted. We require explicit Opt-In of the feature to continue")
 		}
 
