@@ -1,10 +1,18 @@
 package plugin
 
 import (
+	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
@@ -157,4 +165,83 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	}
 
 	return &settings, nil
+}
+
+// InstanceLLMOptInData contains the LLM opt-in state and the last user who changed it
+type instanceLLMOptInData struct {
+	IsOptIn        string `json:"llmIsOptIn"` // string with "0" being false, and "1" being true
+	OptInChangedBy string `json:"llmOptInChangedBy"`
+}
+
+type SaveLLMStateData struct {
+	GrafanaURL     url.URL `json:"grafanaUrl"`
+	APIKey         string  `json:"apikey"`
+	OptIn          bool    `json:"optIn"`
+	OptInChangedBy string  `json:"optInChangedBy"`
+}
+
+// SaveLLMOptInDataToGrafanaCom persists Grafana-managed LLM opt-in data to grafana.com.
+// This is required because provisioned plugins' settings do not survive a restart, and are
+// always reset to the state in grafana.com's provisioned-plugins endpoint.
+//
+// This function (and getPluginID) use the [/api/gnet][] endpoint, which [proxies requests][] to
+// the Grafana instance's configured [`GrafanaComUrl` setting][], which is set to the correct
+// value for the environment in Hosted Grafana instances.
+//
+// [/api/gnet]: https://github.com/grafana/grafana/blob/4d8287b319514b750617c20c130ffc424a3ecf2c/pkg/api/api.go#L677
+// [proxies requests]: https://github.com/grafana/grafana/blob/4bc582570ef7e713599ab3f2009fa75c27bb8a02/pkg/api/grafana_com_proxy.go#L28
+// [`GrafanaComUrl` setting]: https://github.com/grafana/grafana/blob/460be702619428e455ba74f8fb3bb563c1bea43a/pkg/setting/setting.go#L1088
+func SaveLLMOptInDataToGrafanaCom(ctx context.Context, data SaveLLMStateData, settings Settings) error {
+	notHG := os.Getenv("NOT_HG")
+	if notHG != "" {
+		log.DefaultLogger.Info("NOT_HG variable found; skipping saving settings to grafana.com")
+		return nil
+	}
+
+	var optIn string
+	if data.OptIn {
+		optIn = "1"
+	} else {
+		optIn = "0"
+	}
+
+	optInData := instanceLLMOptInData{
+		IsOptIn:        optIn,
+		OptInChangedBy: data.OptInChangedBy,
+	}
+
+	jsonData, err := json.Marshal(optInData)
+	if err != nil {
+		return fmt.Errorf("marshal plugin jsonData: %w", err)
+	}
+
+	gcomURL := data.GrafanaURL
+	gcomURL.Path = fmt.Sprintf("/api/gnet/instances/%s", settings.Tenant)
+
+	gcomReq, err := http.NewRequestWithContext(ctx, "POST", gcomURL.String(), bytes.NewReader(jsonData))
+	if err != nil {
+		return fmt.Errorf("create http request: %w", err)
+	}
+	gcomReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.APIKey))
+	gcomReq.Header.Set("X-Api-Key", settings.GrafanaComAPIKey)
+	gcomReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	_, err = doRequest(gcomReq)
+	return err
+}
+
+func doRequest(req *http.Request) ([]byte, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("send http request: %w", err)
+	}
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
+	if err != nil {
+		return nil, fmt.Errorf("read http response: %w", err)
+	}
+	if resp.StatusCode/100 != 2 {
+		return respBody, fmt.Errorf("HTTP error %d: %s", resp.StatusCode, string(respBody))
+	}
+	return respBody, nil
 }

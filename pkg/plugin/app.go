@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"sync"
 
@@ -36,6 +38,50 @@ type App struct {
 	settings          *Settings
 }
 
+// Handles requests to /save-llm-state endpoint, and pushes state to GCom.
+func handleSaveLLMState(rw http.ResponseWriter, req *http.Request) {
+	log.DefaultLogger.Debug("Received resource call", "url", req.URL.String(), "method", req.Method)
+
+	if req.Method != http.MethodGet {
+		return
+	}
+
+	requestData := SaveLLMStateData{}
+	if req.Body != nil {
+		defer func() {
+			if err := req.Body.Close(); err != nil {
+				log.DefaultLogger.Warn("Failed to close response body", "err", err)
+			}
+		}()
+		b, err := io.ReadAll(req.Body)
+		if err != nil {
+			log.DefaultLogger.Error("Failed to read request body to bytes", "error", err)
+		} else {
+			err := json.Unmarshal(b, &requestData)
+			if err != nil {
+				log.DefaultLogger.Error("Failed to unmarshal request body to JSON", "error", err)
+			}
+
+			log.DefaultLogger.Debug("Received resource call body", "body", requestData)
+		}
+	}
+
+	config := httpadapter.PluginConfigFromContext(req.Context())
+	appSettings := config.AppInstanceSettings
+
+	settings, err := loadSettings(*appSettings)
+	if err != nil {
+		log.DefaultLogger.Error("Error loading settings", "err", err)
+		return
+	}
+
+	ctx := req.Context()
+
+	SaveLLMOptInDataToGrafanaCom(ctx, requestData, *settings)
+
+	rw.WriteHeader(http.StatusOK)
+}
+
 // NewApp creates a new example *App instance.
 func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Creating new app instance")
@@ -53,6 +99,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	// to use a *http.ServeMux for resource calls, so we can map multiple routes
 	// to CallResource without having to implement extra logic.
 	mux := http.NewServeMux()
+	mux.HandleFunc("/save-llm-state", handleSaveLLMState)
 	app.registerRoutes(mux, *app.settings)
 	app.CallResourceHandler = httpadapter.New(mux)
 

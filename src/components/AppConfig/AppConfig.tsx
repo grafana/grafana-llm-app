@@ -12,6 +12,8 @@ import { LLMConfig } from './LLMConfig';
 import { OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 
+import { saveLLMOptInState } from 'api/api-key';
+
 ///////////////////////
 export interface LLMGatewaySettings {
   // Opt-in to LLMGateway?
@@ -96,6 +98,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       const result = await checkPluginHealth(plugin.meta.id);
       setHealthCheck(result.data);
     }
+    // Push LLM opt-in state info
+    saveLLMOptInState(settings.llmGateway?.isOptIn as boolean, 'USERNAME - GETME!');
+
     setIsUpdating(false);
     setUpdated(true);
   };
