@@ -12,8 +12,6 @@ import { LLMConfig } from './LLMConfig';
 import { OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 
-import { saveLLMOptInState } from 'api/api-key';
-
 ///////////////////////
 export interface LLMGatewaySettings {
   // Opt-in to LLMGateway?
@@ -22,6 +20,20 @@ export interface LLMGatewaySettings {
   url?: string;
 }
 //////////////////////
+
+export function getUsername(): string {
+  // TODO: implement this function to get the current Grafana user
+  return 'user';
+}
+
+export async function saveLLMOptInState(optIn: boolean, optInChangedBy: string): Promise<void> {
+  const backendSrv = getBackendSrv();
+  backendSrv.post(`api/plugins/grafana-llm-app/resources/save-llm-state`, {
+    optIn,
+    optInChangedBy,
+  });
+}
+
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
@@ -99,7 +111,8 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       setHealthCheck(result.data);
     }
     // Push LLM opt-in state info
-    saveLLMOptInState(settings.llmGateway?.isOptIn as boolean, 'USERNAME - GETME!');
+    const username = getUsername();
+    saveLLMOptInState(settings.llmGateway?.isOptIn as boolean, username);
 
     setIsUpdating(false);
     setUpdated(true);

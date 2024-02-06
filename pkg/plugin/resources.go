@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
@@ -254,6 +255,121 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 	w.Write(bodyJSON)
 }
 
+// SaveLLMOptInDataToGrafanaCom persists Grafana-managed LLM opt-in data to grafana.com.
+// This is required because provisioned plugins' settings do not survive a restart, and are
+// always reset to the state in grafana.com's provisioned-plugins endpoint.
+//
+// This function (and getPluginID) use the [/api/gnet][] endpoint, which [proxies requests][] to
+// the Grafana instance's configured [`GrafanaComUrl` setting][], which is set to the correct
+// value for the environment in Hosted Grafana instances.
+//
+// [/api/gnet]: https://github.com/grafana/grafana/blob/4d8287b319514b750617c20c130ffc424a3ecf2c/pkg/api/api.go#L677
+// [proxies requests]: https://github.com/grafana/grafana/blob/4bc582570ef7e713599ab3f2009fa75c27bb8a02/pkg/api/grafana_com_proxy.go#L28
+// [`GrafanaComUrl` setting]: https://github.com/grafana/grafana/blob/460be702619428e455ba74f8fb3bb563c1bea43a/pkg/setting/setting.go#L1088
+// Handles requests to /save-llm-state endpoint, and pushes state to GCom.
+func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
+	log.DefaultLogger.Debug("Handling request to save LLM state to gcom..")
+	if app.saToken == "" {
+		// not available in Grafana < 10.2.3 or if externalServiceAccounts feature flag is not enabled
+		log.DefaultLogger.Warn("Service account token not available; cannot save LLM state to gcom")
+		return
+	}
+
+	if req.Method != http.MethodPost {
+		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Read the request body
+	requestData := SaveLLMStateData{}
+	if req.Body != nil {
+		defer func() {
+			if err := req.Body.Close(); err != nil {
+				log.DefaultLogger.Warn("Failed to close response body", "err", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}()
+		b, err := io.ReadAll(req.Body)
+		if err != nil {
+			log.DefaultLogger.Error("Failed to read request body to bytes", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else {
+			err := json.Unmarshal(b, &requestData)
+			if err != nil {
+				log.DefaultLogger.Error("Failed to unmarshal request body to JSON", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		log.DefaultLogger.Warn("Request body is nil")
+	}
+
+	notHG := os.Getenv("NOT_HG")
+	if notHG != "" {
+		log.DefaultLogger.Info("NOT_HG variable found; skipping saving settings to gcom")
+		return
+	}
+
+	// turn the optIn bool into a string
+	var optIn string
+	if requestData.OptIn {
+		optIn = "1"
+	} else {
+		optIn = "0"
+	}
+
+	optInData := instanceLLMOptInData{
+		IsOptIn:        optIn,
+		OptInChangedBy: requestData.OptInChangedBy,
+	}
+
+	// Prepare the request to gcom
+	jsonData, err := json.Marshal(optInData)
+	if err != nil {
+		log.DefaultLogger.Error("Failed to marshal plugin jsonData", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	gcomPath := fmt.Sprintf("/api/gnet/instances/%s", app.settings.Tenant)
+	proxyReq, err := http.NewRequestWithContext(req.Context(), "POST", app.grafanaAppURL+gcomPath, bytes.NewReader(jsonData))
+	if err != nil {
+		log.DefaultLogger.Error("Failed to create http request", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Set the headers with the service account token
+	proxyReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", app.saToken))
+	proxyReq.Header.Set("X-Api-Key", app.settings.GrafanaComAPIKey)
+	proxyReq.Header.Set("Content-Type", "application/json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(proxyReq)
+	if err != nil {
+		log.DefaultLogger.Error("Error sending request", "err", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.DefaultLogger.Error("Error response from gcom", "status", resp.Status)
+		// parse the response body and return it
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.DefaultLogger.Error("Failed to read response body to bytes", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.Error(w, string(b), resp.StatusCode)
+		return
+	}
+	log.DefaultLogger.Debug("Saved state in gcom", "status", resp.Status)
+	w.WriteHeader(http.StatusOK)
+}
+
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 	switch settings.OpenAI.Provider {
@@ -267,4 +383,5 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
+	mux.HandleFunc("/save-llm-state", a.handleSaveLLMState)
 }
