@@ -29,6 +29,7 @@ ci/
 e2e-results/
 **/cypress/videos
 **/cypress/report.json
+tmp/Cypress/*
 
 # Editor
 .idea
