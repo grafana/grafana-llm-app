@@ -19,28 +19,6 @@ export interface LLMGatewaySettings {
   // URL for LLMGateway
   url?: string;
 }
-//////////////////////
-
-export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
-  return lastValueFrom(
-    getBackendSrv().fetch({
-      url: `api/plugins/grafana-llm-app/resources/save-llm-state`,
-      method: 'POST',
-      data: { optIn },
-    })
-  )
-    .then((response: FetchResponse) => {
-      if (!response.ok) {
-        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
-        return false;
-      }
-      return true;
-    })
-    .catch((error) => {
-      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
-      return false;
-    });
-}
 
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
@@ -230,3 +208,24 @@ const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckR
   });
   return lastValueFrom(response) as Promise<FetchResponse<HealthCheckResult>>;
 };
+
+export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
+  return lastValueFrom(
+    getBackendSrv().fetch({
+      url: `api/plugins/grafana-llm-app/resources/save-llm-state`,
+      method: 'POST',
+      data: { optIn },
+    })
+  )
+    .then((response: FetchResponse) => {
+      if (!response.ok) {
+        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
+        return false;
+      }
+      return true;
+    })
+    .catch((error) => {
+      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
+      return false;
+    });
+}
