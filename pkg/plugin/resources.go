@@ -324,12 +324,6 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 		log.DefaultLogger.Warn("Request body is nil")
 	}
 
-	notHG := os.Getenv("NOT_HG")
-	if notHG != "" {
-		log.DefaultLogger.Info("NOT_HG variable found; skipping saving settings to gcom")
-		return
-	}
-
 	// turn the optIn bool into a string
 	var optIn string
 	if requestData.OptIn {
@@ -348,6 +342,17 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	if user.Role != "Admin" {
 		handleError(w, fmt.Errorf("only admins can opt-in to Grafana managed LLM"), http.StatusForbidden)
 		return
+	}
+
+	notHG := os.Getenv("NOT_HG")
+	if notHG != "" {
+		log.DefaultLogger.Info("NOT_HG variable found; skipping saving settings to gcom and returning success.")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(`{"status": "Success"}`))
+		if err != nil {
+			handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	optInData := instanceLLMOptInData{
