@@ -17,6 +17,7 @@ import (
 )
 
 func handleError(w http.ResponseWriter, err error, status int) {
+	log.DefaultLogger.Error(err.Error())
 	// Attempt to write the error as JSON.
 	jd, err := json.Marshal(map[string]string{"error": err.Error()})
 	if err != nil {
