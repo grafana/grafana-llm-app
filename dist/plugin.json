@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "LLM",
+  "id": "grafana-llm-app",
+  "backend": true,
+  "streaming": true,
+  "executable": "gpx_llm",
+  "preload": true,
+  "info": {
+    "keywords": [
+      "app"
+    ],
+    "description": "Plugin to easily allow LLM based extensions to grafana",
+    "author": {
+      "name": "Grafana"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [
+      {
+        "name": "Configuration",
+        "path": "img/screenshot-configuration.png"
+      }
+    ],
+    "version": "0.6.0",
+    "updated": "2024-02-07"
+  },
+  "includes": [],
+  "dependencies": {
+    "grafanaDependency": ">=9.5.2",
+    "plugins": []
+  },
+  "iam": {
+    "permissions": [
+      {
+        "action": "orgs:read"
+      }
+    ]
+  }
+}
