@@ -21,24 +21,25 @@ export interface LLMGatewaySettings {
 }
 //////////////////////
 
-
 export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
   return lastValueFrom(
     getBackendSrv().fetch({
       url: `api/plugins/grafana-llm-app/resources/save-llm-state`,
       method: 'POST',
-      data: { optIn }
+      data: { optIn },
     })
-  ).then((response: FetchResponse) => {
-    if (!response.ok) {
-      alert('Error using Grafana-managed OpenAI: ' + response.status + ' ' + response.data.message);
+  )
+    .then((response: FetchResponse) => {
+      if (!response.ok) {
+        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
+        return false;
+      }
+      return true;
+    })
+    .catch((error) => {
+      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
       return false;
-    }
-    return true;
-  }).catch((error) => {
-    alert('Error using Grafana-managed OpenAI: ' + error.status + ' ' + error.data.message);
-    return false;
-  })
+    });
 }
 
 export interface AppPluginSettings {
@@ -90,7 +91,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const validateInputs = (): boolean => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !settings?.llmGateway?.isOptIn) {
-      alert("You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana");
+      console.error("You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana");
       return false;
     }
     return true;
@@ -105,6 +106,8 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       const optInResult = await saveLLMOptInState(settings.llmGateway?.isOptIn as boolean);
       setOptInUpdated(false);
       if (!optInResult) {
+        setIsUpdating(false);
+        setUpdated(false);
         return;
       }
     }

@@ -16,6 +16,25 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
+func handleError(w http.ResponseWriter, err error, status int) {
+	// Attempt to write the error as JSON.
+	jd, err := json.Marshal(map[string]string{"error": err.Error()})
+	if err != nil {
+		// We can't write JSON, so just write the error string.
+		w.WriteHeader(http.StatusInternalServerError)
+		_, err = w.Write([]byte(err.Error()))
+		if err != nil {
+			log.DefaultLogger.Error("Unable to write error response", "err", err)
+		}
+		return
+	}
+	w.WriteHeader(status)
+	_, err = w.Write(jd)
+	if err != nil {
+		log.DefaultLogger.Error("Unable to write error response", "err", err)
+	}
+}
+
 // modifyURL modifies the request URL to point to the configured OpenAI API.
 func modifyURL(openAIUrl string, req *http.Request) error {
 	u, err := url.Parse(openAIUrl)
@@ -277,7 +296,7 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if req.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		handleError(w, fmt.Errorf("invalid method"), http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -286,21 +305,18 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	if req.Body != nil {
 		defer func() {
 			if err := req.Body.Close(); err != nil {
-				log.DefaultLogger.Warn("Failed to close response body", "err", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				handleError(w, fmt.Errorf("failed to close request body %w", err), http.StatusInternalServerError)
 				return
 			}
 		}()
 		b, err := io.ReadAll(req.Body)
 		if err != nil {
-			log.DefaultLogger.Error("Failed to read request body to bytes", "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
 			return
 		} else {
 			err := json.Unmarshal(b, &requestData)
 			if err != nil {
-				log.DefaultLogger.Error("Failed to unmarshal request body to JSON", "error", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				handleError(w, fmt.Errorf("failed to unmarshal request body to JSON %w", err), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -325,12 +341,12 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	user := httpadapter.UserFromContext(req.Context())
 
 	if user == nil || user.Email == "" {
-		http.Error(w, "Valid user not found", http.StatusUnauthorized)
+		handleError(w, fmt.Errorf("valid user not found (please sign in and retry)"), http.StatusUnauthorized)
 		return
 	}
 
 	if user.Role != "Admin" {
-		http.Error(w, "Only admins can opt-in to Grafana managed LLM", http.StatusForbidden)
+		handleError(w, fmt.Errorf("only admins can opt-in to Grafana managed LLM"), http.StatusForbidden)
 		return
 	}
 
@@ -342,16 +358,14 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	// Prepare the request to gcom
 	jsonData, err := json.Marshal(optInData)
 	if err != nil {
-		log.DefaultLogger.Error("Failed to marshal plugin jsonData", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, fmt.Errorf("failed to marshal plugin jsonData %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	gcomPath := fmt.Sprintf("/api/gnet/instances/%s", app.settings.Tenant)
 	proxyReq, err := http.NewRequestWithContext(req.Context(), "POST", app.grafanaAppURL+gcomPath, bytes.NewReader(jsonData))
 	if err != nil {
-		log.DefaultLogger.Error("Failed to create http request", "error", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(w, fmt.Errorf("failed to create http request %w", err), http.StatusBadRequest)
 		return
 	}
 	// Set the headers with the service account token
@@ -362,8 +376,7 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	httpClient := &http.Client{}
 	resp, err := httpClient.Do(proxyReq)
 	if err != nil {
-		log.DefaultLogger.Error("Error sending request", "err", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(w, fmt.Errorf("failed to send request to gcom %w", err), http.StatusBadRequest)
 		return
 	}
 	defer resp.Body.Close()
@@ -372,11 +385,10 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 		// parse the response body and return it
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.DefaultLogger.Error("Failed to read response body to bytes", "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(w, fmt.Errorf("failed to read response body to bytes %w", err), http.StatusInternalServerError)
 			return
 		}
-		http.Error(w, string(b), resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to save state in gcom: %s %s", resp.Status, string(b)), http.StatusInternalServerError)
 		return
 	}
 	log.DefaultLogger.Debug("Saved state in gcom", "status", resp.Status)
@@ -385,8 +397,7 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte(`{"status": "Success"}`))
 	if err != nil {
-		log.DefaultLogger.Error("Failed to write response body", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
 		return
 	}
 }
