@@ -22,40 +22,19 @@ type providerName string
 type ProviderSettings struct {
 	URL            string       `json:"url"`
 	OrganizationID string       `json:"organizationId"`
-	Name           providerName `json:"name"` // TODO: make use of this field and drop "Provider"
+	Name           providerName `json:"name"`
 	// Deprecated: Use Name instead.
 	Provider     providerName `json:"provider"`
 	AzureMapping [][]string   `json:"azureModelMapping"`
+	PulzeModel   string       `json:"pulzeModel"`
 	apiKey       string
 }
 
 type Settings struct {
+	// Deprecated: Use Provider instead.
+	OpenAI   ProviderSettings      `json:"openAI"`
 	Provider ProviderSettings      `json:"provider"`
 	Vector   vector.VectorSettings `json:"vector"`
-}
-
-// UnmarshalJSON supports parsing of old settings structure.
-func (s *Settings) UnmarshalJSON(data []byte) error {
-	// partially parse data to check for keys
-	var ps map[string]json.RawMessage
-	err := json.Unmarshal(data, &ps)
-	if err != nil {
-		return err
-	}
-
-	// parse vector field
-	err = json.Unmarshal(ps["vector"], &s.Vector)
-	if err != nil {
-		return err
-	}
-
-	// use 'openAI' (old settings structure) as a fallback
-	keyToParse := "provider"
-	if _, exists := ps[keyToParse]; !exists {
-		log.DefaultLogger.Warn("No 'provider' settings found, using deprecated 'openAI' field! Please migrate to 'settings.provider'")
-		keyToParse = "openAI"
-	}
-	return json.Unmarshal(ps[keyToParse], &s.Provider)
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) Settings {
@@ -65,14 +44,20 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 			Name: providerOpenAI,
 		},
 	}
+
 	_ = json.Unmarshal(appSettings.JSONData, &settings)
+	// populate the new settings structure from 'openAI' if not present
+	if settings.Provider.Name == "" {
+		settings.Provider = settings.OpenAI
+		settings.Provider.Name = settings.Provider.Provider
+	}
 
 	if settings.Vector.Embed.Type == embed.EmbedderOpenAI {
 		settings.Vector.Embed.OpenAI.URL = settings.Provider.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
 
-	switch settings.Provider.Provider {
+	switch settings.Provider.Name {
 	case providerOpenAI:
 		// We need to handle the case where the user has customized the URL,
 		// then reverted that customization so that the JSON data includes
@@ -87,8 +72,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) Settings {
 		}
 	default:
 		// Default to OpenAI if an unknown provider was specified.
-		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.Provider.Provider)
-		settings.Provider.Provider = providerOpenAI
+		settings.Provider.Name = providerOpenAI
 	}
 
 	settings.Provider.apiKey = appSettings.DecryptedSecureJSONData[providerKey]

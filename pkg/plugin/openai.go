@@ -17,7 +17,7 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 	if err != nil {
 		return nil, err
 	}
-	switch a.settings.Provider.Provider {
+	switch a.settings.Provider.Name {
 	case providerOpenAI:
 		req.Header.Set("Authorization", "Bearer "+a.settings.Provider.apiKey)
 		req.Header.Set("OpenAI-Organization", a.settings.Provider.OrganizationID)
@@ -34,7 +34,7 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, openAIURL *url.URL, body map[string]interface{}) (*http.Request, error) {
 	log.DefaultLogger.Debug("Receiving OpenAIChatCompletionsRequest")
 	url := openAIURL
-	switch a.settings.Provider.Provider {
+	switch a.settings.Provider.Name {
 	case providerOpenAI:
 		url.Path = "/v1/chat/completions"
 
@@ -57,7 +57,7 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, openAIURL *ur
 		url.Path = "/v1/chat/completions"
 
 	default:
-		return nil, fmt.Errorf("Unknown provider: %s", a.settings.Provider.Provider)
+		return nil, fmt.Errorf("Unknown provider: %s", a.settings.Provider.Name)
 	}
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {

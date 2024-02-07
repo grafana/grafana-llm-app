@@ -73,6 +73,7 @@ func newOpenAIProxy(settings Settings) http.Handler {
 }
 
 func newPulzeProxy(settings Settings) http.Handler {
+	// TODO: If no model is provided in the payload, use pulzeModel
 	director := func(req *http.Request) {
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/pulze")
 		req.Header.Add("Authorization", "Bearer "+settings.Provider.apiKey)
@@ -223,7 +224,7 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
-	switch settings.Provider.Provider {
+	switch settings.Provider.Name {
 	case providerOpenAI:
 		mux.Handle("/openai/", newOpenAIProxy(settings))
 	case providerAzure:
@@ -231,7 +232,7 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 	case providerPulze:
 		mux.Handle("/pulze/", newPulzeProxy(settings))
 	default:
-		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.Provider.Provider)
+		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.Provider.Name)
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 }

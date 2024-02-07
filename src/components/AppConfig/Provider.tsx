@@ -16,6 +16,8 @@ export interface ProviderSettings {
   name?: Provider;
   // The organization ID for OpenAI.
   organizationId?: string;
+  // The default model for Pulze.
+  pulzeModel?: string;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
 }
@@ -43,10 +45,9 @@ export function ProviderConfig({
     });
   };
   return (
-    <FieldSet label="LLM Settings">
-      <Field label="Provider">
+    <FieldSet label="Provider Settings">
+      <Field label="Provider" data-testid={testIds.appConfig.openAIProvider}>
         <Select
-          data-testid={testIds.appConfig.openAIProvider}
           options={
             [
               { label: 'OpenAI', value: 'openai' },
@@ -72,8 +73,8 @@ export function ProviderConfig({
             settings.name === 'azure'
               ? `https://<resource-name>.openai.azure.com`
               : settings.name === 'pulze'
-                ? 'https://api.pulze.ai'
-                : `https://api.openai.com`
+              ? 'https://api.pulze.ai/v1'
+              : `https://api.openai.com`
           }
           onChange={onChangeField}
         />
@@ -122,6 +123,25 @@ export function ProviderConfig({
                 azureModelMapping,
               })
             }
+          />
+        </Field>
+      )}
+      {settings.name === 'pulze' && (
+        <Field
+          label="Default Pulze Model"
+          description="The default pulze model to use"
+          data-testid={testIds.appConfig.pulzeModel}
+        >
+          <Select
+            options={
+              [
+                { label: 'pulze', value: 'pulze' },
+                { label: 'pulze-v0', value: 'pulze-v0' },
+              ] as Array<SelectableValue<Provider>>
+            }
+            value={settings.pulzeModel ?? 'pulze'}
+            onChange={(e) => onChange({ ...settings, pulzeModel: e.value })}
+            width={60}
           />
         </Field>
       )}

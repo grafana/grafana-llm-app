@@ -5,6 +5,7 @@ export const testIds = {
     openAIKey: 'data-testid ac-openai-api-key',
     openAIOrganizationID: 'data-testid ac-openai-api-organization-id',
     openAIUrl: 'data-testid ac-openai-api-url',
+    pulzeModel: 'data-testid ac-pulze-model',
     vectorEnabled: 'data-testid ac-vector-enabled',
     qdrantAddress: 'data-testid ac-qdrant-address',
     qdrantSecure: 'data-testid ac-qdrant-secure',

@@ -37,9 +37,9 @@ function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
 export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> {}
 
 // migration layer to convert old to new structure
-const initialJsonData = (jsonData: KeyValue<any>): AppPluginSettings => {
+export const initialJsonData = (jsonData: KeyValue<any>): AppPluginSettings => {
   // destructure old fields and rename 'provider' to 'name'
-  const {provider: name, ...oldSettings} = jsonData.openAI ?? {}
+  const {provider: name, ...oldSettings} = jsonData.openAI ?? { provider: "openai" }
     // only use values from openAI if no provider configured
   return {
     provider: jsonData.provider ?? {...oldSettings, name},
