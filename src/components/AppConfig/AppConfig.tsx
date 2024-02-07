@@ -82,6 +82,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const [configuredSecrets, setConfiguredSecrets] = useState<SecretsSet>(initialSecrets(secureJsonFields ?? {}));
   // Whether any settings have been updated.
   const [updated, setUpdated] = useState(false);
+  const [optInUpdated, setOptInUpdated] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
@@ -100,7 +101,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       return;
     }
     // Push LLM opt-in state, will also check if the user is allowed to opt-in
-    if (settings.enableGrafanaManagedLLM && settings.llmGateway?.isOptIn !== undefined) {
+    if (settings.enableGrafanaManagedLLM && optInUpdated) {
       const optInResult = await saveLLMOptInState(settings.llmGateway?.isOptIn as boolean);
       setOptInUpdated(false);
       if (!optInResult) {
@@ -139,6 +140,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       <LLMConfig
         settings={settings}
         onChange={(newSettings: AppPluginSettings) => {
+          if (newSettings.llmGateway?.isOptIn !== settings.llmGateway?.isOptIn) {
+            setOptInUpdated(true);
+          }
           setSettings(newSettings);
           setUpdated(true);
         }}
