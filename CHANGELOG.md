@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.5.3
+## 0.6.0
 
 * Add Grafana-managed OpenAI as a provider option (Grafana Cloud only)
 
