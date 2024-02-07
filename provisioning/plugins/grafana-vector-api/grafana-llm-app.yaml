@@ -4,6 +4,7 @@ apps:
   - type: grafana-llm-app
     jsonData:
       base64EncodedAccessTokenSet: True
+      # enableGrafanaManagedLLM: True
       openAI:
         provider: openai
         url: https://api.openai.com

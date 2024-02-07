@@ -45,6 +45,8 @@
     "unmarshalling",
     "Upsert",
     "vectorapi",
-    "BAAI"
+    "BAAI",
+    "gcom",
+    "gnet",
   ]
 }

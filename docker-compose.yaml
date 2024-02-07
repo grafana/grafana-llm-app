@@ -6,7 +6,7 @@ services:
     build:
       context: ./.config
       args:
-        grafana_version: ${GRAFANA_VERSION:-10.1.0}
+        grafana_version: ${GRAFANA_VERSION:-10.3.0}
     environment:
       AZURE_OPENAI_API_KEY: $AZURE_OPENAI_API_KEY
       GF_LOG_LEVEL: debug
@@ -14,6 +14,7 @@ services:
       OPENAI_API_KEY: $OPENAI_API_KEY
       VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
       VECTOR_STORE_BASIC_AUTH_PASSWORD: $VECTOR_STORE_BASIC_AUTH_PASSWORD
+      GF_FEATURE_TOGGLES_ENABLE: externalServiceAccounts
     ports:
       - 3000:3000/tcp
     volumes:

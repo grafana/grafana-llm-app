@@ -36,7 +36,8 @@ export function LLMConfig({
   onChangeSecrets: (secrets: Secrets) => void;
 }) {
   const s = useStyles2(getStyles);
-  const llmGatewayEnabled = settings.llmGateway?.url !== undefined; // if URL specified, llm-gateway available
+  // should only be relevant for Grafana Cloud
+  const allowGrafanaManagedLLM = settings.enableGrafanaManagedLLM === true;
 
   // llmOption is the currently chosen LLM option in the UI
   const [llmOption, setLLMOption] = useState<LLMOptions>(getLLMOptionFromSettings(settings));
@@ -208,7 +209,7 @@ export function LLMConfig({
       </Modal>
 
       <FieldSet label="OpenAI Settings" className={s.sidePadding}>
-        {llmGatewayEnabled && (
+        {allowGrafanaManagedLLM && (
           <Card
             isSelected={llmOption === 'grafana-provided'}
             onClick={selectGrafanaManaged}
@@ -223,7 +224,7 @@ export function LLMConfig({
             </Card.Figure>
           </Card>
         )}
-        {llmGatewayEnabled && llmOption === 'grafana-provided' && (
+        {allowGrafanaManagedLLM && llmOption === 'grafana-provided' && (
           <div className={s.optionDetails}>
             <Field>
               {optIn ? (
@@ -291,7 +292,6 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   sidePadding: css`
     margin-left: ${theme.spacing(1)};
     margin-right: ${theme.spacing(1)};
-    width: 1000px;
   `,
   divWithScrollbar: css`
     overflow-y: auto;

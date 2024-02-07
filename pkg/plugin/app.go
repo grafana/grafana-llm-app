@@ -3,6 +3,8 @@ package plugin
 import (
 	"context"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -34,6 +36,8 @@ type App struct {
 	healthOpenAI      *openAIHealthDetails
 	healthVector      *vectorHealthDetails
 	settings          *Settings
+	saToken           string
+	grafanaAppURL     string
 }
 
 // NewApp creates a new example *App instance.
@@ -55,6 +59,16 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	mux := http.NewServeMux()
 	app.registerRoutes(mux, *app.settings)
 	app.CallResourceHandler = httpadapter.New(mux)
+
+	// Getting the service account token that has been shared with the plugin
+	app.saToken = os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+
+	// The Grafana URL is required to request Grafana API later
+	app.grafanaAppURL = strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
+	if app.grafanaAppURL == "" {
+		// For debugging purposes only
+		app.grafanaAppURL = "http://localhost:3000"
+	}
 
 	if app.settings.Vector.Enabled {
 		log.DefaultLogger.Debug("Creating vector service")

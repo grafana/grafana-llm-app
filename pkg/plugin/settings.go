@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -157,4 +158,16 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	}
 
 	return &settings, nil
+}
+
+// InstanceLLMOptInData contains the LLM opt-in state and the last user who changed it
+type instanceLLMOptInData struct {
+	IsOptIn        string `json:"llmIsOptIn"` // string with "0" being false, and "1" being true
+	OptInChangedBy string `json:"llmOptInChangedBy"`
+}
+
+type SaveLLMStateData struct {
+	GrafanaURL     url.URL `json:"grafanaUrl"`
+	OptIn          bool    `json:"optIn"`
+	OptInChangedBy string  `json:"optInChangedBy"`
 }
