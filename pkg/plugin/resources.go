@@ -72,16 +72,86 @@ func newOpenAIProxy(settings Settings) http.Handler {
 	}
 }
 
+// pulzeProxy is a reverse proxy for Pulze API calls.
+// It modifies the request to point to the configured OpenAI API, returning
+// a 400 error if the URL in settings cannot be parsed, then proxies the request
+// using the configured API key and setting the default pulze model if none given.
+type pulzeProxy struct {
+	settings Settings
+	// rp is a reverse proxy handling the modified request. Use this rather than
+	// our own client, since it handles things like buffering.
+	rp *httputil.ReverseProxy
+}
+
 func newPulzeProxy(settings Settings) http.Handler {
-	// TODO: If no model is provided in the payload, use pulzeModel
-	director := func(req *http.Request) {
-		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/pulze")
-		req.Header.Add("Authorization", "Bearer "+settings.Provider.apiKey)
-	}
-	return &openAIProxy{
+	// We make all of the actual modifications in ServeHTTP, since they can fail
+	// and we want to early-return from HTTP requests in that case.
+	director := func(req *http.Request) {}
+	return &pulzeProxy{
 		settings: settings,
 		rp:       &httputil.ReverseProxy{Director: director},
 	}
+}
+
+func (p *pulzeProxy) modifyRequest(req *http.Request) error {
+	err := modifyURL(p.settings.Provider, req)
+	if err != nil {
+		return fmt.Errorf("modify url: %w", err)
+	}
+
+	log.DefaultLogger.Debug("Pre URL: %s", req.URL.Path)
+
+	req.URL.Path = strings.TrimPrefix(req.URL.Path, "/pulze")
+	req.Header.Add("Authorization", "Bearer "+p.settings.Provider.apiKey)
+
+	log.DefaultLogger.Debug("After URL: %s", req.URL.Path)
+
+	// Read the body so we can determine if we need to add the configured pulze model
+	bodyBytes, _ := io.ReadAll(req.Body)
+	var requestBody map[string]interface{}
+	err = json.Unmarshal(bodyBytes, &requestBody)
+	if err != nil {
+		return fmt.Errorf("unmarshal request body: %w", err)
+	}
+
+	// check if model is empty or not present
+	if val, ok := requestBody["model"].(string); !ok || val == "" {
+		requestBody["model"] = p.settings.Provider.PulzeModel
+		log.DefaultLogger.Debug(fmt.Sprintf("New Body: %s", requestBody))
+	}
+
+	newBodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("unmarshal request body: %w", err)
+	}
+
+	req.Body = io.NopCloser(bytes.NewBuffer(newBodyBytes))
+	req.ContentLength = int64(len(newBodyBytes))
+	return nil
+}
+
+func (p *pulzeProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	err := p.modifyRequest(req)
+	if err != nil {
+		// Attempt to write the error as JSON.
+		jd, err := json.Marshal(map[string]string{"error": err.Error()})
+		if err != nil {
+			// We can't write JSON, so just write the error string.
+			w.WriteHeader(http.StatusInternalServerError)
+			_, err = w.Write([]byte(err.Error()))
+			if err != nil {
+				log.DefaultLogger.Error("Unable to write error response", "err", err)
+			}
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, err = w.Write(jd)
+		if err != nil {
+			log.DefaultLogger.Error("Unable to write error response", "err", err)
+		}
+		return
+	}
+	p.rp.ServeHTTP(w, req)
 }
 
 // azureOpenAIProxy is a reverse proxy for Azure OpenAI API calls.

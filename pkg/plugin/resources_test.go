@@ -190,7 +190,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expStatus: http.StatusBadRequest,
 		},
 		{
-			name: "pulze",
+			name: "pulze with specific model",
 
 			openAIsettings: ProviderSettings{
 				Name:       providerPulze,
@@ -200,14 +200,34 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			method: http.MethodPost,
 			path:   "/pulze/v1/chat/completions",
-			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			body:   []byte(`{"model": "openai/gpt-3.5-turbo", "messages": ["some stuff"]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization": {"Bearer abcd1234"},
-				// "OpenAI-Organization": {"myOrg"},
 			},
 			expReqPath: "/v1/chat/completions",
-			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			expReqBody: []byte(`{"model": "openai/gpt-3.5.turbo", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "pulze without model",
+
+			openAIsettings: ProviderSettings{
+				Name:       providerPulze,
+				PulzeModel: "pulze",
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/pulze/v1/chat/completions",
+			body:   []byte(`{"model": "", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "pulze", "messages": ["some stuff"]}`),
 
 			expStatus: http.StatusOK,
 		},
