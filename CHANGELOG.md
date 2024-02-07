@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.0
+
+* Add Grafana-managed OpenAI as a provider option (Grafana Cloud only)
+
 ## 0.5.2
 
 * Allow Qdrant API key to be configured in config UI, not just when provisioning
