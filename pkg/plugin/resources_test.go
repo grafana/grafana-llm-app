@@ -104,7 +104,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 
-		openAIsettings OpenAISettings
+		openAIsettings ProviderSettings
 		apiKey         string
 
 		method string
@@ -124,9 +124,9 @@ func TestCallOpenAIProxy(t *testing.T) {
 		{
 			name: "openai",
 
-			openAIsettings: OpenAISettings{
+			openAIsettings: ProviderSettings{
 				OrganizationID: "myOrg",
-				Provider:       openAIProviderOpenAI,
+				Name:           providerOpenAI,
 			},
 			apiKey: "abcd1234",
 
@@ -146,9 +146,9 @@ func TestCallOpenAIProxy(t *testing.T) {
 		{
 			name: "azure",
 
-			openAIsettings: OpenAISettings{
+			openAIsettings: ProviderSettings{
 				OrganizationID: "myOrg",
-				Provider:       openAIProviderAzure,
+				Name:           providerAzure,
 				AzureMapping: [][]string{
 					{"gpt-3.5-turbo", "gpt-35-turbo"},
 				},
@@ -171,9 +171,9 @@ func TestCallOpenAIProxy(t *testing.T) {
 		{
 			name: "azure invalid deployment",
 
-			openAIsettings: OpenAISettings{
+			openAIsettings: ProviderSettings{
 				OrganizationID: "myOrg",
-				Provider:       openAIProviderAzure,
+				Name:           providerAzure,
 				AzureMapping: [][]string{
 					{"gpt-3.5-turbo", "gpt-35-turbo"},
 				},
@@ -189,6 +189,48 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			expStatus: http.StatusBadRequest,
 		},
+		{
+			name: "pulze with specific model",
+
+			openAIsettings: ProviderSettings{
+				Name:       providerPulze,
+				PulzeModel: "pulze",
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/pulze/v1/chat/completions",
+			body:   []byte(`{"model": "openai/gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "openai/gpt-3.5.turbo", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "pulze without model",
+
+			openAIsettings: ProviderSettings{
+				Name:       providerPulze,
+				PulzeModel: "pulze",
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/pulze/v1/chat/completions",
+			body:   []byte(`{"model": "", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "pulze", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
@@ -199,7 +241,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			tc.openAIsettings.URL = server.server.URL
 
 			// Initialize app
-			settings := Settings{OpenAI: tc.openAIsettings}
+			settings := Settings{Provider: tc.openAIsettings}
 			jsonData, err := json.Marshal(settings)
 			if err != nil {
 				t.Fatalf("json marshal: %s", err)
@@ -207,7 +249,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			appSettings := backend.AppInstanceSettings{
 				JSONData: jsonData,
 				DecryptedSecureJSONData: map[string]string{
-					"openAIKey": tc.apiKey,
+					"providerKey": tc.apiKey,
 				},
 			}
 			inst, err := NewApp(ctx, appSettings)

@@ -30,7 +30,7 @@ func TestEmbeddingSettingLogic(t *testing.T) {
 						}
 					}
 				}`),
-				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				DecryptedSecureJSONData: map[string]string{providerKey: "abcd1234"},
 			},
 			embeddingURL:           "https://api.openai.com",
 			embeddingAuthType:      "openai-key-auth",

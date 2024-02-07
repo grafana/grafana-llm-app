@@ -17,18 +17,16 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 	if err != nil {
 		return nil, err
 	}
-	switch a.settings.Provider.Provider {
-	case openAIProviderOpenAI:
+	switch a.settings.Provider.Name {
+	case providerOpenAI:
 		req.Header.Set("Authorization", "Bearer "+a.settings.Provider.apiKey)
 		req.Header.Set("OpenAI-Organization", a.settings.Provider.OrganizationID)
-	case openAIProviderAzure:
+	case providerAzure:
 		req.Header.Set("api-key", a.settings.Provider.apiKey)
-	case openAIProviderPulze:
+	case providerPulze:
 		log.DefaultLogger.Debug("In newAuthenticatedOpenAIRequest case")
 		req.Header.Set("Authorization", "Bearer "+a.settings.Provider.apiKey)
-		log.DefaultLogger.Debug(a.settings.Provider.apiKey)
-		pulzeLabels := fmt.Sprintf("{\"grafana_org_id\": \"%s\"}", a.settings.Provider.OrganizationID)
-		req.Header.Set("Pulze-Labels", pulzeLabels)
+		req.Header.Set("Pulze-Labels", "{\"x-grafana-llm-plugin\": true}")
 	}
 	return req, nil
 }
@@ -36,11 +34,11 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, openAIURL *url.URL, body map[string]interface{}) (*http.Request, error) {
 	log.DefaultLogger.Debug("Receiving OpenAIChatCompletionsRequest")
 	url := openAIURL
-	switch a.settings.Provider.Provider {
-	case openAIProviderOpenAI:
+	switch a.settings.Provider.Name {
+	case providerOpenAI:
 		url.Path = "/v1/chat/completions"
 
-	case openAIProviderAzure:
+	case providerAzure:
 		deployment := ""
 		for _, v := range a.settings.Provider.AzureMapping {
 			if val, ok := body["model"].(string); ok && val == v[0] {
@@ -54,12 +52,12 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, openAIURL *ur
 		delete(body, "model")
 		url.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
 		url.RawQuery = "api-version=2023-03-15-preview"
-	case openAIProviderPulze:
+	case providerPulze:
 		log.DefaultLogger.Debug("Receiving OpenAIChatCompletionsRequest: in pulze case")
 		url.Path = "/v1/chat/completions"
 
 	default:
-		return nil, fmt.Errorf("Unknown provider: %s", a.settings.Provider.Provider)
+		return nil, fmt.Errorf("Unknown provider: %s", a.settings.Provider.Name)
 	}
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {

@@ -51,9 +51,9 @@ func TestCheckHealth(t *testing.T) {
 				DecryptedSecureJSONData: map[string]string{},
 			},
 			expDetails: healthCheckDetails{
-				OpenAI: openAIHealthDetails{
+				Provider: providerHealthDetails{
 					Error:  "No models are working",
-					Models: map[string]openAIModelHealth{},
+					Models: map[string]modelHealth{},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -62,7 +62,7 @@ func TestCheckHealth(t *testing.T) {
 		{
 			name: "openai enabled",
 			settings: backend.AppInstanceSettings{
-				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				DecryptedSecureJSONData: map[string]string{providerKey: "abcd1234"},
 			},
 			hcClient: &mockHealthCheckClient{
 				do: func(req *http.Request) (*http.Response, error) {
@@ -75,10 +75,10 @@ func TestCheckHealth(t *testing.T) {
 				},
 			},
 			expDetails: healthCheckDetails{
-				OpenAI: openAIHealthDetails{
+				Provider: providerHealthDetails{
 					Configured: true,
 					OK:         true,
-					Models: map[string]openAIModelHealth{
+					Models: map[string]modelHealth{
 						"gpt-3.5-turbo": {OK: true, Error: ""},
 						"gpt-4":         {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
 					},
@@ -111,9 +111,9 @@ func TestCheckHealth(t *testing.T) {
 			},
 			vService: &mockVectorService{},
 			expDetails: healthCheckDetails{
-				OpenAI: openAIHealthDetails{
+				Provider: providerHealthDetails{
 					Error:  "No models are working",
-					Models: map[string]openAIModelHealth{},
+					Models: map[string]modelHealth{},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -139,7 +139,7 @@ func TestCheckHealth(t *testing.T) {
 						}
 					}
 				}`),
-				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				DecryptedSecureJSONData: map[string]string{providerKey: "abcd1234"},
 			},
 			vService: &mockVectorService{},
 			hcClient: &mockHealthCheckClient{
@@ -153,11 +153,11 @@ func TestCheckHealth(t *testing.T) {
 				},
 			},
 			expDetails: healthCheckDetails{
-				OpenAI: openAIHealthDetails{
+				Provider: providerHealthDetails{
 					Configured: true,
 					OK:         true,
 					Error:      "",
-					Models: map[string]openAIModelHealth{
+					Models: map[string]modelHealth{
 						"gpt-3.5-turbo": {OK: true, Error: ""},
 						"gpt-4":         {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
 					},
@@ -202,14 +202,14 @@ func TestCheckHealth(t *testing.T) {
 			if err = json.Unmarshal(resp.JSONDetails, &details); err != nil {
 				t.Errorf("non-JSON response details (%s): %s", resp.JSONDetails, err)
 			}
-			if details.OpenAI.OK != tc.expDetails.OpenAI.OK ||
-				details.OpenAI.Configured != tc.expDetails.OpenAI.Configured ||
-				details.OpenAI.Error != tc.expDetails.OpenAI.Error {
-				t.Errorf("OpenAI details should be %+v, got %+v", tc.expDetails.OpenAI, details.OpenAI)
+			if details.Provider.OK != tc.expDetails.Provider.OK ||
+				details.Provider.Configured != tc.expDetails.Provider.Configured ||
+				details.Provider.Error != tc.expDetails.Provider.Error {
+				t.Errorf("OpenAI details should be %+v, got %+v", tc.expDetails.Provider, details.Provider)
 			}
-			for k, v := range tc.expDetails.OpenAI.Models {
-				if details.OpenAI.Models[k] != v {
-					t.Errorf("OpenAI model %s should be %+v, got %+v", k, v, details.OpenAI.Models[k])
+			for k, v := range tc.expDetails.Provider.Models {
+				if details.Provider.Models[k] != v {
+					t.Errorf("OpenAI model %s should be %+v, got %+v", k, v, details.Provider.Models[k])
 				}
 			}
 			if details.Vector != tc.expDetails.Vector {
