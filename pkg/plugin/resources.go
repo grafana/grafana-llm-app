@@ -380,9 +380,15 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.DefaultLogger.Debug("Saved state in gcom", "status", resp.Status)
-	w.WriteHeader(http.StatusOK)
+
 	// write a success response body since backendSrv.* needs a valid json response body
-	w.Write([]byte(`{"status": "Success"}`))
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write([]byte(`{"status": "Success"}`))
+	if err != nil {
+		log.DefaultLogger.Error("Failed to write response body", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
