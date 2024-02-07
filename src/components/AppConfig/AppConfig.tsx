@@ -44,6 +44,10 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
+  // The enableGrafanaManagedLLM flag will enable the plugin to use Grafana-managed OpenAI
+  // This will only work for Grafana Cloud install plugins
+  enableGrafanaManagedLLM?: boolean;
+  // Config used for Grafana-managed LLM
   llmGateway?: LLMGatewaySettings;
 }
 
@@ -96,7 +100,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       return;
     }
     // Push LLM opt-in state, will also check if the user is allowed to opt-in
-    if (settings.llmGateway?.isOptIn !== undefined) {
+    if (settings.enableGrafanaManagedLLM && settings.llmGateway?.isOptIn !== undefined) {
       const optInResult = await saveLLMOptInState(settings.llmGateway?.isOptIn as boolean);
       setOptInUpdated(false);
       if (!optInResult) {
