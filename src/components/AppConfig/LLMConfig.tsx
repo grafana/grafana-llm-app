@@ -292,7 +292,6 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   sidePadding: css`
     margin-left: ${theme.spacing(1)};
     margin-right: ${theme.spacing(1)};
-    width: 1000px;
   `,
   divWithScrollbar: css`
     overflow-y: auto;
