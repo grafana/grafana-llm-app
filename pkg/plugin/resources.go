@@ -291,7 +291,7 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	log.DefaultLogger.Debug("Handling request to save LLM state to gcom..")
 	if app.saToken == "" {
 		// not available in Grafana < 10.2.3 or if externalServiceAccounts feature flag is not enabled
-		log.DefaultLogger.Warn("Service account token not available; cannot save LLM state to gcom")
+		handleError(w, fmt.Errorf("Service account token not available; cannot save LLM state to gcom"), http.StatusForbidden)
 		return
 	}
 
