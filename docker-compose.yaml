@@ -50,31 +50,6 @@ services:
     volumes:
       - sentence-transformers:/app/.sentence_transfomers
 
-  # Bring up the llm-gateway service. Requires the machine-learning repo to be cloned in an
-  # adjacent directory. Set your OpenAI key in the .env file (see .env.example for format)
-  llm-gateway:
-    build:
-      context: ../machine-learning/
-      dockerfile: ../machine-learning/mlapi/Dockerfile
-      target: development
-      cache_from:
-        - us.gcr.io/kubernetes-dev/mlops-api:latest
-      args:
-        BUILDKIT_INLINE_CACHE: '1'
-    ports:
-      - 4033:4033
-    working_dir: /go/src/mlapi
-    entrypoint:
-      - 'air'
-    command:
-      - '-c'
-      - '.air.llm-gateway.toml'
-    environment:
-      air_wd: /go/src/mlapi
-      OPENAI_API_KEY: '$OPENAI_API_KEY'
-      OPENAI_ORGANIZATION_ID: '$OPENAI_ORGANIZATION_ID'
-    restart: unless-stopped
-
 volumes:
   sentence-transformers:
   # For grafana/vectorapi embedder or store
