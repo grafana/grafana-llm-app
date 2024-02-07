@@ -13,6 +13,7 @@ import (
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
 // modifyURL modifies the request URL to point to the configured OpenAI API.
@@ -321,9 +322,21 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 		optIn = "0"
 	}
 
+	user := httpadapter.UserFromContext(req.Context())
+
+	if user == nil || user.Email == "" {
+		http.Error(w, "Valid user not found", http.StatusUnauthorized)
+		return
+	}
+
+	if user.Role != "Admin" {
+		http.Error(w, "Only admins can opt-in to Grafana managed LLM", http.StatusForbidden)
+		return
+	}
+
 	optInData := instanceLLMOptInData{
 		IsOptIn:        optIn,
-		OptInChangedBy: requestData.OptInChangedBy,
+		OptInChangedBy: user.Email,
 	}
 
 	// Prepare the request to gcom
@@ -368,6 +381,8 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	}
 	log.DefaultLogger.Debug("Saved state in gcom", "status", resp.Status)
 	w.WriteHeader(http.StatusOK)
+	// write a success response body since backendSrv.* needs a valid json response body
+	w.Write([]byte(`{"status": "Success"}`))
 }
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.

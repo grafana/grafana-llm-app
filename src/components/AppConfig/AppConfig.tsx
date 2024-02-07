@@ -21,17 +21,24 @@ export interface LLMGatewaySettings {
 }
 //////////////////////
 
-export function getUsername(): string {
-  // TODO: implement this function to get the current Grafana user
-  return 'user';
-}
 
-export async function saveLLMOptInState(optIn: boolean, optInChangedBy: string): Promise<void> {
-  const backendSrv = getBackendSrv();
-  backendSrv.post(`api/plugins/grafana-llm-app/resources/save-llm-state`, {
-    optIn,
-    optInChangedBy,
-  });
+export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
+  return lastValueFrom(
+    getBackendSrv().fetch({
+      url: `api/plugins/grafana-llm-app/resources/save-llm-state`,
+      method: 'POST',
+      data: { optIn }
+    })
+  ).then((response: FetchResponse) => {
+    if (!response.ok) {
+      alert('Error using Grafana-managed OpenAI: ' + response.status + ' ' + response.data.message);
+      return false;
+    }
+    return true;
+  }).catch((error) => {
+    alert('Error using Grafana-managed OpenAI: ' + error.status + ' ' + error.data.message);
+    return false;
+  })
 }
 
 export interface AppPluginSettings {
@@ -88,6 +95,14 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     if (!validateInputs()) {
       return;
     }
+    // Push LLM opt-in state, will also check if the user is allowed to opt-in
+    if (settings.llmGateway?.isOptIn !== undefined) {
+      const optInResult = await saveLLMOptInState(settings.llmGateway?.isOptIn as boolean);
+      setOptInUpdated(false);
+      if (!optInResult) {
+        return;
+      }
+    }
     setIsUpdating(true);
     setHealthCheck(undefined);
     let key: keyof SecretsSet;
@@ -110,12 +125,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       const result = await checkPluginHealth(plugin.meta.id);
       setHealthCheck(result.data);
     }
-    // Push LLM opt-in state info
-    const username = getUsername();
-    saveLLMOptInState(settings.llmGateway?.isOptIn as boolean, username);
 
     setIsUpdating(false);
-    setUpdated(true);
+    setUpdated(false);
   };
 
   return (
