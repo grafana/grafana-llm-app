@@ -4,7 +4,7 @@ import { lastValueFrom } from 'rxjs';
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, KeyValue, PluginConfigPageProps, PluginMeta } from '@grafana/data';
 import { FetchResponse, HealthCheckResult, getBackendSrv } from '@grafana/runtime';
-import { Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
+import { Alert, Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
 import { ShowHealthCheckResult } from './HealthCheck';
@@ -88,17 +88,17 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
 
-  const validateInputs = (): boolean => {
+  const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !settings?.llmGateway?.isOptIn) {
-      console.error("You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana");
-      return false;
+      return "You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana";
     }
-    return true;
+    return;
   };
+  const errorState = validateInputs();
 
   const doSave = async () => {
-    if (!validateInputs()) {
+    if (errorState !== undefined) {
       return;
     }
     // Push LLM opt-in state, will also check if the user is allowed to opt-in
@@ -183,13 +183,19 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         }}
       />
 
+      {errorState !== undefined && <Alert title={errorState} severity="error" />}
       {isUpdating ? (
         <LoadingPlaceholder text="Running health check..." />
       ) : (
         healthCheck && <ShowHealthCheckResult {...healthCheck} />
       )}
       <div className={s.marginTop}>
-        <Button type="submit" data-testid={testIds.appConfig.submit} onClick={doSave} disabled={!updated || isUpdating}>
+        <Button
+          type="submit"
+          data-testid={testIds.appConfig.submit}
+          onClick={doSave}
+          disabled={!updated || isUpdating || errorState !== undefined}
+        >
           Save &amp; test
         </Button>
       </div>
