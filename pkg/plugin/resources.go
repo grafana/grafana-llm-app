@@ -121,12 +121,8 @@ func (p *pulzeOpenAIProxy) modifyRequest(req *http.Request) error {
 		return fmt.Errorf("modify url: %w", err)
 	}
 
-	log.DefaultLogger.Debug("Pre URL: %s", req.URL.Path)
-
 	req.URL.Path = strings.TrimPrefix(req.URL.Path, "/pulze")
 	req.Header.Add("Authorization", "Bearer "+p.settings.OpenAI.apiKey)
-
-	log.DefaultLogger.Debug("After URL: %s", req.URL.Path)
 
 	// Read the body so we can determine if we need to add the configured pulze model
 	bodyBytes, _ := io.ReadAll(req.Body)
@@ -139,7 +135,6 @@ func (p *pulzeOpenAIProxy) modifyRequest(req *http.Request) error {
 	// check if model is empty or not present
 	if val, ok := requestBody["model"].(string); !ok || val == "" {
 		requestBody["model"] = p.settings.OpenAI.PulzeModel
-		log.DefaultLogger.Debug(fmt.Sprintf("New Body: %s", requestBody))
 	}
 
 	newBodyBytes, err := json.Marshal(requestBody)

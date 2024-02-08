@@ -31,7 +31,7 @@ describe('Components/AppConfig', () => {
     } as unknown as AppConfigProps;
   });
 
-  test('OpenAI provider: renders the "Provider Settings" fieldset with API key, API url inputs and button', () => {
+  test('renders the "API Settings" fieldset with API key, API url inputs and button', () => {
     const plugin = { meta: { ...props.plugin.meta, enabled: false } };
 
     // @ts-ignore - We don't need to provide `addConfigPage()` and `setChannelSupport()` for these tests

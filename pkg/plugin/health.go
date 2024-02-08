@@ -124,7 +124,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		d.Error = "No models are working"
 	}
 
-	// Only cache result if provider is ok to use.
+	// Only cache result if openAI is ok to use.
 	if d.OK {
 		a.healthOpenAI = &d
 	}
