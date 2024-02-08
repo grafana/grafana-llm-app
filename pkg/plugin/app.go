@@ -3,6 +3,8 @@ package plugin
 import (
 	"context"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -33,25 +35,40 @@ type App struct {
 	healthCheckMutex  sync.Mutex
 	healthProvider    *providerHealthDetails
 	healthVector      *vectorHealthDetails
-	settings          Settings
+	settings          *Settings
+	saToken           string
+	grafanaAppURL     string
 }
 
 // NewApp creates a new example *App instance.
 func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Creating new app instance")
 	var app App
+	var err error
 
 	log.DefaultLogger.Debug("Loading settings")
-	app.settings = loadSettings(appSettings)
+	app.settings, err = loadSettings(appSettings)
+	if err != nil {
+		log.DefaultLogger.Error("Error loading settings", "err", err)
+		return nil, err
+	}
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
 	// to use a *http.ServeMux for resource calls, so we can map multiple routes
 	// to CallResource without having to implement extra logic.
 	mux := http.NewServeMux()
-	app.registerRoutes(mux, app.settings)
+	app.registerRoutes(mux, *app.settings)
 	app.CallResourceHandler = httpadapter.New(mux)
 
-	var err error
+	// Getting the service account token that has been shared with the plugin
+	app.saToken = os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+
+	// The Grafana URL is required to request Grafana API later
+	app.grafanaAppURL = strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
+	if app.grafanaAppURL == "" {
+		// For debugging purposes only
+		app.grafanaAppURL = "http://localhost:3000"
+	}
 
 	if app.settings.Vector.Enabled {
 		log.DefaultLogger.Debug("Creating vector service")

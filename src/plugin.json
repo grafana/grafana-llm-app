@@ -32,5 +32,12 @@
   "dependencies": {
     "grafanaDependency": ">=9.5.2",
     "plugins": []
+  },
+  "iam": {
+    "permissions": [
+      {
+        "action": "orgs:read"
+      }
+    ]
   }
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -38,12 +37,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	// set stream to true
 	requestBody["stream"] = true
 
-	u, err := url.Parse(a.settings.Provider.URL)
-	if err != nil {
-		return fmt.Errorf("Unable to parse OpenAI URL: %w", err)
-	}
-
-	httpReq, err := a.newOpenAIChatCompletionsRequest(ctx, u, requestBody)
+	httpReq, err := a.newOpenAIChatCompletionsRequest(ctx, requestBody, a.settings.Tenant)
 	if err != nil {
 		return fmt.Errorf("proxy: stream: error creating request: %w", err)
 	}

@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { Checkbox, Field, FieldSet, InlineField, Input, Select, useStyles2, Label } from '@grafana/ui';
+import { Checkbox, Field, FieldSet, InlineField, Input, Select, useStyles2, Label, SecretInput } from '@grafana/ui';
 
 import { testIds } from 'components/testIds';
-import { AppPluginSettings, Secrets, SecretsSet, getStyles } from './AppConfig';
+import { Secrets, SecretsSet, getStyles } from './AppConfig';
 
 import { BasicAuthConfig } from './AuthSettings/BasicAuth';
 import { SelectableValue } from '@grafana/data';
@@ -48,6 +48,12 @@ export interface Props<T> {
   onChange: (settings: T) => void;
 }
 
+interface SecretProps {
+  onChangeSecrets: (secrets: Secrets) => void;
+  secrets: Secrets;
+  secretsSet: SecretsSet;
+}
+
 const OPENAI_DEFAULT_MODEL = 'text-embedding-ada-002';
 const VECTORAPI_DEFAULT_MODEL = 'BAAI/bge-small-en-v1.5';
 
@@ -57,24 +63,18 @@ export function VectorConfig({
   secretsSet,
   onChange,
   onChangeSecrets,
-}: {
-  settings?: AppPluginSettings;
-  secrets: Secrets;
-  secretsSet: SecretsSet;
-  onChange: (settings: VectorSettings) => void;
-  onChangeSecrets: (secrets: Secrets) => void;
-}) {
+}: Props<VectorSettings> & SecretProps) {
   // update the model value if the embedder type changes
   React.useEffect(() => {
-    if (settings?.vector?.embed?.type === 'openai' && settings?.vector?.model !== OPENAI_DEFAULT_MODEL) {
-      onChange({ ...settings.vector, model: OPENAI_DEFAULT_MODEL });
+    if (settings?.embed?.type === 'openai' && settings?.model !== OPENAI_DEFAULT_MODEL) {
+      onChange({ ...settings, model: OPENAI_DEFAULT_MODEL });
     } else if (
-      settings?.vector?.embed?.type === 'grafana/vectorapi' &&
-      (settings?.vector?.model === undefined || settings?.vector?.model === OPENAI_DEFAULT_MODEL)
+      settings?.embed?.type === 'grafana/vectorapi' &&
+      (settings?.model === undefined || settings?.model === OPENAI_DEFAULT_MODEL)
     ) {
-      onChange({ ...settings.vector, model: VECTORAPI_DEFAULT_MODEL });
+      onChange({ ...settings, model: VECTORAPI_DEFAULT_MODEL });
     }
-  }, [settings?.vector, settings?.vector?.embed?.type, onChange]);
+  }, [settings, settings?.embed?.type, onChange]);
 
   return (
     <FieldSet label="Vector Settings">
@@ -82,41 +82,41 @@ export function VectorConfig({
         <Checkbox
           name="enabled"
           data-testid={testIds.appConfig.vectorEnabled}
-          value={settings?.vector?.enabled || false}
+          value={settings?.enabled || false}
           onChange={(e) => onChange({ ...settings, enabled: e.currentTarget.checked })}
         />
       </Field>
 
-      {settings?.vector?.enabled && (
+      {settings?.enabled && (
         <>
           <Field
             label="Model"
             description="The model used by the embedder and for embeddings stored in the store"
-            disabled={settings.vector?.embed?.type === 'openai' || settings.vector?.embed?.type === undefined}
+            disabled={settings.embed?.type === 'openai' || settings.embed?.type === undefined}
           >
             <Input
               width={60}
               name="model"
               data-testid={testIds.appConfig.model}
-              value={settings?.vector?.model}
-              placeholder={settings?.vector?.model}
-              onChange={(e) => onChange({ ...settings.vector, model: e.currentTarget.value })}
+              value={settings?.model}
+              placeholder={settings?.model}
+              onChange={(e) => onChange({ ...settings, model: e.currentTarget.value })}
             />
           </Field>
 
           <EmbedderConfig
-            settings={settings?.vector?.embed}
+            settings={settings?.embed}
             secrets={secrets}
             secretsSet={secretsSet}
-            onChange={(embed) => onChange({ ...settings.vector, embed })}
+            onChange={(embed) => onChange({ ...settings, embed })}
             onChangeSecrets={onChangeSecrets}
           />
 
           <StoreConfig
-            settings={settings?.vector?.store}
+            settings={settings?.store}
             secrets={secrets}
             secretsSet={secretsSet}
-            onChange={(store) => onChange({ ...settings.vector, store })}
+            onChange={(store) => onChange({ ...settings, store })}
             onChangeSecrets={onChangeSecrets}
           />
         </>
@@ -133,13 +133,7 @@ export function EmbedderConfig({
   secretsSet,
   onChange,
   onChangeSecrets,
-}: {
-  settings?: EmbedderSettings;
-  secrets: Secrets;
-  secretsSet: SecretsSet;
-  onChange: (settings: EmbedderSettings) => void;
-  onChangeSecrets: (secrets: Secrets) => void;
-}) {
+}: Props<EmbedderSettings> & SecretProps) {
   const s = useStyles2(getStyles);
 
   return (
@@ -157,9 +151,7 @@ export function EmbedderConfig({
             placeholder="Select Embedder Provider"
             value={settings?.type}
             width={60}
-            onChange={(e) => {
-              onChange({ ...settings, type: e.value });
-            }}
+            onChange={(e) => onChange({ type: e.value })}
           />
           {settings?.type === 'openai' && <Label> Using configured OpenAI as embedder provider </Label>}
         </>
@@ -206,12 +198,13 @@ export function EmbedderConfig({
   );
 }
 
-function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
+function QdrantConfig({ settings, secrets, secretsSet, onChange, onChangeSecrets }: Props<QdrantSettings> & SecretProps) {
+  const s = useStyles2(getStyles);
   return (
     <>
       <Field label="Address" description="Address of the qdrant gRPC server">
         <Input
-          width={60}
+          width={s.inlineFieldInputWidth}
           name="url"
           data-testid={testIds.appConfig.qdrantAddress}
           value={settings?.address}
@@ -227,6 +220,19 @@ function QdrantConfig({ settings, onChange }: Props<QdrantSettings>) {
           onChange={(e) => onChange({ ...settings, secure: e.currentTarget.checked })}
         />
       </Field>
+      {settings?.secure && (
+        <Field label="API key" description="API key for the qdrant gRPC server">
+          <SecretInput
+            name="qdrantApiKey"
+            width={s.inlineFieldInputWidth}
+            data-testid={testIds.appConfig.qdrantApiKey}
+            onChange={(e) => onChangeSecrets({ ...secrets, qdrantApiKey: e.currentTarget.value })}
+            onReset={() => onChangeSecrets({ ...secrets, qdrantApiKey: '' })}
+            isConfigured={secretsSet.qdrantApiKey ?? false}
+            value={secrets.qdrantApiKey}
+          />
+        </Field>
+      )}
     </>
   );
 }
@@ -255,13 +261,7 @@ function StoreConfig({
   secretsSet,
   onChange,
   onChangeSecrets,
-}: {
-  settings?: StoreSettings;
-  secrets: Secrets;
-  secretsSet: SecretsSet;
-  onChange: (settings: StoreSettings) => void;
-  onChangeSecrets: (secrets: Secrets) => void;
-}) {
+}: Props<StoreSettings> & SecretProps) {
   return (
     <>
       <h4>Store</h4>
@@ -280,7 +280,13 @@ function StoreConfig({
         />
       </Field>
       {settings?.type === 'qdrant' && (
-        <QdrantConfig settings={settings.qdrant} onChange={(qdrant) => onChange({ ...settings, qdrant })} />
+        <QdrantConfig
+          settings={settings.qdrant}
+          secrets={secrets}
+          secretsSet={secretsSet}
+          onChange={(qdrant) => onChange({ ...settings, qdrant })}
+          onChangeSecrets={onChangeSecrets}
+        />
       )}
       {settings?.type === 'grafana/vectorapi' && (
         <>

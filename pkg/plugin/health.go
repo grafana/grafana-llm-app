@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 )
 
@@ -23,16 +21,16 @@ type healthCheckClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type modelHealth struct {
+type openAIModelHealth struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error,omitempty"`
 }
 
-type providerHealthDetails struct {
-	Configured bool                   `json:"configured"`
-	OK         bool                   `json:"ok"`
-	Error      string                 `json:"error,omitempty"`
-	Models     map[string]modelHealth `json:"models"`
+type openAIHealthDetails struct {
+	Configured bool                         `json:"configured"`
+	OK         bool                         `json:"ok"`
+	Error      string                       `json:"error,omitempty"`
+	Models     map[string]openAIModelHealth `json:"models"`
 }
 
 type vectorHealthDetails struct {
@@ -42,9 +40,9 @@ type vectorHealthDetails struct {
 }
 
 type healthCheckDetails struct {
-	Provider providerHealthDetails `json:"provider"`
-	Vector   vectorHealthDetails   `json:"vector"`
-	Version  string                `json:"version"`
+	OpenAI  openAIHealthDetails `json:"openAI"`
+	Vector  vectorHealthDetails `json:"vector"`
+	Version string              `json:"version"`
 }
 
 func getVersion() string {
@@ -55,13 +53,7 @@ func getVersion() string {
 	return buildInfo.Version
 }
 
-// testModel simulates a health check for a specific model of a provider.
-func (a *App) testModel(ctx context.Context, url *url.URL, model string) error {
-	if url == nil {
-		return fmt.Errorf("URL is nil")
-	}
-
-	// Simulated health check logic goes here
+func (a *App) testOpenAIModel(ctx context.Context, model string, tenant string) error {
 	body := map[string]interface{}{
 		"model": model,
 		"messages": []map[string]interface{}{
@@ -71,7 +63,7 @@ func (a *App) testModel(ctx context.Context, url *url.URL, model string) error {
 			},
 		},
 	}
-	req, err := a.newOpenAIChatCompletionsRequest(ctx, url, body)
+	req, err := a.newOpenAIChatCompletionsRequest(ctx, body, tenant)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -90,33 +82,29 @@ func (a *App) testModel(ctx context.Context, url *url.URL, model string) error {
 	return nil
 }
 
-// providerHealth performs a health check for the selected provider and caches the
+// openAIHealth performs a health check for the selected provider and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
-func (a *App) providerHealth(ctx context.Context, provider string, models []string) providerHealthDetails {
-	if a.healthProvider != nil {
-		log.DefaultLogger.Debug("returning cached healthProvider:", a.healthProvider.Models)
-		return *a.healthProvider
+func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest) openAIHealthDetails {
+	if a.healthOpenAI != nil {
+		return *a.healthOpenAI
 	}
-	log.DefaultLogger.Debug(fmt.Sprintf("in checkProviderHealth with %s", models))
 
-	d := providerHealthDetails{
-		Configured: a.settings.Provider.apiKey != "",
+	d := openAIHealthDetails{
 		OK:         true,
-		Models:     make(map[string]modelHealth),
+		Configured: a.settings.OpenAI.apiKey != "",
+		Models:     map[string]openAIModelHealth{},
 	}
-	u, err := url.Parse(a.settings.Provider.URL)
-	if err != nil {
-		d.OK = false
-		d.Error = fmt.Sprintf("Unable to parse provider URL: %s", err)
-		return d
+	models := providerModels["openai"]
+	if a.settings.OpenAI.Provider == openAIProviderPulze {
+		models = providerModels["pulze"]
 	}
 
 	for _, model := range models {
-		health := modelHealth{OK: false, Error: "model not configured."}
+		health := openAIModelHealth{OK: false, Error: "OpenAI not configured"}
 		if d.Configured {
 			health.OK = true
 			health.Error = ""
-			err := a.testModel(ctx, u, model)
+			err := a.testOpenAIModel(ctx, model, a.settings.Tenant)
 			if err != nil {
 				health.OK = false
 				health.Error = err.Error()
@@ -138,7 +126,7 @@ func (a *App) providerHealth(ctx context.Context, provider string, models []stri
 
 	// Only cache result if provider is ok to use.
 	if d.OK {
-		a.healthProvider = &d
+		a.healthOpenAI = &d
 	}
 	return d
 }
@@ -188,13 +176,9 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
 
-	log.DefaultLogger.Debug("CheckHealth", a.settings.Provider.Name, a.settings.Provider)
-
-	ps := string(a.settings.Provider.Name)
-	log.DefaultLogger.Debug("")
-	provider := a.providerHealth(ctx, ps, providerModels[ps])
-	if provider.Error == "" {
-		a.healthProvider = &provider
+	openAI := a.openAIHealth(ctx, req)
+	if openAI.Error == "" {
+		a.healthOpenAI = &openAI
 	}
 
 	vector := a.vectorHealth(ctx)
@@ -202,9 +186,9 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 		a.healthVector = &vector
 	}
 	details := healthCheckDetails{
-		Provider: provider,
-		Vector:   vector,
-		Version:  getVersion(),
+		OpenAI:  openAI,
+		Vector:  vector,
+		Version: getVersion(),
 	}
 
 	body, err := json.Marshal(details)

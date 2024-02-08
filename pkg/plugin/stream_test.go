@@ -66,6 +66,7 @@ func TestRunStream(t *testing.T) {
 	}`)
 	for _, tc := range []struct {
 		name       string
+		settings   Settings
 		statusCode int
 
 		expErr          string
@@ -73,9 +74,36 @@ func TestRunStream(t *testing.T) {
 	}{
 		{
 			name:       "bad auth",
+			settings:   Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
 			statusCode: http.StatusUnauthorized,
 
 			expErr:          "401",
+			expMessageCount: 0,
+		},
+		{
+			name: "grafana managed key but no opt in raises error",
+			settings: Settings{
+				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
+				LLMGateway: LLMGatewaySettings{
+					IsOptIn: false,
+				},
+			},
+			statusCode: http.StatusUnauthorized,
+
+			expErr:          "proxy: stream: error creating request: Grafana Provided LLM access is not permitted. We require explicit Opt-In of the feature to continue",
+			expMessageCount: 0,
+		},
+		{
+			name: "grafana managed key with opt in succeeds",
+			settings: Settings{
+				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
+				LLMGateway: LLMGatewaySettings{
+					IsOptIn: true,
+				},
+			},
+			statusCode: http.StatusPartialContent,
+
+			expErr:          "206",
 			expMessageCount: 0,
 		},
 	} {
@@ -85,8 +113,14 @@ func TestRunStream(t *testing.T) {
 			// Start up a mock server that just captures the request and sends a 200 OK response.
 			server := newMockOpenAIStreamServer(t, tc.statusCode, finish)
 
-			// Initialize app
-			settings := Settings{Provider: ProviderSettings{URL: server.server.URL, Name: providerOpenAI}}
+			// Initialize app (need to set OpenAISettings:URL in here)
+			settings := tc.settings
+			if settings.OpenAI.Provider == openAIProviderGrafana {
+				settings.LLMGateway.URL = server.server.URL
+			} else {
+				settings.OpenAI.URL = server.server.URL
+			}
+
 			jsonData, err := json.Marshal(settings)
 			if err != nil {
 				t.Fatalf("json marshal: %s", err)
