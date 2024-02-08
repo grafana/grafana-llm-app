@@ -33,7 +33,7 @@ type App struct {
 
 	healthCheckClient healthCheckClient
 	healthCheckMutex  sync.Mutex
-	healthProvider    *providerHealthDetails
+	healthOpenAI      *openAIHealthDetails
 	healthVector      *vectorHealthDetails
 	settings          *Settings
 	saToken           string
