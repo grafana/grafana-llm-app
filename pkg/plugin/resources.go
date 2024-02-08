@@ -40,8 +40,8 @@ func handleError(w http.ResponseWriter, err error, status int) {
 func modifyURL(openAIUrl string, req *http.Request) error {
 	u, err := url.Parse(openAIUrl)
 	if err != nil {
-		log.DefaultLogger.Error("Unable to parse provider URL", "err", err)
-		return fmt.Errorf("parse provider URL: %w", err)
+		log.DefaultLogger.Error("Unable to parse OpenAI URL", "err", err)
+		return fmt.Errorf("parse OpenAI URL: %w", err)
 	}
 	req.URL.Scheme = u.Scheme
 	req.URL.Host = u.Host
@@ -205,7 +205,7 @@ func (a *azureOpenAIProxy) modifyRequest(req *http.Request) error {
 	}
 
 	// Find the deployment for the model.
-	// Models are mapped to deployments in settings.Provider.AzureMapping.
+	// Models are mapped to deployments in settings.OpenAI.AzureMapping.
 	var deployment string = ""
 	for _, v := range a.settings.OpenAI.AzureMapping {
 		if val, ok := requestBody["model"].(string); ok && val == v[0] {

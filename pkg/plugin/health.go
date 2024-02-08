@@ -131,7 +131,8 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 	return d
 }
 
-// testVectorService checks the health of VectorAPI and caches the result if successful.
+// testVectorService checks the health of VectorAPI and caches the result if
+// successful. The caller must lock a.healthCheckMutex.
 func (a *App) testVectorService(ctx context.Context) error {
 	if a.vectorService == nil {
 		return fmt.Errorf("vector service not configured")
@@ -171,7 +172,8 @@ func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 	return d
 }
 
-// CheckHealth handles health checks for the selected provider and the Vector service.
+// CheckHealth handles health checks sent from Grafana to the plugin.
+// It returns whether each feature is working based on the plugin settings.
 func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
@@ -185,12 +187,12 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	if vector.Error == "" {
 		a.healthVector = &vector
 	}
+
 	details := healthCheckDetails{
 		OpenAI:  openAI,
 		Vector:  vector,
 		Version: getVersion(),
 	}
-
 	body, err := json.Marshal(details)
 	if err != nil {
 		return &backend.CheckHealthResult{

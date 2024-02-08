@@ -56,7 +56,6 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const s = useStyles2(getStyles);
   const { enabled, pinned, jsonData, secureJsonFields } = plugin.meta;
   const [settings, setSettings] = useState<AppPluginSettings>(jsonData ?? {});
-  console.log(settings);
   const [newSecrets, setNewSecrets] = useState<Secrets>({});
   // Whether each secret is already configured in the plugin backend.
   const [configuredSecrets, setConfiguredSecrets] = useState<SecretsSet>(initialSecrets(secureJsonFields ?? {}));

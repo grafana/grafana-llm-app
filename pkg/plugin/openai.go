@@ -77,7 +77,7 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 		url.Path = "/openai/v1/chat/completions"
 
 	default:
-		return nil, fmt.Errorf("Unknown provider: %s", a.settings.OpenAI.Provider)
+		return nil, fmt.Errorf("Unknown OpenAI provider: %s", a.settings.OpenAI.Provider)
 	}
 
 	bodyBytes, err := json.Marshal(body)
