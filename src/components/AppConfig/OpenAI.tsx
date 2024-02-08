@@ -54,6 +54,7 @@ export function OpenAIConfig({
             [
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
+              { label: 'Pulze', value: 'pulze' },
             ] as Array<SelectableValue<OpenAIProvider>>
           }
           value={settings.provider ?? 'openai'}
@@ -93,7 +94,7 @@ export function OpenAIConfig({
         />
       </Field>
 
-      {settings.provider !== 'azure' && (
+      {settings.provider !== 'azure' && settings.provider !== 'pulze' && (
         <Field label="OpenAI API Organization ID" description="Your OpenAI API Organization ID">
           <Input
             width={60}
