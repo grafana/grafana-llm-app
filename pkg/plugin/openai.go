@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 )
 
 func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, url url.URL, body io.Reader, tenant string) (*http.Request, error) {
@@ -70,7 +71,7 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 		if err != nil {
 			return nil, fmt.Errorf("Unable to parse LLM Gateway URL: %w", err)
 		}
-		url.Path = "/openai/v1/chat/completions"
+		url.Path = path.Join(url.Path, "/openai/v1/chat/completions")
 
 	default:
 		return nil, fmt.Errorf("Unknown OpenAI provider: %s", a.settings.OpenAI.Provider)
