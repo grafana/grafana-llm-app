@@ -18,6 +18,8 @@ export interface OpenAISettings {
   provider?: OpenAIProvider;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
+  // Override the model used (e.g. gpt-3.5-turbo or for self-hosted models).
+  modelOverride?: string;
 }
 
 export function OpenAIConfig({
@@ -117,6 +119,25 @@ export function OpenAIConfig({
                 azureModelMapping,
               })
             }
+          />
+        </Field>
+      )}
+
+      {/* field for model override */}
+      {/* we should first get the all available models from /v1/models if you click this option */}
+      {settings.provider === 'openai' && (
+        <Field
+          label="OpenAI Model Override"
+          description="Override the model used (e.g. gpt-3.5-turbo or for self-hosted models)."
+        >
+          <Input
+            width={60}
+            data-testid={testIds.appConfig.openAIModelOverride}
+            name="openAIModelOverride"
+            value={settings.modelOverride}
+            placeholder={settings.modelOverride ? '' : 'gpt-3.5-turbo'}
+            onChange={(e) => onChange({ ...settings, modelOverride: e.currentTarget.value })}
+            onReset={() => onChange({ ...settings, modelOverride: undefined })}
           />
         </Field>
       )}

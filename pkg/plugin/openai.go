@@ -76,6 +76,11 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 		return nil, fmt.Errorf("Unknown OpenAI provider: %s", a.settings.OpenAI.Provider)
 	}
 
+	// if model override is set, override the one in the json
+	if a.settings.OpenAI.ModelOverride != "" {
+		body["model"] = a.settings.OpenAI.ModelOverride
+	}
+
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
 		return nil, fmt.Errorf("marshal request body: %w", err)

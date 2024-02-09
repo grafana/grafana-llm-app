@@ -39,6 +39,9 @@ type OpenAISettings struct {
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
 
+	// Optional model override for OpenAI
+	ModelOverride string `json:"modelOverride"`
+
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
 	// provider (excluding the LLMGateway). Stored securely.
 	apiKey string
