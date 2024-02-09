@@ -58,6 +58,7 @@ func (a *App) testOpenAIModel(ctx context.Context, model string, tenant string) 
 				"content": "Hello",
 			},
 		},
+		"max_tokens": 1,
 	}
 	req, err := a.newOpenAIChatCompletionsRequest(ctx, body, tenant)
 	if err != nil {
