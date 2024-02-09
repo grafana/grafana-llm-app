@@ -88,7 +88,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 
 	d := openAIHealthDetails{
 		OK:         true,
-		Configured: a.settings.OpenAI.apiKey != "",
+		Configured: a.settings.OpenAI.apiKey != "" || a.settings.OpenAI.Provider == openAIProviderGrafana,
 		Models:     map[string]openAIModelHealth{},
 	}
 
