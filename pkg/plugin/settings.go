@@ -133,7 +133,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 
 	// Read user's OpenAI key & the LLMGateway key
 	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
-	settings.LLMGateway.apiKey = appSettings.DecryptedSecureJSONData[llmGatewayKey]
+	settings.LLMGateway.apiKey = appSettings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
 
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
 	encodedTenantAndToken, ok := appSettings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
