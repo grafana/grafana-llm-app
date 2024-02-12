@@ -295,8 +295,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			appSettings := backend.AppInstanceSettings{
 				JSONData: jsonData,
 				DecryptedSecureJSONData: map[string]string{
-					"openAIKey":     tc.apiKey,
-					"llmGatewayKey": tc.apiKey,
+					"openAIKey": tc.apiKey,
 				},
 			}
 			inst, err := NewApp(ctx, appSettings)

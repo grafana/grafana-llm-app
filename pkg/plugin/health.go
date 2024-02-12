@@ -49,7 +49,7 @@ func getVersion() string {
 	return buildInfo.Version
 }
 
-func (a *App) testOpenAIModel(ctx context.Context, model string, tenant string) error {
+func (a *App) testOpenAIModel(ctx context.Context, model string) error {
 	body := map[string]interface{}{
 		"model": model,
 		"messages": []map[string]interface{}{
@@ -60,7 +60,7 @@ func (a *App) testOpenAIModel(ctx context.Context, model string, tenant string) 
 		},
 		"max_tokens": 1,
 	}
-	req, err := a.newOpenAIChatCompletionsRequest(ctx, body, tenant)
+	req, err := a.newOpenAIChatCompletionsRequest(ctx, body)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -97,7 +97,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		if d.Configured {
 			health.OK = true
 			health.Error = ""
-			err := a.testOpenAIModel(ctx, model, a.settings.Tenant)
+			err := a.testOpenAIModel(ctx, model)
 			if err != nil {
 				health.OK = false
 				health.Error = err.Error()
