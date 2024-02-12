@@ -14,7 +14,6 @@ import (
 )
 
 const openAIKey = "openAIKey"
-const llmGatewayKey = "llmGatewayKey"
 const encodedTenantAndTokenKey = "base64EncodedAccessToken"
 
 type openAIProvider string
