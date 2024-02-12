@@ -200,7 +200,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 			name: "grafana-managed llm gateway - opt in not set",
 
 			settings: Settings{
-				Tenant: "123",
+				Tenant:           "123",
+				GrafanaComAPIKey: "abcd1234",
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
@@ -212,7 +213,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
 
 			expReqHeaders: http.Header{
-				"Authorization": {"Bearer abcd1234"},
+				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/openai/v1/chat/completions",
@@ -224,7 +225,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 			name: "grafana-managed llm gateway - opt in set to true",
 
 			settings: Settings{
-				Tenant: "123",
+				Tenant:           "123",
+				GrafanaComAPIKey: "abcd1234",
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
@@ -239,7 +241,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
 
 			expReqHeaders: http.Header{
-				"Authorization": {"Bearer abcd1234"},
+				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/openai/v1/chat/completions",
@@ -251,7 +253,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 			name: "grafana-managed llm gateway - opt in set to false",
 
 			settings: Settings{
-				Tenant: "123",
+				Tenant:           "123",
+				GrafanaComAPIKey: "abcd1234",
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
@@ -265,7 +268,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
 
 			expReqHeaders: http.Header{
-				"Authorization": {"Bearer abcd1234"},
+				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/openai/v1/chat/completions",
