@@ -25,7 +25,7 @@ Grafana Cloud: the LLM app plugin is installed for everyone, but LLM features ar
 OSS or Enterprise: install and configure this plugin with your OpenAI-compatible API key to enable various LLM-related functionality across Grafana.
 
 This includes new functionality inside Grafana itself, such as explaining panels, or in plugins,
-such as AI assistants for flamegraphs, error logs and more.
+such as AI assistants for flame graphs and error logs, automated incident summaries, and more.
 
 All LLM requests will be routed via this plugin, which ensures the correct API key is being
 used and requests are routed appropriately.
