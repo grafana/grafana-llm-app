@@ -57,9 +57,6 @@ type LLMGatewaySettings struct {
 	// IsOptIn indicates if customer has enabled the Grafana Managed Key LLM.
 	// If not specified, this will be false.
 	IsOptIn bool `json:"isOptIn"`
-
-	//apiKey is the api key needed to authenticate requests to the LLM gateway. Stored securely.
-	apiKey string
 }
 
 // Settings contains the plugin's settings and secrets required by the plugin backend.
@@ -141,7 +138,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 
 	// Read user's OpenAI key & the LLMGateway key
 	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
-	settings.LLMGateway.apiKey = appSettings.DecryptedSecureJSONData[llmGatewayKey]
 
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
 	encodedTenantAndToken, ok := appSettings.DecryptedSecureJSONData[encodedTenantAndTokenKey]

@@ -300,7 +300,7 @@ func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request)
 
 func newGrafanaOpenAIProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
-		req.Header.Add("Authorization", "Bearer "+settings.LLMGateway.apiKey)
+		req.SetBasicAuth(settings.Tenant, settings.GrafanaComAPIKey)
 		req.Header.Add("X-Scope-OrgID", settings.Tenant)
 	}
 
