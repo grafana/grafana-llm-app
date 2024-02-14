@@ -41,7 +41,6 @@ describe('Components/AppConfig', () => {
     // expect(screen.queryByTestId(testIds.appConfig.openAIKey)).toBeInTheDocument();
     // expect(screen.queryByTestId(testIds.appConfig.openAIOrganizationID)).toBeInTheDocument();
     // expect(screen.queryByTestId(testIds.appConfig.openAIUrl)).toBeInTheDocument();
-    // expect(screen.queryByTestId(testIds.appConfig.model)).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: /vector settings/i })).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.model)).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.qdrantSecure)).toBeInTheDocument();
