@@ -12,9 +12,11 @@ import (
 )
 
 // Define models for each provider to be included in the health check.
-var providerModels = map[string][]string{
-	"openai": {"gpt-3.5-turbo", "gpt-4"},
-	"pulze":  {"pulze", "openai/gpt-4"},
+var providerModels = map[openAIProvider][]string{
+	openAIProviderOpenAI:  {"gpt-3.5-turbo", "gpt-4"},
+	openAIProviderGrafana: {"gpt-3.5-turbo", "gpt-4"},
+	openAIProviderAzure:   {"gpt-3.5-turbo", "gpt-4"},
+	openAIProviderPulze:   {"pulze", "openai/gpt-4"},
 }
 
 type healthCheckClient interface {
@@ -95,12 +97,8 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		Configured: a.settings.OpenAI.apiKey != "" || a.settings.OpenAI.Provider == openAIProviderGrafana,
 		Models:     map[string]openAIModelHealth{},
 	}
-	models := providerModels["openai"]
-	if a.settings.OpenAI.Provider == openAIProviderPulze {
-		models = providerModels["pulze"]
-	}
 
-	for _, model := range models {
+	for _, model := range providerModels[a.settings.OpenAI.Provider] {
 		health := openAIModelHealth{OK: false, Error: "OpenAI not configured"}
 		if d.Configured {
 			health.OK = true
