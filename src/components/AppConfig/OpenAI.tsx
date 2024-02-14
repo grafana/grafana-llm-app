@@ -8,7 +8,7 @@ import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 
 export type OpenAIProvider = 'openai' | 'azure' | 'grafana' | 'pulze';
-export type PulzeModel = 'pulze' | 'pulze-v0'
+export type PulzeModel = 'pulze' | 'pulze-v0';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
@@ -72,7 +72,11 @@ export function OpenAIConfig({
           data-testid={testIds.appConfig.openAIUrl}
           value={settings.url}
           placeholder={
-            settings.provider === 'azure' ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`
+            settings.provider === 'azure'
+              ? 'https://<resource-name>.openai.azure.com'
+              : settings.provider === 'pulze'
+              ? 'https://api.pulze.ai/v1'
+              : 'https://api.openai.com'
           }
           onChange={onChangeField}
         />

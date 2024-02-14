@@ -13,7 +13,11 @@ export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
-  if (settings.openAI?.provider === 'azure' || settings.openAI?.provider === 'openai') {
+  if (
+    settings.openAI?.provider === 'azure' ||
+    settings.openAI?.provider === 'openai' ||
+    settings.openAI?.provider === 'pulze'
+  ) {
     return 'openai';
   } else if (settings.openAI?.provider === 'grafana' && settings.llmGateway?.isOptIn) {
     return 'grafana-provided';
