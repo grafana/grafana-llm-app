@@ -219,7 +219,7 @@ const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckR
 export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
   return lastValueFrom(
     getBackendSrv().fetch({
-      url: `api/plugins/grafana-llm-app/resources/save-llm-state`,
+      url: `api/plugins/grafana-llm-app/resources/grafana-llm-state`,
       method: 'POST',
       data: { allowed: optIn },
     })
@@ -240,7 +240,7 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
 export async function getLLMOptInState(): Promise<boolean> {
   return lastValueFrom(
     getBackendSrv().fetch({
-      url: `api/plugins/grafana-llm-app/resources/get-llm-state`,
+      url: `api/plugins/grafana-llm-app/resources/grafana-llm-state`,
       method: 'GET',
     })
   )

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -327,11 +328,6 @@ func getLLMOptInState(ctx context.Context, settings *Settings) (llmGatewayRespon
 func (app *App) handleGetLLMOptInState(w http.ResponseWriter, req *http.Request) {
 	log.DefaultLogger.Debug("Handling request to get LLM state from llm-gateway..")
 
-	if req.Method != http.MethodGet {
-		handleError(w, fmt.Errorf("invalid method"), http.StatusMethodNotAllowed)
-		return
-	}
-
 	llmState, err := getLLMOptInState(req.Context(), app.settings)
 	if err != nil {
 		handleError(w, err, http.StatusBadRequest)
@@ -359,40 +355,39 @@ type setLLMOptInState struct {
 }
 
 type llmOptInState struct {
-	Allowed bool `json:"allowed"`
+	Allowed *bool `json:"allowed"`
 }
 
 // handleSaveLLMOptInState persists Grafana-managed LLM opt-in state to the llm-gateway.
 func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request) {
 	log.DefaultLogger.Debug("Handling request to save LLM state to llm-gateway..")
 
-	if req.Method != http.MethodPost {
-		handleError(w, fmt.Errorf("invalid method"), http.StatusMethodNotAllowed)
+	// Read the request body
+	if req.Body == nil {
+		log.DefaultLogger.Warn("Request body is nil")
+		handleError(w, errors.New("request body required"), http.StatusBadRequest)
 		return
 	}
-
-	// Read the request body
 	requestData := llmOptInState{}
-	if req.Body != nil {
-		defer func() {
-			if err := req.Body.Close(); err != nil {
-				handleError(w, fmt.Errorf("failed to close request body %w", err), http.StatusInternalServerError)
-				return
-			}
-		}()
-		b, err := io.ReadAll(req.Body)
-		if err != nil {
-			handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
+	defer func() {
+		if err := req.Body.Close(); err != nil {
+			handleError(w, fmt.Errorf("failed to close request body %w", err), http.StatusInternalServerError)
 			return
-		} else {
-			err := json.Unmarshal(b, &requestData)
-			if err != nil {
-				handleError(w, fmt.Errorf("failed to unmarshal request body to JSON %w", err), http.StatusInternalServerError)
-				return
-			}
 		}
-	} else {
-		log.DefaultLogger.Warn("Request body is nil")
+	}()
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(b, &requestData)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to unmarshal request body to JSON %w", err), http.StatusInternalServerError)
+		return
+	}
+	if requestData.Allowed == nil {
+		handleError(w, errors.New("`allowed` field is required"), http.StatusBadRequest)
+		return
 	}
 
 	user := httpadapter.UserFromContext(req.Context())
@@ -408,7 +403,7 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 	}
 
 	newOptInState := setLLMOptInState{
-		Allowed:   requestData.Allowed,
+		Allowed:   *requestData.Allowed,
 		UserEmail: user.Email,
 	}
 
@@ -425,8 +420,9 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 		handleError(w, fmt.Errorf("failed to create http request %w", err), http.StatusBadRequest)
 		return
 	}
-	// Set the headers with the service account token
-	proxyReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", app.saToken))
+	// Basic auth for use with Grafana Cloud.
+	proxyReq.SetBasicAuth(app.settings.Tenant, app.settings.GrafanaComAPIKey)
+	// X-Scope-OrgID for use in local settings.
 	proxyReq.Header.Add("X-Scope-OrgID", app.settings.Tenant)
 	proxyReq.Header.Set("Content-Type", "application/json")
 
@@ -452,9 +448,21 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 
 	// write a success response body since backendSrv.* needs a valid json response body
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(`{"status": "Success"}`))
+	_, _ = w.Write([]byte(`{"status": "Success"}`))
 	if err != nil {
 		handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (a *App) handleLLMState(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case "GET":
+		a.handleGetLLMOptInState(w, req)
+	case "POST":
+		a.handleSaveLLMOptInState(w, req)
+	default:
+		handleError(w, fmt.Errorf("method not allowed: %s", req.Method), http.StatusMethodNotAllowed)
 		return
 	}
 }
@@ -472,7 +480,6 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
-	mux.HandleFunc("/save-llm-state", a.handleSaveLLMOptInState)
-	mux.HandleFunc("/get-llm-state", a.handleGetLLMOptInState)
+	mux.HandleFunc("/grafana-llm-state", a.handleLLMState)
 
 }
