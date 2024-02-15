@@ -88,15 +88,6 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     if (errorState !== undefined) {
       return;
     }
-    // Push LLM opt-in state, will also check if the user is allowed to opt-in
-    if (settings.enableGrafanaManagedLLM) {
-      const optInResult = await saveLLMOptInState(managedLLMOptIn);
-      if (!optInResult) {
-        setIsUpdating(false);
-        setUpdated(false);
-        return;
-      }
-    }
     setIsUpdating(true);
     setHealthCheck(undefined);
     let key: keyof SecretsSet;
