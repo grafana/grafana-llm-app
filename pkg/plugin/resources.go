@@ -448,11 +448,8 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 
 	// write a success response body since backendSrv.* needs a valid json response body
 	w.WriteHeader(http.StatusOK)
+	// No need (or real ability) to handle an error after already writing a success header.
 	_, _ = w.Write([]byte(`{"status": "Success"}`))
-	if err != nil {
-		handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
-		return
-	}
 }
 
 func (a *App) handleLLMState(w http.ResponseWriter, req *http.Request) {

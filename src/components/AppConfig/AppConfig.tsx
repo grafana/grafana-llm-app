@@ -68,10 +68,8 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   };
   const errorState = validateInputs();
 
-  const updateManagedLLMOptIn = (newOptIn: boolean): void => {
-    console.log('Try to set Opt in state to', managedLLMOptIn);
-    saveLLMOptInState(newOptIn);
-
+  const updateManagedLLMOptIn = async (newOptIn: boolean): Promise<void> => {
+    await saveLLMOptInState(newOptIn);
     setManagedLLMOptIn(newOptIn);
   };
 
@@ -209,7 +207,7 @@ const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckR
   return lastValueFrom(response) as Promise<FetchResponse<HealthCheckResult>>;
 };
 
-export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
+export async function saveLLMOptInState(optIn: boolean): Promise<void> {
   return lastValueFrom(
     getBackendSrv().fetch({
       url: `api/plugins/grafana-llm-app/resources/grafana-llm-state`,
@@ -217,16 +215,10 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
       data: { allowed: optIn },
     })
   ).then((response: FetchResponse) => {
-      if (!response.ok) {
-        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
-        return false;
-      }
-      return true;
-    })
-    .catch((error) => {
-      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
-      return false;
-    });
+    if (!response.ok) {
+      throw response.data;
+    }
+  });
 }
 
 export async function getLLMOptInState(): Promise<boolean> {
@@ -236,14 +228,9 @@ export async function getLLMOptInState(): Promise<boolean> {
       method: 'GET',
     })
   ).then((response: FetchResponse) => {
-      if (!response.ok || response.data?.status !== 'success') {
-        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
-        return false;
-      }
-      return response.data.data?.allowed ?? false;
-    })
-    .catch((error) => {
-      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
-      return false;
-    });
+    if (!response.ok || response.data?.status !== 'success') {
+      throw response.data;
+    }
+    return response.data.data?.allowed ?? false;
+  });
 }
