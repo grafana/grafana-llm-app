@@ -81,8 +81,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       setManagedLLMOptIn(optIn);
     };
 
-    fetchData();
-  }, []);
+    if (settings.enableGrafanaManagedLLM === true) {
+      fetchData();
+    }
+  }, [settings.enableGrafanaManagedLLM]);
 
   const doSave = async () => {
     if (errorState !== undefined) {
@@ -214,8 +216,7 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
       method: 'POST',
       data: { allowed: optIn },
     })
-  )
-    .then((response: FetchResponse) => {
+  ).then((response: FetchResponse) => {
       if (!response.ok) {
         console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
         return false;
@@ -234,8 +235,7 @@ export async function getLLMOptInState(): Promise<boolean> {
       url: `api/plugins/grafana-llm-app/resources/grafana-llm-state`,
       method: 'GET',
     })
-  )
-    .then((response: FetchResponse) => {
+  ).then((response: FetchResponse) => {
       if (!response.ok || response.data?.status !== 'success') {
         console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
         return false;
