@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { lastValueFrom } from 'rxjs';
 
 import { css } from '@emotion/css';
@@ -13,12 +13,6 @@ import { OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 
 ///////////////////////
-export interface LLMGatewaySettings {
-  // Opt-in to LLMGateway?
-  isOptIn?: boolean;
-  // URL for LLMGateway
-  url?: string;
-}
 
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
@@ -26,8 +20,6 @@ export interface AppPluginSettings {
   // The enableGrafanaManagedLLM flag will enable the plugin to use Grafana-managed OpenAI
   // This will only work for Grafana Cloud install plugins
   enableGrafanaManagedLLM?: boolean;
-  // Config used for Grafana-managed LLM
-  llmGateway?: LLMGatewaySettings;
 }
 
 export type Secrets = {
@@ -61,28 +53,44 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const [configuredSecrets, setConfiguredSecrets] = useState<SecretsSet>(initialSecrets(secureJsonFields ?? {}));
   // Whether any settings have been updated.
   const [updated, setUpdated] = useState(false);
-  const [optInUpdated, setOptInUpdated] = useState(false);
+
+  const [managedLLMOptIn, setManagedLLMOptIn] = useState<boolean>(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
 
   const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
-    if (settings?.openAI?.provider === 'grafana' && !settings?.llmGateway?.isOptIn) {
+    if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
       return "You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana";
     }
     return;
   };
   const errorState = validateInputs();
 
+  const updateManagedLLMOptIn = (newOptIn: boolean): void => {
+    console.log('Try to set Opt in state to', managedLLMOptIn);
+    saveLLMOptInState(newOptIn);
+
+    setManagedLLMOptIn(newOptIn);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const optIn = await getLLMOptInState();
+      setManagedLLMOptIn(optIn);
+    };
+
+    fetchData();
+  }, []);
+
   const doSave = async () => {
     if (errorState !== undefined) {
       return;
     }
     // Push LLM opt-in state, will also check if the user is allowed to opt-in
-    if (settings.enableGrafanaManagedLLM && optInUpdated) {
-      const optInResult = await saveLLMOptInState(settings.llmGateway?.isOptIn as boolean);
-      setOptInUpdated(false);
+    if (settings.enableGrafanaManagedLLM) {
+      const optInResult = await saveLLMOptInState(managedLLMOptIn);
       if (!optInResult) {
         setIsUpdating(false);
         setUpdated(false);
@@ -121,14 +129,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       <LLMConfig
         settings={settings}
         onChange={(newSettings: AppPluginSettings) => {
-          if (newSettings.llmGateway?.isOptIn !== settings.llmGateway?.isOptIn) {
-            setOptInUpdated(true);
-          }
           setSettings(newSettings);
           setUpdated(true);
         }}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
+        optIn={managedLLMOptIn}
+        setOptIn={updateManagedLLMOptIn}
         onChangeSecrets={(secrets: Secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
@@ -214,7 +221,7 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
     getBackendSrv().fetch({
       url: `api/plugins/grafana-llm-app/resources/save-llm-state`,
       method: 'POST',
-      data: { optIn },
+      data: { allowed: optIn },
     })
   )
     .then((response: FetchResponse) => {
@@ -223,6 +230,26 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
         return false;
       }
       return true;
+    })
+    .catch((error) => {
+      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
+      return false;
+    });
+}
+
+export async function getLLMOptInState(): Promise<boolean> {
+  return lastValueFrom(
+    getBackendSrv().fetch({
+      url: `api/plugins/grafana-llm-app/resources/get-llm-state`,
+      method: 'GET',
+    })
+  )
+    .then((response: FetchResponse) => {
+      if (!response.ok || response.data?.status !== 'success') {
+        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
+        return false;
+      }
+      return response.data.data?.allowed ?? false;
     })
     .catch((error) => {
       console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"net/url"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -48,10 +47,6 @@ type LLMGatewaySettings struct {
 	// This is the URL of the LLM endpoint of the machine learning backend which proxies
 	// the request to our llm-gateway. If empty, the gateway is disabled.
 	URL string `json:"url"`
-
-	// IsOptIn indicates if customer has enabled the Grafana Managed Key LLM.
-	// If not specified, this will be false.
-	IsOptIn bool `json:"isOptIn"`
 }
 
 // Settings contains the plugin's settings and secrets required by the plugin backend.
@@ -82,9 +77,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		OpenAI: OpenAISettings{
 			URL:      "https://api.openai.com",
 			Provider: openAIProviderOpenAI,
-		},
-		LLMGateway: LLMGatewaySettings{
-			IsOptIn: false, // always assume opted-out unless specified
 		},
 	}
 
@@ -153,16 +145,4 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	}
 
 	return &settings, nil
-}
-
-// InstanceLLMOptInData contains the LLM opt-in state and the last user who changed it
-type instanceLLMOptInData struct {
-	IsOptIn        string `json:"llmIsOptIn"` // string with "0" being false, and "1" being true
-	OptInChangedBy string `json:"llmOptInChangedBy"`
-}
-
-type SaveLLMStateData struct {
-	GrafanaURL     url.URL `json:"grafanaUrl"`
-	OptIn          bool    `json:"optIn"`
-	OptInChangedBy string  `json:"optInChangedBy"`
 }

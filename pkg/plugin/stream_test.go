@@ -81,29 +81,13 @@ func TestRunStream(t *testing.T) {
 			expMessageCount: 0,
 		},
 		{
-			name: "grafana managed key but no opt in raises error",
+			name: "grafana managed key",
 			settings: Settings{
 				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
-				LLMGateway: LLMGatewaySettings{
-					IsOptIn: false,
-				},
 			},
 			statusCode: http.StatusUnauthorized,
 
-			expErr:          "proxy: stream: error creating request: Grafana Provided LLM access is not permitted. We require explicit Opt-In of the feature to continue",
-			expMessageCount: 0,
-		},
-		{
-			name: "grafana managed key with opt in succeeds",
-			settings: Settings{
-				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
-				LLMGateway: LLMGatewaySettings{
-					IsOptIn: true,
-				},
-			},
-			statusCode: http.StatusPartialContent,
-
-			expErr:          "206",
+			expErr:          "401",
 			expMessageCount: 0,
 		},
 	} {
