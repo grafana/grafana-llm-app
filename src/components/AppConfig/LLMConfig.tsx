@@ -15,7 +15,7 @@ export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
   if (settings.openAI?.provider === 'azure' || settings.openAI?.provider === 'openai') {
     return 'openai';
-  } else if (settings.openAI?.provider === 'grafana' && settings.llmGateway?.isOptIn) {
+  } else if (settings.openAI?.provider === 'grafana') {
     return 'grafana-provided';
   } else {
     return 'disabled';
@@ -26,6 +26,8 @@ export function LLMConfig({
   settings,
   secrets,
   secretsSet,
+  optIn,
+  setOptIn,
   onChange,
   onChangeSecrets,
 }: {
@@ -33,6 +35,8 @@ export function LLMConfig({
   onChange: (settings: AppPluginSettings) => void;
   secrets: Secrets;
   secretsSet: SecretsSet;
+  optIn: boolean;
+  setOptIn: (optIn: boolean) => void;
   onChangeSecrets: (secrets: Secrets) => void;
 }) {
   const s = useStyles2(getStyles);
@@ -43,8 +47,6 @@ export function LLMConfig({
   const [llmOption, setLLMOption] = useState<LLMOptions>(getLLMOptionFromSettings(settings));
   // previousOpenAIProvider caches the value of the openAI provider, as it is overwritten by the grafana option
   const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<OpenAIProvider>();
-  // optIn indicates if the user has opted in to Grafana-managed OpenAI
-  const [optIn, setOptIn] = useState<boolean>(settings.llmGateway?.isOptIn || false);
 
   // 2 modals: opt-in and opt-out
   const [optInModalIsOpen, setOptInModalIsOpen] = useState<boolean>(false);
@@ -71,7 +73,6 @@ export function LLMConfig({
     onChange({
       ...settings,
       openAI: { provider: 'grafana' },
-      llmGateway: { ...settings.llmGateway, isOptIn: true },
     });
   };
 
@@ -82,7 +83,6 @@ export function LLMConfig({
     onChange({
       ...settings,
       openAI: { provider: undefined },
-      llmGateway: { ...settings.llmGateway, isOptIn: false },
     });
     setLLMOption('disabled');
   };

@@ -2,13 +2,14 @@ package plugin
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
@@ -276,61 +277,117 @@ func (app *App) handleVectorSearch(w http.ResponseWriter, req *http.Request) {
 	w.Write(bodyJSON)
 }
 
-// SaveLLMOptInDataToGrafanaCom persists Grafana-managed LLM opt-in data to grafana.com.
-// This is required because provisioned plugins' settings do not survive a restart, and are
-// always reset to the state in grafana.com's provisioned-plugins endpoint.
-//
-// This function (and getPluginID) use the [/api/gnet][] endpoint, which [proxies requests][] to
-// the Grafana instance's configured [`GrafanaComUrl` setting][], which is set to the correct
-// value for the environment in Hosted Grafana instances.
-//
-// [/api/gnet]: https://github.com/grafana/grafana/blob/4d8287b319514b750617c20c130ffc424a3ecf2c/pkg/api/api.go#L677
-// [proxies requests]: https://github.com/grafana/grafana/blob/4bc582570ef7e713599ab3f2009fa75c27bb8a02/pkg/api/grafana_com_proxy.go#L28
-// [`GrafanaComUrl` setting]: https://github.com/grafana/grafana/blob/460be702619428e455ba74f8fb3bb563c1bea43a/pkg/setting/setting.go#L1088
-// Handles requests to /save-llm-state endpoint, and pushes state to GCom.
-func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
-	log.DefaultLogger.Debug("Handling request to save LLM state to gcom..")
-	if app.saToken == "" {
-		// not available in Grafana < 10.2.3 or if externalServiceAccounts feature flag is not enabled
-		handleError(w, fmt.Errorf("Service account token not available; cannot save LLM state to gcom"), http.StatusForbidden)
+type llmGatewayResponseData struct {
+	Allowed       bool   `json:"allowed"`
+	LastUpdatedBy string `json:"lastUpdatedBy"`
+}
+
+type llmGatewayResponse struct {
+	Status string                 `json:"status"`
+	Data   llmGatewayResponseData `json:"data"`
+}
+
+func getLLMOptInState(ctx context.Context, settings *Settings) (llmGatewayResponse, error) {
+	path := settings.LLMGateway.URL + "/vendor/api/v1/vendors/openai" // hard-coded to openai for now
+	proxyReq, err := http.NewRequestWithContext(ctx, "GET", path, nil)
+	if err != nil {
+		return llmGatewayResponse{}, fmt.Errorf("failed to create http request %w", err)
+	}
+	// Set the headers with the service account token
+	// proxyReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s:%s", app.settings.GComToken))
+	proxyReq.SetBasicAuth(settings.Tenant, settings.GrafanaComAPIKey)
+	proxyReq.Header.Add("X-Scope-OrgID", settings.Tenant)
+	proxyReq.Header.Set("Content-Type", "application/json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(proxyReq)
+	if err != nil {
+		return llmGatewayResponse{}, fmt.Errorf("failed to send request to llm-gateway %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.DefaultLogger.Error("Error response from llm-gateway", "status", resp.Status)
+		// parse the response body and return it
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return llmGatewayResponse{}, fmt.Errorf("failed to read response body to bytes %w", err)
+		}
+		return llmGatewayResponse{}, fmt.Errorf("failed to read state in llm-gateway: %s %s", resp.Status, string(b))
+	}
+	log.DefaultLogger.Debug("Read opt-in state from llm-gateway", "status", resp.Status)
+
+	body := llmGatewayResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return llmGatewayResponse{}, err
+	}
+
+	return body, nil
+}
+
+func (app *App) handleGetLLMOptInState(w http.ResponseWriter, req *http.Request) {
+	log.DefaultLogger.Debug("Handling request to get LLM state from llm-gateway..")
+
+	llmState, err := getLLMOptInState(req.Context(), app.settings)
+	if err != nil {
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
-	if req.Method != http.MethodPost {
-		handleError(w, fmt.Errorf("invalid method"), http.StatusMethodNotAllowed)
+	bodyJSON, err := json.Marshal(llmState)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(bodyJSON)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
+		return
+	}
+}
+
+// InstanceLLMOptInData contains the LLM opt-in state and the last user who changed it
+type setLLMOptInState struct {
+	Allowed   bool   `json:"allowed"`
+	UserEmail string `json:"userEmail"`
+}
+
+type llmOptInState struct {
+	Allowed *bool `json:"allowed"`
+}
+
+// handleSaveLLMOptInState persists Grafana-managed LLM opt-in state to the llm-gateway.
+func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request) {
+	log.DefaultLogger.Debug("Handling request to save LLM state to llm-gateway..")
 
 	// Read the request body
-	requestData := SaveLLMStateData{}
-	if req.Body != nil {
-		defer func() {
-			if err := req.Body.Close(); err != nil {
-				handleError(w, fmt.Errorf("failed to close request body %w", err), http.StatusInternalServerError)
-				return
-			}
-		}()
-		b, err := io.ReadAll(req.Body)
-		if err != nil {
-			handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
-			return
-		} else {
-			err := json.Unmarshal(b, &requestData)
-			if err != nil {
-				handleError(w, fmt.Errorf("failed to unmarshal request body to JSON %w", err), http.StatusInternalServerError)
-				return
-			}
-		}
-	} else {
+	if req.Body == nil {
 		log.DefaultLogger.Warn("Request body is nil")
+		handleError(w, errors.New("request body required"), http.StatusBadRequest)
+		return
 	}
-
-	// turn the optIn bool into a string
-	var optIn string
-	if requestData.OptIn {
-		optIn = "1"
-	} else {
-		optIn = "0"
+	requestData := llmOptInState{}
+	defer func() {
+		if err := req.Body.Close(); err != nil {
+			handleError(w, fmt.Errorf("failed to close request body %w", err), http.StatusInternalServerError)
+			return
+		}
+	}()
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(b, &requestData)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to unmarshal request body to JSON %w", err), http.StatusInternalServerError)
+		return
+	}
+	if requestData.Allowed == nil {
+		handleError(w, errors.New("`allowed` field is required"), http.StatusBadRequest)
+		return
 	}
 
 	user := httpadapter.UserFromContext(req.Context())
@@ -341,69 +398,68 @@ func (app *App) handleSaveLLMState(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if user.Role != "Admin" {
-		handleError(w, fmt.Errorf("only admins can opt-in to Grafana managed LLM"), http.StatusForbidden)
+		handleError(w, fmt.Errorf("only admins can change opt-in state for the Grafana managed LLM"), http.StatusForbidden)
 		return
 	}
 
-	notHG := os.Getenv("NOT_HG")
-	if notHG != "" {
-		log.DefaultLogger.Info("NOT_HG variable found; skipping saving settings to gcom and returning success.")
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(`{"status": "Success"}`))
-		if err != nil {
-			handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
-			return
-		}
+	newOptInState := setLLMOptInState{
+		Allowed:   *requestData.Allowed,
+		UserEmail: user.Email,
 	}
 
-	optInData := instanceLLMOptInData{
-		IsOptIn:        optIn,
-		OptInChangedBy: user.Email,
-	}
-
-	// Prepare the request to gcom
-	jsonData, err := json.Marshal(optInData)
+	// Prepare the request to llm-gateway
+	jsonData, err := json.Marshal(newOptInState)
 	if err != nil {
 		handleError(w, fmt.Errorf("failed to marshal plugin jsonData %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	gcomPath := fmt.Sprintf("/api/gnet/instances/%s", app.settings.Tenant)
-	proxyReq, err := http.NewRequestWithContext(req.Context(), "POST", app.grafanaAppURL+gcomPath, bytes.NewReader(jsonData))
+	path := app.settings.LLMGateway.URL + "/vendor/api/v1/vendors/openai" // hard-coded to openai for now
+	proxyReq, err := http.NewRequestWithContext(req.Context(), "POST", path, bytes.NewReader(jsonData))
 	if err != nil {
 		handleError(w, fmt.Errorf("failed to create http request %w", err), http.StatusBadRequest)
 		return
 	}
-	// Set the headers with the service account token
-	proxyReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", app.saToken))
-	proxyReq.Header.Set("X-Api-Key", app.settings.GrafanaComAPIKey)
+	// Basic auth for use with Grafana Cloud.
+	proxyReq.SetBasicAuth(app.settings.Tenant, app.settings.GrafanaComAPIKey)
+	// X-Scope-OrgID for use in local settings.
+	proxyReq.Header.Add("X-Scope-OrgID", app.settings.Tenant)
 	proxyReq.Header.Set("Content-Type", "application/json")
 
 	httpClient := &http.Client{}
 	resp, err := httpClient.Do(proxyReq)
 	if err != nil {
-		handleError(w, fmt.Errorf("failed to send request to gcom %w", err), http.StatusBadRequest)
+		handleError(w, fmt.Errorf("failed to send request to llm-gateway %w", err), http.StatusBadRequest)
 		return
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.DefaultLogger.Error("Error response from gcom", "status", resp.Status)
+	if resp.StatusCode/100 != 2 {
+		log.DefaultLogger.Error("Error response from llm-gateway", "status", resp.Status)
 		// parse the response body and return it
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			handleError(w, fmt.Errorf("failed to read response body to bytes %w", err), http.StatusInternalServerError)
 			return
 		}
-		handleError(w, fmt.Errorf("failed to save state in gcom: %s %s", resp.Status, string(b)), http.StatusInternalServerError)
+		handleError(w, fmt.Errorf("failed to save state in llm-gateway: %s %s", resp.Status, string(b)), http.StatusInternalServerError)
 		return
 	}
-	log.DefaultLogger.Debug("Saved state in gcom", "status", resp.Status)
+	log.DefaultLogger.Debug("Saved state in llm-gateway", "status", resp.Status)
 
 	// write a success response body since backendSrv.* needs a valid json response body
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(`{"status": "Success"}`))
-	if err != nil {
-		handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
+	// No need (or real ability) to handle an error after already writing a success header.
+	_, _ = w.Write([]byte(`{"status": "Success"}`))
+}
+
+func (a *App) handleLLMState(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case "GET":
+		a.handleGetLLMOptInState(w, req)
+	case "POST":
+		a.handleSaveLLMOptInState(w, req)
+	default:
+		handleError(w, fmt.Errorf("method not allowed: %s", req.Method), http.StatusMethodNotAllowed)
 		return
 	}
 }
@@ -421,5 +477,6 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 		log.DefaultLogger.Warn("Unknown OpenAI provider configured", "provider", settings.OpenAI.Provider)
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
-	mux.HandleFunc("/save-llm-state", a.handleSaveLLMState)
+	mux.HandleFunc("/grafana-llm-state", a.handleLLMState)
+
 }

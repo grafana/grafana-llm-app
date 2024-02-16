@@ -30,6 +30,8 @@
     "embedder",
     "errcheck",
     "eventsource",
+    "flamegraph",
+    "flamegraphs",
     "grafana",
     "healthz",
     "httpadapter",

@@ -129,33 +129,6 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 				}`),
 			},
 			llmGatewayURL: "https://llm-gateway-prod-api-eu-west.grafana.net",
-			llmIsOptIn:    false,
-		},
-		{
-			name: "grafana-llm-gateway-explicit-opt-in",
-			settings: backend.AppInstanceSettings{
-				JSONData: []byte(`{
-					"llmGateway": {
-						"url": "https://llm-gateway-prod-api-eu-west.grafana.net",
-						"isOptIn": true
-					}
-				}`),
-			},
-			llmGatewayURL: "https://llm-gateway-prod-api-eu-west.grafana.net",
-			llmIsOptIn:    true,
-		},
-		{
-			name: "grafana-llm-gateway-explicit-opt-out",
-			settings: backend.AppInstanceSettings{
-				JSONData: []byte(`{
-					"llmGateway": {
-						"url": "https://llm-gateway-prod-api-eu-west.grafana.net",
-						"isOptIn": false
-					}
-				}`),
-			},
-			llmGatewayURL: "https://llm-gateway-prod-api-eu-west.grafana.net",
-			llmIsOptIn:    false,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -169,9 +142,6 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 				t.Errorf("expected llm gateway URL to be %s, got %s", tc.llmGatewayURL, settings.LLMGateway.URL)
 			}
 
-			if settings.LLMGateway.IsOptIn != tc.llmIsOptIn {
-				t.Errorf("expected llm opt in status to be %t, got %t", tc.llmIsOptIn, settings.LLMGateway.IsOptIn)
-			}
 		})
 	}
 }
