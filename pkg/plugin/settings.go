@@ -72,10 +72,6 @@ type Settings struct {
 
 	// LLMGateway provides Grafana-managed OpenAI.
 	LLMGateway LLMGatewaySettings `json:"llmGateway"`
-
-	// Pass through settings for plugin data saving
-	VectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
-	VectorStoreBasicAuthPassword    string `json:"vectorStoreBasicAuthPassword"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
