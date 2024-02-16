@@ -62,6 +62,8 @@ type Settings struct {
 	// It is used when persisting the plugin's settings after setup.
 	GrafanaComAPIKey string
 
+	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
+
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
@@ -70,6 +72,10 @@ type Settings struct {
 
 	// LLMGateway provides Grafana-managed OpenAI.
 	LLMGateway LLMGatewaySettings `json:"llmGateway"`
+
+	// Pass through settings for plugin data saving
+	VectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
+	VectorStoreBasicAuthPassword    string `json:"vectorStoreBasicAuthPassword"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
@@ -143,6 +149,9 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 			return nil, errors.New("invalid grafana.com API key")
 		}
 	}
+
+	settings.VectorStoreBasicAuthPassword = appSettings.DecryptedSecureJSONData["vectorStoreBasicAuthPassword"]
+	settings.VectorEmbedderBasicAuthPassword = appSettings.DecryptedSecureJSONData["vectorEmbedderBasicAuthPassword"]
 
 	return &settings, nil
 }
