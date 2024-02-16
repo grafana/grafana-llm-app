@@ -477,7 +477,7 @@ type provisionedPlugin struct {
 
 // getPluginID gets the *ID* of the *provisioned plugin* from grafana.com.
 // Note that this differs to the plugin ID referred to by the `backend.CallResourceRequest`,
-// which is 'grafana-ml-app'
+// which is 'grafana-llm-app'
 func getPluginID(ctx context.Context, slug string, grafanaAppURL string, saToken string, gcomAPIKey string) (int, error) {
 	gcomPath := "/api/gnet/instances/" + slug + "/provisioned-plugins/grafana-llm-app"
 	req, err := http.NewRequestWithContext(ctx, "GET", grafanaAppURL+gcomPath, nil)
@@ -522,6 +522,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "Success"}`))
+		return
 	}
 
 	pluginID, err = getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
