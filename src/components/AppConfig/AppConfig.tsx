@@ -101,7 +101,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         secureJsonData[key] = newSecrets[key];
       }
     }
-    await updatePlugin(plugin.meta.id, {
+    await updateAndSavePluginSettings(plugin.meta.id, {
       enabled,
       pinned,
       jsonData: settings,
@@ -193,6 +193,7 @@ export const getStyles = (theme: GrafanaTheme2) => ({
 });
 
 export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
+  console.log('Updating plugin', pluginId, data)
   const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/settings`,
     method: 'POST',
@@ -201,6 +202,25 @@ export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
 
   return lastValueFrom(response);
 };
+
+export const savePluginSettings = (data: Partial<PluginMeta>) => {
+  console.log('Saving plugin settings', data)
+  const response = getBackendSrv().fetch({
+    url: `api/plugins/grafana-llm-app/resources/save-plugin-settings`,
+    method: 'POST',
+    data
+  });
+
+  return lastValueFrom(response);
+};
+
+export const updateAndSavePluginSettings = (pluginId: string, data: Partial<PluginMeta>) => {
+  const gcomPluginData = {
+    jsonData: data.jsonData,
+    secureJsonData: data.secureJsonData,
+  };
+  return Promise.all([updatePlugin(pluginId, data), savePluginSettings(gcomPluginData)]);
+}
 
 const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckResult>> => {
   const response = getBackendSrv().fetch({
