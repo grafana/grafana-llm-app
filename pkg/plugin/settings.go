@@ -146,8 +146,5 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		}
 	}
 
-	settings.VectorStoreBasicAuthPassword = appSettings.DecryptedSecureJSONData["vectorStoreBasicAuthPassword"]
-	settings.VectorEmbedderBasicAuthPassword = appSettings.DecryptedSecureJSONData["vectorEmbedderBasicAuthPassword"]
-
 	return &settings, nil
 }
