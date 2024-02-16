@@ -206,7 +206,7 @@ export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
 export const savePluginSettings = (data: Partial<PluginMeta>) => {
   console.log('Saving plugin settings', data)
   const response = getBackendSrv().fetch({
-    url: `api/plugins/grafana-llm-app/resources/save-plugin-settings`,
+    url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
     method: 'POST',
     data
   });
