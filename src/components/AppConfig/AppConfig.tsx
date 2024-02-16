@@ -62,7 +62,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
-      return "You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana";
+      return 'You must click the "accept limited data sharing with OpenAI" checkbox to use OpenAI provided by Grafana';
     }
     return;
   };
@@ -110,7 +110,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       const result = await checkPluginHealth(plugin.meta.id);
       setHealthCheck(result.data);
     }
-
+    // If moving away from Grafana-managed LLM, opt-out of the feature automatically
+    if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
+      updateManagedLLMOptIn(false);
+    }
     setIsUpdating(false);
     setUpdated(false);
   };
