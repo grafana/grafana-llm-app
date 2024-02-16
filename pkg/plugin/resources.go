@@ -519,7 +519,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	var err error
 
 	if hgSlug == "" || !a.settings.EnableGrafanaManagedLLM {
-		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com", "Request details:", fmt.Sprintf(" %+v", gcomReq))
+		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "Success"}`))
 	}
@@ -552,6 +552,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 }
 
 func doRequest(req *http.Request) ([]byte, error) {
+	log.DefaultLogger.Debug("SSSSSSSSending request to grafana.com", "req", fmt.Sprintf("%+v", req))
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
