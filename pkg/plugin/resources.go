@@ -513,18 +513,19 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 
 	log.DefaultLogger.Debug("Getting provisioned plugin ID from grafana.com")
 
-	notHG := os.Getenv("NOT_HG")
+	// The HG_INSTANCE_SLUG is only set for Grafana Cloud instances.
+	hgSlug := os.Getenv("HG_INSTANCE_SLUG")
 	var pluginID int
 	var err error
-	if notHG != "" {
-		log.DefaultLogger.Info("NOT_HG variable found; skipping getting pluginID")
-		pluginID = 0
-	} else {
+	if hgSlug != "" && a.settings.EnableGrafanaManagedLLM {
 		pluginID, err = getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
 		if err != nil {
 			handleError(w, fmt.Errorf("get plugin ID: %w", err), http.StatusInternalServerError)
 			return
 		}
+	} else {
+		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping getting provisioned pluginID")
+		pluginID = 0
 	}
 
 	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
@@ -537,10 +538,10 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	gcomReq.Header.Set("X-Api-Key", a.settings.GrafanaComAPIKey)
 	gcomReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	if notHG != "" {
-		log.DefaultLogger.Info("NOT_HG variable found; skipping saving settings to grafana.com", "Request details:", fmt.Sprintf(" %+v", gcomReq))
-	} else {
+	if hgSlug != "" && a.settings.EnableGrafanaManagedLLM {
 		_, err = doRequest(gcomReq)
+	} else {
+		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com", "Request details:", fmt.Sprintf(" %+v", gcomReq))
 	}
 
 	// write a success response body since backendSrv.* needs a valid json response body
