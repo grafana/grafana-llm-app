@@ -517,15 +517,17 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	hgSlug := os.Getenv("HG_INSTANCE_SLUG")
 	var pluginID int
 	var err error
-	if hgSlug != "" && a.settings.EnableGrafanaManagedLLM {
-		pluginID, err = getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
-		if err != nil {
-			handleError(w, fmt.Errorf("get plugin ID: %w", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping getting provisioned pluginID")
-		pluginID = 0
+
+	if hgSlug == "" || !a.settings.EnableGrafanaManagedLLM {
+		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com", "Request details:", fmt.Sprintf(" %+v", gcomReq))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status": "Success"}`))
+	}
+
+	pluginID, err = getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
+	if err != nil {
+		handleError(w, fmt.Errorf("get plugin ID: %w", err), http.StatusInternalServerError)
+		return
 	}
 
 	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
@@ -538,19 +540,15 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	gcomReq.Header.Set("X-Api-Key", a.settings.GrafanaComAPIKey)
 	gcomReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	if hgSlug != "" && a.settings.EnableGrafanaManagedLLM {
-		_, err = doRequest(gcomReq)
-	} else {
-		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com", "Request details:", fmt.Sprintf(" %+v", gcomReq))
+	_, err = doRequest(gcomReq)
+	if err != nil {
+		handleError(w, fmt.Errorf("saving plugin setting to gcom: %w", err), http.StatusInternalServerError)
+		return
 	}
 
 	// write a success response body since backendSrv.* needs a valid json response body
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status": "Success"}`))
-	if err != nil {
-		handleError(w, fmt.Errorf("failed to write response body %w", err), http.StatusInternalServerError)
-		return
-	}
 }
 
 func doRequest(req *http.Request) ([]byte, error) {
