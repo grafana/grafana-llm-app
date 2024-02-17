@@ -51,7 +51,7 @@ export function OpenAIConfig({
             [
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
-            ] as Array<SelectableValue<OpenAIProvider>>
+            ] as any[]
           }
           value={settings.provider ?? 'openai'}
           onChange={(e) => onChange({ ...settings, provider: e.value })}

@@ -6,7 +6,7 @@ import { testIds } from 'components/testIds';
 import { Secrets, SecretsSet, getStyles } from './AppConfig';
 
 import { BasicAuthConfig } from './AuthSettings/BasicAuth';
-import { SelectableValue } from '@grafana/data';
+// import { SelectableValue } from '@grafana/data';
 
 export interface VectorSettings {
   // Whether the vector service should be enabled.
@@ -146,7 +146,7 @@ export function EmbedderConfig({
               [
                 { label: 'OpenAI API', value: 'openai' },
                 { label: 'Grafana Vector API', value: 'grafana/vectorapi' },
-              ] as Array<SelectableValue<EmbedderOptions>>
+              ] as any[]
             }
             placeholder="Select Embedder Provider"
             value={settings?.type}
