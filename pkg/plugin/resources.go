@@ -515,7 +515,7 @@ type pluginSettings struct {
 // 	vectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
 // }
 
-func (a *App) insertProvisionedToken(body io.ReadCloser) (io.ReadCloser, error) {
+func (a *App) insertProvisionedToken(body io.ReadCloser) (url.Values, error) {
 	// Read the request body
 	if body == nil {
 		return nil, errors.New("request body required")
@@ -534,12 +534,22 @@ func (a *App) insertProvisionedToken(body io.ReadCloser) (io.ReadCloser, error) 
 	// Insert the provisioned token into the request body
 	requestData.SecureJSONData["base64EncodedAccessToken"] = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", a.settings.Tenant, a.settings.GrafanaComAPIKey)))
 	// Marshal the request body back to JSON
-	b, err = json.Marshal(requestData)
+	jsonData, err := json.Marshal(requestData.JSONData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body %w", err)
+		return nil, fmt.Errorf("failed to marshal request jsonData %w", err)
 	}
+
+	secureJSONData, err := json.Marshal(requestData.SecureJSONData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request secureJSONData %w", err)
+	}
+
+	newBody := url.Values{}
+	newBody.Set("jsonData", string(jsonData))
+	newBody.Set("secureJsonData", string(secureJSONData))
+
 	// Create a new io.ReadCloser with the updated request body
-	return io.NopCloser(bytes.NewReader(b)), nil
+	return newBody, nil
 }
 
 func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request) {
@@ -575,7 +585,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
 		return
 	}
-	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, newReqBody)
+	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, strings.NewReader(newReqBody.Encode()))
 	if err != nil {
 		handleError(w, fmt.Errorf("create gcom request: %w", err), http.StatusInternalServerError)
 		return
@@ -608,7 +618,7 @@ func doRequest(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("read http response: %w", err)
 	}
 	if resp.StatusCode/100 != 2 {
-		return respBody, fmt.Errorf("HTTP error %d: %s", resp.StatusCode, string(respBody))
+		return respBody, fmt.Errorf("HTTP error %d", resp.StatusCode)
 	}
 	return respBody, nil
 }
