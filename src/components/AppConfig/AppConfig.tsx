@@ -193,7 +193,8 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   inlineFieldInputWidth: 40,
 });
 
-export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
+export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<PluginMeta>) => {
+  console.log('Updating plugin', pluginId, data)
   const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/settings`,
     method: 'POST',
@@ -203,7 +204,8 @@ export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
   return lastValueFrom(response);
 };
 
-export const savePluginSettings = (data: Partial<PluginMeta>) => {
+export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) => {
+  console.log('Saving plugin settings', data)
   const response = getBackendSrv().fetch({
     url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
     method: 'POST',
@@ -213,18 +215,20 @@ export const savePluginSettings = (data: Partial<PluginMeta>) => {
   return lastValueFrom(response);
 };
 
-export const updateAndSavePluginSettings = async (pluginId: string, data: Partial<PluginMeta>) => {
+export const updateAndSavePluginSettings = async (settings: AppPluginSettings, pluginId: string, data: Partial<PluginMeta>) => {
   const gcomPluginData = {
     jsonData: data.jsonData,
     secureJsonData: data.secureJsonData,
   };
 
-  await savePluginSettings(gcomPluginData).then((response: FetchResponse) => {
-    if (!response.ok) {
-      throw response.data;
-    }
-  });
-  await updatePlugin(pluginId, data).then((response: FetchResponse) => {
+  if (settings.enableGrafanaManagedLLM === true) {
+    await updateGcomProvisionedPluginSettings(gcomPluginData).then((response: FetchResponse) => {
+      if (!response.ok) {
+        throw response.data;
+      }
+    });
+  }
+  await updateGrafanaPluginSettings(pluginId, data).then((response: FetchResponse) => {
     if (!response.ok) {
       throw response.data;
     }
