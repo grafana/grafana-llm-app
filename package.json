@@ -71,10 +71,11 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@emotion/css": "^11.1.3",
-    "@grafana/data": "10.2.1",
-    "@grafana/runtime": "10.2.1",
-    "@grafana/ui": "10.2.3",
+    "@emotion/css": "^11.11.2",
+    "@grafana/data": "10.2.2",
+    "@grafana/llms": "file:../../sandersaarond/grafana-llm-frontend",
+    "@grafana/runtime": "10.2.2",
+    "@grafana/ui": "10.2.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-router-dom": "^5.2.0",

@@ -2,7 +2,6 @@ import React, { ChangeEvent } from 'react';
 
 import { Field, FieldSet, Input, SecretInput, Select, useStyles2 } from '@grafana/ui';
 
-import { SelectableValue } from '@grafana/data';
 import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
