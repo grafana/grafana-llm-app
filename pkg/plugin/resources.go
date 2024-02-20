@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -511,21 +510,15 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	log.DefaultLogger.Debug("Getting provisioned plugin ID from grafana.com")
-
-	// The HG_INSTANCE_SLUG is only set for Grafana Cloud instances.
-	hgSlug := os.Getenv("HG_INSTANCE_SLUG")
-	var pluginID int
-	var err error
-
-	if hgSlug == "" || !a.settings.EnableGrafanaManagedLLM {
-		log.DefaultLogger.Info("Hosted Grafana Slug not found or plugin not provisioned; skipping saving settings to grafana.com")
+	if !a.settings.EnableGrafanaManagedLLM {
+		log.DefaultLogger.Info("Plugin not provisioned; skipping saving settings to grafana.com")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "Success"}`))
 		return
 	}
 
-	pluginID, err = getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
+	log.DefaultLogger.Debug("Getting provisioned plugin ID from grafana.com")
+	pluginID, err := getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
 	if err != nil {
 		handleError(w, fmt.Errorf("get plugin ID: %w", err), http.StatusInternalServerError)
 		return
