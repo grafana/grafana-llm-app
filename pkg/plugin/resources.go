@@ -516,10 +516,10 @@ func (a *App) mergeSecureJSONData(body io.ReadCloser) (url.Values, error) {
 		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
 	}
 
+	// Update mandatory fields
+	requestData.SecureJSONData.EncodedTenantAndTokenKey = base64.StdEncoding.EncodeToString([]byte(a.settings.DecryptedSecureJSONData.EncodedTenantAndTokenKey))
+
 	// Insert existing plugin secureJSONData fields if missing from request
-	if requestData.SecureJSONData.EncodedTenantAndTokenKey == "" {
-		requestData.SecureJSONData.EncodedTenantAndTokenKey = base64.StdEncoding.EncodeToString([]byte(a.settings.DecryptedSecureJSONData.EncodedTenantAndTokenKey))
-	}
 	if requestData.SecureJSONData.OpenAIKey == "" {
 		requestData.SecureJSONData.OpenAIKey = a.settings.DecryptedSecureJSONData.OpenAIKey
 	}

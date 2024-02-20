@@ -47,8 +47,8 @@ type LLMGatewaySettings struct {
 }
 
 type SecureJSONData struct {
+	EncodedTenantAndTokenKey        string
 	OpenAIKey                       string `json:"openAIKey"`
-	EncodedTenantAndTokenKey        string `json:"base64EncodedAccessToken"`
 	QdrantAPIKey                    string `json:"qdrantApiKey"`
 	VectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
 	VectorStoreBasicAuthUsername    string `json:"vectorStoreBasicAuthUsername"`
