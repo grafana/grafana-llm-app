@@ -7,6 +7,7 @@ import { Button, Card, Checkbox, FieldSet, Icon, useStyles2 } from '@grafana/ui'
 import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
 import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
+import { DevSandbox} from './DevSandbox';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
 export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
@@ -95,6 +96,8 @@ export function LLMConfig({
   };
 
   return (
+    <>
+    {process.env.NODE_ENV === 'development' && <DevSandbox/>}
     <FieldSet label="OpenAI Settings" className={s.sidePadding}>
       {allowGrafanaManagedLLM && (
         <div onClick={selectGrafanaManaged}>
@@ -222,6 +225,7 @@ export function LLMConfig({
         </Card.Figure>
       </Card>
     </FieldSet>
+    </>
   );
 }
 
