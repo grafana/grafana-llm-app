@@ -99,12 +99,17 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         secureJsonData[key] = newSecrets[key];
       }
     }
-    await updateAndSavePluginSettings(plugin.meta.id, {
-      enabled,
-      pinned,
-      jsonData: settings,
-      secureJsonData,
-    });
+    try {
+      await updateAndSavePluginSettings(plugin.meta.id, settings.enableGrafanaManagedLLM, {
+        enabled,
+        pinned,
+        jsonData: settings,
+        secureJsonData,
+      });
+    } catch (e) {
+      setIsUpdating(false);
+      throw (e);
+    }
     // If disabling LLM features, no health check needed
     if (settings.openAI?.provider !== undefined) {
       const result = await checkPluginHealth(plugin.meta.id);
@@ -215,13 +220,13 @@ export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) =
   return lastValueFrom(response);
 };
 
-export const updateAndSavePluginSettings = async (settings: AppPluginSettings, pluginId: string, data: Partial<PluginMeta>) => {
+export const updateAndSavePluginSettings = async (pluginId: string, persistToGcom = false, data: Partial<PluginMeta>) => {
   const gcomPluginData = {
     jsonData: data.jsonData,
     secureJsonData: data.secureJsonData,
   };
 
-  if (settings.enableGrafanaManagedLLM === true) {
+  if (persistToGcom === true) {
     await updateGcomProvisionedPluginSettings(gcomPluginData).then((response: FetchResponse) => {
       if (!response.ok) {
         throw response.data;
