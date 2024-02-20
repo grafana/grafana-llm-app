@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/stretchr/testify/require"
 )
 
 // mockCallResourceResponseSender implements backend.CallResourceResponseSender
@@ -147,25 +148,15 @@ func TestMergeSecureJSONData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			body := []byte(`{"secureJsonData": ` + string(tc.secureJSONData) + `}`)
 			merged, err := app.mergeSecureJSONData(body)
-			if err != nil {
-				t.Fatalf("mergeSecureJSONData error: %s", err)
-			}
+
+			require.NoError(t, err)
 
 			secureJsonString := merged.Get("secureJsonData")
 			var updatedSecureJson map[string]string
 			err = json.Unmarshal([]byte(secureJsonString), &updatedSecureJson)
-			if err != nil {
-				t.Fatalf("unmarshal error: %s", err)
-			}
-			if len(tc.expMerged) != len(updatedSecureJson) {
-				t.Fatalf("expected merged length %d, got %d", len(tc.expMerged), len(updatedSecureJson))
-			}
-			for k, v := range tc.expMerged {
-				if updatedSecureJson[k] != v {
-					t.Fatalf("expected merged key %s value %s, got %s", k, v, updatedSecureJson[k])
-				}
-			}
+			require.NoError(t, err)
 
+			require.Equal(t, tc.expMerged, updatedSecureJson)
 		})
 	}
 }
