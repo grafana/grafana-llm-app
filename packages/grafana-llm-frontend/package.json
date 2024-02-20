@@ -5,7 +5,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production"
   },
   "keywords": [],
   "author": "",
@@ -13,12 +14,12 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.3.3",
+    "typescript": "5.3.3",
     "webpack": "^5.90.3",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@grafana/data": "^10.3.3",
-    "@grafana/runtime": "^10.3.3"
+    "@grafana/data": "10.2.1",
+    "@grafana/runtime": "10.2.1"
   }
 }
