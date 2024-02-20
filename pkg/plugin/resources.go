@@ -533,7 +533,6 @@ func (a *App) insertProvisionedToken(body io.ReadCloser) (url.Values, error) {
 	newBody.Set("jsonData", string(jsonData))
 	newBody.Set("secureJsonData", string(secureJSONData))
 
-	// Create a new io.ReadCloser with the updated request body
 	return newBody, nil
 }
 
