@@ -103,6 +103,7 @@ export function LLMConfig({
               {llmOption === 'grafana-provided' && (
                 <>
                   <div className={s.openaiTermsBox}>
+                    <h4>Terms of Usage (Last updated: February 16th, 2024)</h4>
                     <p>
                       To enable OpenAI via Grafana Labs, please note that some data from your Grafana instance will be
                       sent to OpenAI when you use the LLM-based features. Grafana Labs imposes usage limits for this
@@ -172,7 +173,12 @@ export function LLMConfig({
                       </li>
                     </ul>
                   </div>
-                  <Checkbox value={optIn} onClick={optInChange} label="I accept the AI Terms above" />
+                  <p>
+                    By clicking the &quot;I Accept&quot; button, you agree to these additional AI Terms on behalf of
+                    yourself and/or your organization. Please read these terms carefully before proceeding. If you do
+                    not agree to these terms, do not click the &quot;I Accept&quot; button.
+                  </p>
+                  <Checkbox value={optIn} onClick={optInChange} label="I Accept" />
                 </>
               )}
             </Card.Description>
