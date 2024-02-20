@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Button, FieldSet, Input, Modal, Spinner } from "@grafana/ui";
 import { useAsync } from "react-use";
 import { finalize } from "rxjs";
-// import { openai } from "@grafana/llm";
-import { openai } from "llms";
+import { openai } from "@grafana/llm";
+// import { openai } from "llms";
 
 const BasicChatTest = () => {
   // The current input value.
