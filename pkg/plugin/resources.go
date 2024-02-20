@@ -503,18 +503,6 @@ type pluginSettings struct {
 	SecureJSONData map[string]string      `json:"secureJsonData"`
 }
 
-// // openAIKey?: string;
-// // qdrantApiKey?: string;
-// // vectorStoreBasicAuthPassword?: string;
-// // vectorEmbedderBasicAuthPassword?: string;
-// type pluginSecureJsonData struct {
-// 	base64EncodedAccessToken string `json:"base64EncodedAccessToken"`
-// 	openAIKey                string `json:"openAIKey"`
-// 	qdrantApiKey             string `json:"qdrantApiKey"`
-// 	vectorStoreBasicAuthPassword string `json:"vectorStoreBasicAuthPassword"`
-// 	vectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
-// }
-
 func (a *App) insertProvisionedToken(body io.ReadCloser) (url.Values, error) {
 	// Read the request body
 	if body == nil {
@@ -606,7 +594,6 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 }
 
 func doRequest(req *http.Request) ([]byte, error) {
-	log.DefaultLogger.Info("SSSSSSSSending request to grafana.com", "req", fmt.Sprintf("%+v", req))
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
