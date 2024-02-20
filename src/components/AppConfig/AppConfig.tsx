@@ -215,13 +215,23 @@ export const savePluginSettings = (data: Partial<PluginMeta>) => {
   return lastValueFrom(response);
 };
 
-export const updateAndSavePluginSettings = (pluginId: string, data: Partial<PluginMeta>) => {
+export const updateAndSavePluginSettings = async (pluginId: string, data: Partial<PluginMeta>) => {
   const gcomPluginData = {
     jsonData: data.jsonData,
     secureJsonData: data.secureJsonData,
   };
-  return Promise.all([updatePlugin(pluginId, data), savePluginSettings(gcomPluginData)]);
-}
+
+  await savePluginSettings(gcomPluginData).then((response: FetchResponse) => {
+    if (!response.ok) {
+      throw response.data;
+    }
+  });
+  await updatePlugin(pluginId, data).then((response: FetchResponse) => {
+    if (!response.ok) {
+      throw response.data;
+    }
+  });
+};
 
 const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckResult>> => {
   const response = getBackendSrv().fetch({
