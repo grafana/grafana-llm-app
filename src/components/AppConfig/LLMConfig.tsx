@@ -89,7 +89,6 @@ export function LLMConfig({
 
   return (
     <FieldSet label="OpenAI Settings" className={s.sidePadding}>
-      {' '}
       {allowGrafanaManagedLLM && (
         <div onClick={selectGrafanaManaged}>
           <Card
