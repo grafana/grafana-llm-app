@@ -12,6 +12,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
+const openAIKey = "openAIKey"
+const encodedTenantAndTokenKey = "base64EncodedAccessToken"
+
 type openAIProvider string
 
 const (
@@ -46,14 +49,6 @@ type LLMGatewaySettings struct {
 	URL string `json:"url"`
 }
 
-type SecureJSONData struct {
-	EncodedTenantAndTokenKey        string
-	OpenAIKey                       string `json:"openAIKey"`
-	QdrantAPIKey                    string `json:"qdrantApiKey"`
-	VectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
-	VectorStoreBasicAuthUsername    string `json:"vectorStoreBasicAuthUsername"`
-}
-
 // Settings contains the plugin's settings and secrets required by the plugin backend.
 type Settings struct {
 	// Tenant is the stack ID (Hosted Grafana ID) of the instance this plugin
@@ -67,7 +62,7 @@ type Settings struct {
 	// It is used when persisting the plugin's settings after setup.
 	GrafanaComAPIKey string
 
-	DecryptedSecureJSONData SecureJSONData `json:"secureJsonData"`
+	DecryptedSecureJSONData map[string]string
 
 	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
 
@@ -107,7 +102,8 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
-
+	const openAIKey = "openAIKey"
+	const encodedTenantAndTokenKey = "base64EncodedAccessToken"
 	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
 	if settings.LLMGateway.URL == "" {
 		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, the LLM Gateway support is disabled")
@@ -128,8 +124,12 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.OpenAI.Provider = ""
 	}
 
+	settings.DecryptedSecureJSONData = appSettings.DecryptedSecureJSONData
+
+	settings.OpenAI.apiKey = settings.DecryptedSecureJSONData[openAIKey]
+
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
-	encodedTenantAndToken := settings.DecryptedSecureJSONData.EncodedTenantAndTokenKey
+	encodedTenantAndToken := settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
 	if encodedTenantAndToken != "" {
 		token, err := base64.StdEncoding.DecodeString(encodedTenantAndToken)
 		if err != nil {
