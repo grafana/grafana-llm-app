@@ -222,7 +222,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expStatus: http.StatusOK,
 		},
 		{
-			name: "grafana-managed llm gateway - opt in set to true",
+			name: "grafana-managed llm gateway",
 
 			settings: Settings{
 				Tenant:           "123",
@@ -230,37 +230,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 				OpenAI: OpenAISettings{
 					Provider: openAIProviderGrafana,
 				},
-				LLMGateway: LLMGatewaySettings{
-					IsOptIn: true,
-				},
 			},
-			apiKey: "abcd1234",
-
-			method: http.MethodPost,
-			path:   "/openai/v1/chat/completions",
-			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
-
-			expReqHeaders: http.Header{
-				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
-				"X-Scope-OrgID": {"123"},
-			},
-			expReqPath: "/openai/v1/chat/completions",
-			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
-
-			expStatus: http.StatusOK,
-		},
-		{
-			name: "grafana-managed llm gateway - opt in set to false",
-
-			settings: Settings{
-				Tenant:           "123",
-				GrafanaComAPIKey: "abcd1234",
-				OpenAI: OpenAISettings{
-					Provider: openAIProviderGrafana,
-				},
-				LLMGateway: LLMGatewaySettings{
-					IsOptIn: false,
-				}},
 			apiKey: "abcd1234",
 
 			method: http.MethodPost,

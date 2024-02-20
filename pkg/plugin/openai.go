@@ -66,11 +66,6 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 		url.RawQuery = "api-version=2023-03-15-preview"
 
 	case openAIProviderGrafana:
-		// Ensure Grafana-managed OpenAI has been opted-in before permitting use
-		if !a.settings.LLMGateway.IsOptIn {
-			return nil, fmt.Errorf("Grafana Provided LLM access is not permitted. We require explicit Opt-In of the feature to continue")
-		}
-
 		url, err = url.Parse(a.settings.LLMGateway.URL)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to parse LLM Gateway URL: %w", err)

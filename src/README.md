@@ -11,7 +11,7 @@ It is responsible for:
 
 Future functionality will include:
 
-- support for additional LLM providers, including the ability to choose your own at runtime
+- support for more LLM providers, including the ability to choose your own at runtime
 - rate limiting of requests to LLMs, for cost control
 - token and cost estimation
 - RBAC to only allow certain users to use LLM functionality
@@ -20,12 +20,12 @@ Note: The Grafana LLM App plugin is currently in [Public preview](https://grafan
 
 ## For users
 
-Grafana Cloud: the LLM app plugin is installed for everyone, but LLM features are disabled by default. To enable LLM features, select "OpenAI provided by Grafana" in plugin configuration.
+Grafana Cloud: the LLM app plugin is installed for everyone, but LLM features are disabled by default. To enable LLM features, select "Enable OpenAI access via Grafana" in plugin configuration.
 
-OSS or Enterprise: install and configure this plugin with your OpenAI-compatible API key to enable various LLM-related functionality across Grafana.
+OSS or Enterprise: install and configure this plugin with your OpenAI-compatible API key to enable LLM-powered features across Grafana.
 
 This includes new functionality inside Grafana itself, such as explaining panels, or in plugins,
-such as AI assistants for flamegraphs, error logs and more.
+such as automated incident summaries, AI assistants for flame graphs and Sift error logs, and more.
 
 All LLM requests will be routed via this plugin, which ensures the correct API key is being
 used and requests are routed appropriately.
