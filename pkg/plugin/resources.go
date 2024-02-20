@@ -3,6 +3,7 @@ package plugin
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -497,6 +498,50 @@ func getPluginID(ctx context.Context, slug string, grafanaAppURL string, saToken
 	return plugin.ID, nil
 }
 
+type pluginSettings struct {
+	JSONData       map[string]interface{} `json:"jsonData"`
+	SecureJSONData map[string]string      `json:"secureJsonData"`
+}
+
+// // openAIKey?: string;
+// // qdrantApiKey?: string;
+// // vectorStoreBasicAuthPassword?: string;
+// // vectorEmbedderBasicAuthPassword?: string;
+// type pluginSecureJsonData struct {
+// 	base64EncodedAccessToken string `json:"base64EncodedAccessToken"`
+// 	openAIKey                string `json:"openAIKey"`
+// 	qdrantApiKey             string `json:"qdrantApiKey"`
+// 	vectorStoreBasicAuthPassword string `json:"vectorStoreBasicAuthPassword"`
+// 	vectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
+// }
+
+func (a *App) insertProvisionedToken(body io.ReadCloser) (io.ReadCloser, error) {
+	// Read the request body
+	if body == nil {
+		return nil, errors.New("request body required")
+	}
+	b, err := io.ReadAll(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read request body to bytes %w", err)
+	}
+	// Unmarshal the request body to JSON
+	var requestData pluginSettings
+	err = json.Unmarshal(b, &requestData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
+	}
+
+	// Insert the provisioned token into the request body
+	requestData.SecureJSONData["base64EncodedAccessToken"] = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", a.settings.Tenant, a.settings.GrafanaComAPIKey)))
+	// Marshal the request body back to JSON
+	b, err = json.Marshal(requestData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body %w", err)
+	}
+	// Create a new io.ReadCloser with the updated request body
+	return io.NopCloser(bytes.NewReader(b)), nil
+}
+
 func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		handleError(w, fmt.Errorf("method not allowed: %s", req.Method), http.StatusMethodNotAllowed)
@@ -525,7 +570,12 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	}
 
 	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
-	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, req.Body)
+	newReqBody, err := a.insertProvisionedToken(req.Body)
+	if err != nil {
+		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
+		return
+	}
+	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, newReqBody)
 	if err != nil {
 		handleError(w, fmt.Errorf("create gcom request: %w", err), http.StatusInternalServerError)
 		return
@@ -546,7 +596,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 }
 
 func doRequest(req *http.Request) ([]byte, error) {
-	log.DefaultLogger.Debug("SSSSSSSSending request to grafana.com", "req", fmt.Sprintf("%+v", req))
+	log.DefaultLogger.Info("SSSSSSSSending request to grafana.com", "req", fmt.Sprintf("%+v", req))
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
