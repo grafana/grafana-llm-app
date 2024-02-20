@@ -12,9 +12,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-const openAIKey = "openAIKey"
-const encodedTenantAndTokenKey = "base64EncodedAccessToken"
-
 type openAIProvider string
 
 const (
@@ -49,6 +46,14 @@ type LLMGatewaySettings struct {
 	URL string `json:"url"`
 }
 
+type SecureJSONData struct {
+	OpenAIKey                       string `json:"openAIKey"`
+	EncodedTenantAndTokenKey        string `json:"base64EncodedAccessToken"`
+	QdrantAPIKey                    string `json:"qdrantApiKey"`
+	VectorEmbedderBasicAuthPassword string `json:"vectorEmbedderBasicAuthPassword"`
+	VectorStoreBasicAuthUsername    string `json:"vectorStoreBasicAuthUsername"`
+}
+
 // Settings contains the plugin's settings and secrets required by the plugin backend.
 type Settings struct {
 	// Tenant is the stack ID (Hosted Grafana ID) of the instance this plugin
@@ -61,6 +66,8 @@ type Settings struct {
 	//
 	// It is used when persisting the plugin's settings after setup.
 	GrafanaComAPIKey string
+
+	DecryptedSecureJSONData SecureJSONData `json:"secureJsonData"`
 
 	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
 
@@ -121,12 +128,9 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.OpenAI.Provider = ""
 	}
 
-	// Read user's OpenAI key & the LLMGateway key
-	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
-
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
-	encodedTenantAndToken, ok := appSettings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
-	if ok {
+	encodedTenantAndToken := settings.DecryptedSecureJSONData.EncodedTenantAndTokenKey
+	if encodedTenantAndToken != "" {
 		token, err := base64.StdEncoding.DecodeString(encodedTenantAndToken)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())

@@ -88,7 +88,7 @@ func (a *openAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func newOpenAIProxy(settings Settings) http.Handler {
 	director := func(req *http.Request) {
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/openai")
-		req.Header.Add("Authorization", "Bearer "+settings.OpenAI.apiKey)
+		req.Header.Add("Authorization", "Bearer "+settings.DecryptedSecureJSONData.OpenAIKey)
 		req.Header.Add("OpenAI-Organization", settings.OpenAI.OrganizationID)
 	}
 	return &openAIProxy{
@@ -141,7 +141,7 @@ func (a *azureOpenAIProxy) modifyRequest(req *http.Request) error {
 
 	// We've got a deployment, so finish modifying the request.
 	req.URL.Path = fmt.Sprintf("/openai/deployments/%s/%s", deployment, strings.TrimPrefix(req.URL.Path, "/openai/v1/"))
-	req.Header.Add("api-key", a.settings.OpenAI.apiKey)
+	req.Header.Add("api-key", a.settings.DecryptedSecureJSONData.OpenAIKey)
 	req.URL.RawQuery = "api-version=2023-03-15-preview"
 
 	// Remove extra fields
@@ -497,10 +497,10 @@ func getPluginID(ctx context.Context, slug string, grafanaAppURL string, saToken
 
 type pluginSettings struct {
 	JSONData       map[string]interface{} `json:"jsonData"`
-	SecureJSONData map[string]string      `json:"secureJsonData"`
+	SecureJSONData SecureJSONData         `json:"secureJsonData"`
 }
 
-func (a *App) insertProvisionedToken(body io.ReadCloser) (url.Values, error) {
+func (a *App) mergeSecureJSONData(body io.ReadCloser) (url.Values, error) {
 	// Read the request body
 	if body == nil {
 		return nil, errors.New("request body required")
@@ -516,8 +516,23 @@ func (a *App) insertProvisionedToken(body io.ReadCloser) (url.Values, error) {
 		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
 	}
 
-	// Insert the provisioned token into the request body
-	requestData.SecureJSONData["base64EncodedAccessToken"] = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", a.settings.Tenant, a.settings.GrafanaComAPIKey)))
+	// Insert existing plugin secureJSONData fields if missing from request
+	if requestData.SecureJSONData.EncodedTenantAndTokenKey == "" {
+		requestData.SecureJSONData.EncodedTenantAndTokenKey = base64.StdEncoding.EncodeToString([]byte(a.settings.DecryptedSecureJSONData.EncodedTenantAndTokenKey))
+	}
+	if requestData.SecureJSONData.OpenAIKey == "" {
+		requestData.SecureJSONData.OpenAIKey = a.settings.DecryptedSecureJSONData.OpenAIKey
+	}
+	if requestData.SecureJSONData.QdrantAPIKey == "" {
+		requestData.SecureJSONData.QdrantAPIKey = a.settings.DecryptedSecureJSONData.QdrantAPIKey
+	}
+	if requestData.SecureJSONData.VectorEmbedderBasicAuthPassword == "" {
+		requestData.SecureJSONData.VectorEmbedderBasicAuthPassword = a.settings.DecryptedSecureJSONData.VectorEmbedderBasicAuthPassword
+	}
+	if requestData.SecureJSONData.VectorStoreBasicAuthUsername == "" {
+		requestData.SecureJSONData.VectorStoreBasicAuthUsername = a.settings.DecryptedSecureJSONData.VectorStoreBasicAuthUsername
+	}
+
 	// Marshal the request body back to JSON
 	jsonData, err := json.Marshal(requestData.JSONData)
 	if err != nil {
@@ -564,7 +579,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	}
 
 	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
-	newReqBody, err := a.insertProvisionedToken(req.Body)
+	newReqBody, err := a.mergeSecureJSONData(req.Body)
 	if err != nil {
 		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
 		return

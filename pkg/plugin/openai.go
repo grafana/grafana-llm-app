@@ -18,10 +18,10 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 	}
 	switch a.settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
-		req.Header.Set("Authorization", "Bearer "+a.settings.OpenAI.apiKey)
+		req.Header.Set("Authorization", "Bearer "+a.settings.DecryptedSecureJSONData.OpenAIKey)
 		req.Header.Set("OpenAI-Organization", a.settings.OpenAI.OrganizationID)
 	case openAIProviderAzure:
-		req.Header.Set("api-key", a.settings.OpenAI.apiKey)
+		req.Header.Set("api-key", a.settings.DecryptedSecureJSONData.OpenAIKey)
 	case openAIProviderGrafana:
 		req.SetBasicAuth(a.settings.Tenant, a.settings.GrafanaComAPIKey)
 		req.Header.Add("X-Scope-OrgID", a.settings.Tenant)
