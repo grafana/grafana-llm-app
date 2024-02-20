@@ -62,16 +62,14 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
-      return "You must click the 'Enable OpenAI access via Grafana' button to use OpenAI provided by Grafana";
+      return 'You must click the "I Accept" checkbox to use OpenAI provided by Grafana';
     }
     return;
   };
   const errorState = validateInputs();
 
-  const updateManagedLLMOptIn = (newOptIn: boolean): void => {
-    console.log('Try to set Opt in state to', managedLLMOptIn);
-    saveLLMOptInState(newOptIn);
-
+  const updateManagedLLMOptIn = async (newOptIn: boolean): Promise<void> => {
+    await saveLLMOptInState(newOptIn);
     setManagedLLMOptIn(newOptIn);
   };
 
@@ -112,7 +110,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       const result = await checkPluginHealth(plugin.meta.id);
       setHealthCheck(result.data);
     }
-
+    // If moving away from Grafana-managed LLM, opt-out of the feature automatically
+    if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
+      updateManagedLLMOptIn(false);
+    }
     setIsUpdating(false);
     setUpdated(false);
   };
@@ -229,7 +230,7 @@ const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckR
   return lastValueFrom(response) as Promise<FetchResponse<HealthCheckResult>>;
 };
 
-export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
+export async function saveLLMOptInState(optIn: boolean): Promise<void> {
   return lastValueFrom(
     getBackendSrv().fetch({
       url: `api/plugins/grafana-llm-app/resources/grafana-llm-state`,
@@ -237,16 +238,10 @@ export async function saveLLMOptInState(optIn: boolean): Promise<boolean> {
       data: { allowed: optIn },
     })
   ).then((response: FetchResponse) => {
-      if (!response.ok) {
-        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
-        return false;
-      }
-      return true;
-    })
-    .catch((error) => {
-      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
-      return false;
-    });
+    if (!response.ok) {
+      throw response.data;
+    }
+  });
 }
 
 export async function getLLMOptInState(): Promise<boolean> {
@@ -256,14 +251,9 @@ export async function getLLMOptInState(): Promise<boolean> {
       method: 'GET',
     })
   ).then((response: FetchResponse) => {
-      if (!response.ok || response.data?.status !== 'success') {
-        console.error(`Error using Grafana-managed LLM: ${response.status} ${response.data.message}`);
-        return false;
-      }
-      return response.data.data?.allowed ?? false;
-    })
-    .catch((error) => {
-      console.error(`Error using Grafana-managed LLM: ${error.status} ${error.data.message}`);
-      return false;
-    });
+    if (!response.ok || response.data?.status !== 'success') {
+      throw response.data;
+    }
+    return response.data.data?.allowed ?? false;
+  });
 }

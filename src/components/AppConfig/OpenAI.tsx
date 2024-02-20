@@ -43,7 +43,7 @@ export function OpenAIConfig({
     });
   };
   return (
-    <FieldSet label="Your OpenAI Account details">
+    <FieldSet>
       <Field label="OpenAI Provider">
         <Select
           data-testid={testIds.appConfig.openAIProvider}

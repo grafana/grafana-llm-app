@@ -7,14 +7,14 @@ Note: The Grafana LLM App plugin is currently in [Public preview](https://grafan
 
 ## Install the plugin on Grafana Cloud
 
-Prerequisites:
-- Any Grafana Cloud environment (including Free)
+Prerequisite:
+- Any Grafana Cloud environment (including the free tier)
 
 Steps:
-1. In Grafana Cloud, click **Administration** > **Plugins** in the side navigation menu.
-1. Browse plugins or search for **LLM**, and open the **LLM** plugin.
-1. On the **Configuration** tab, select "OpenAI Provided by Grafana".
-1. Click to permit us to share limited data with OpenAI's API (not for training, and only to provide these features)
+1. In Grafana Cloud, click **Administration** > **Plugins and data** > **Plugins** in the side navigation menu.
+1. Browse or search for the **LLM** plugin and click to open it.
+1. On the **Configuration** tab, select "Enable OpenAI access via Grafana".
+1. Click to permit us to share limited data with OpenAI's API (not for training, and only to provide these features).
 1. Click **Save settings**.
 
 If you prefer, you may configure your own API authentication from supported LLM providers, including OpenAI and Azure. With this option, the LLM app securely stores API keys for you.
