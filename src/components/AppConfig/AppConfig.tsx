@@ -62,7 +62,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
-      return 'You must click the "accept limited data sharing with OpenAI" checkbox to use OpenAI provided by Grafana';
+      return 'You must click the "I Accept" checkbox to use OpenAI provided by Grafana';
     }
     return;
   };

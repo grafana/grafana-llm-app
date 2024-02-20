@@ -90,58 +90,103 @@ export function LLMConfig({
   return (
     <FieldSet label="OpenAI Settings" className={s.sidePadding}>
       {allowGrafanaManagedLLM && (
-        <Card
-          isSelected={llmOption === 'grafana-provided'}
-          onClick={selectGrafanaManaged}
-          className={s.cardWithoutBottomMargin}
-        >
-          <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
-          <Card.Description>
-            <p>Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana</p>
-            {llmOption === 'grafana-provided' && (
-              <>
-                <div className={s.openaiTermsBox}>
-                  <ul>
-                    <li>Grafana uses OpenAI’s API platform to provide LLM functionality.</li>
-                    <li>
-                      OpenAI does not train models on inputs or outputs of their API platform. OpenAI does retain data
-                      for a short time to provide the services and monitor for abuse. All data is encrypted in transit
-                      and at rest.
-                    </li>
-                    <li>
-                      Visit the OpenAI trust portal for more details:{' '}
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={(e) => window.open('https://trust.openai.com/', '_blank')}
-                      >
-                        https://trust.openai.com/
-                      </Button>
-                    </li>
-                    <li>
-                      AI features are clearly marked in Grafana, and each feature sends minimal data to OpenAI, and only
-                      on user request (for example, when someone clicks the button to request an Incident auto-summary).
-                    </li>
-                    <li>
-                      By enabling this integration, I accept that Grafana shares limited data to the OpenAI API as
-                      needed to provide LLM-powered features.
-                    </li>
-                  </ul>
-                </div>
-                <Checkbox
-                  value={optIn}
-                  onClick={optInChange}
-                  label="I accept limited data sharing with OpenAI as described above"
-                />
-              </>
-            )}
-          </Card.Description>
-          <Card.Figure>
-            <Icon name="grafana" size="lg" />
-          </Card.Figure>
-        </Card>
+        <div onClick={selectGrafanaManaged}>
+          <Card
+            isSelected={llmOption === 'grafana-provided'}
+            // onClick={selectGrafanaManaged} // prevents events passing to children, use parent div instead!
+            className={s.cardWithoutBottomMargin}
+          >
+            <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
+            <Card.Description>
+              <p>Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana</p>
+              {llmOption === 'grafana-provided' && (
+                <>
+                  <div className={s.openaiTermsBox}>
+                    <h4>Terms of Usage (Last updated: February 16th, 2024)</h4>
+                    <p>
+                      To enable OpenAI via Grafana Labs, please note that some data from your Grafana instance will be
+                      sent to OpenAI when you use the LLM-based features. Grafana Labs imposes usage limits for this
+                      service.
+                    </p>
+                    <p>
+                      Additionally, the following terms (&quot;AI Terms&quot;) are hereby added to and become part of
+                      your licensing agreement with Grafana Labs (the &quot;Agreement&quot;) as additional terms.
+                      Capitalized terms not defined in these AI Terms have the meanings given in the Agreement. These
+                      terms apply to your specific use of the OpenAI via Grafana Labs feature(s), and are separate,
+                      necessary terms regarding your use of this feature and therefore are not &apos;click-wrap&apos;,
+                      &apos;shrink-wrap&apos;, different or additional terms, or the like, to the extent your licensing
+                      agreement with Grafana Labs purports to supersede any such terms.
+                    </p>
+                    <ul>
+                      <li>Grafana Labs uses OpenAI&apos;s API platform to provide the LLM features.</li>
+                      <li>
+                        OpenAI does not train aggregated models on inputs or outputs of the API platform as used in
+                        connection with Grafana Labs Product(s).
+                      </li>
+                      <li>
+                        OpenAI does retain data for a short time in order to provide the services and monitor for abuse.
+                        All data sent to OpenAI is encrypted in transit and at rest.
+                      </li>
+                      <li>
+                        All features utilizing OpenAI are clearly marked in the Grafana Labs Product(s), and each
+                        feature sends minimal data to OpenAI&mdash;and only at the request of a user (for example, when
+                        a user clicks the button to request an Incident auto-summary).
+                      </li>
+                      <li>
+                        Grafana Labs will add new features regularly that utilize features connecting to OpenAI&apos;s
+                        APIs, which may include, but are not limited to:
+                        <ul>
+                          <li>Explaining Flamegraphs & offer suggestions to fix issues</li>
+                          <li>Incident auto-summary</li>
+                          <li>
+                            Suggesting names & descriptions for panels & dashboards, and summarize differences when
+                            saving changes
+                          </li>
+                          <li>Explaining error log lines in Sift</li>
+                          <li>Generating KQL queries in the Azure Data Explorer plugin</li>
+                        </ul>
+                      </li>
+                      <li>
+                        Visit the OpenAI trust portal for more detail about OpenAI:{' '}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={(e) => {
+                            window.open('https://trust.openai.com/', '_blank');
+                            e.stopPropagation();
+                          }}
+                        >
+                          https://trust.openai.com/
+                        </Button>
+                      </li>
+                      <li>
+                        If you enable this feature, OpenAI will be a subprocessor of Grafana Labs for the purpose of any
+                        data processing agreement you may have in place with Grafana Labs.
+                      </li>
+                      <li>
+                        Disclaimer. Outputs are generated through machine learning processes and are not tested,
+                        verified, endorsed or guaranteed to be accurate, complete or current by Grafana Labs. You should
+                        independently review and verify all outputs as to appropriateness for any or all of your use
+                        cases or applications. The warranties, disclaimers, and limitations of liability in the
+                        Agreement apply to the AI Features.
+                      </li>
+                    </ul>
+                  </div>
+                  <p>
+                    By clicking the &quot;I Accept&quot; button, you agree to these additional AI Terms on behalf of
+                    yourself and/or your organization. Please read these terms carefully before proceeding. If you do
+                    not agree to these terms, do not click the &quot;I Accept&quot; button.
+                  </p>
+                  <Checkbox value={optIn} onClick={optInChange} label="I Accept" />
+                </>
+              )}
+            </Card.Description>
+            <Card.Figure>
+              <Icon name="grafana" size="lg" />
+            </Card.Figure>
+          </Card>
+        </div>
       )}
-
       <Card isSelected={llmOption === 'openai'} onClick={selectOpenAI} className={s.cardWithoutBottomMargin}>
         <Card.Heading>Use your own OpenAI account</Card.Heading>
         <Card.Description>
@@ -160,7 +205,6 @@ export function LLMConfig({
           <OpenAILogo width={20} height={20} />
         </Card.Figure>
       </Card>
-
       <Card isSelected={llmOption === 'disabled'} onClick={selectLLMDisabled} className={s.cardWithoutBottomMargin}>
         <Card.Heading>Disable all LLM features in Grafana</Card.Heading>
         <Card.Description>&nbsp;</Card.Description>
@@ -180,19 +224,27 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   nestedList: css`
     margin-left: ${theme.spacing(3)};
   `,
-  openaiTermsBox: css`
-    overflow-y: auto;
-    z-index: 2;
-    margin-right: ${theme.spacing(3)};
-    padding: ${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(1)} ${theme.spacing(3)};
-    border: 1px solid ${theme.colors.border.medium};
-    background: ${theme.colors.background.primary};
-    color: ${theme.colors.text.primary};
-  `,
+  openaiTermsBox: css({
+    'overflow-y': 'auto',
+    height: '250px',
+    'margin-right': theme.spacing(3),
+    'margin-bottom': theme.spacing(1),
+    padding: `${theme.spacing(1)} ${theme.spacing(2)} ${theme.spacing(1)} ${theme.spacing(2)}`,
+    border: `1px solid ${theme.colors.border.medium}`,
+    background: theme.colors.background.primary,
+    color: theme.colors.text.primary,
+
+    ' ul': {
+      // space important, matches all children of type 'ul'
+      'padding-left': theme.spacing(2),
+    },
+    '> ul > li:not(:last-child)': {
+      // slight vertical padding between main bullet points
+      'margin-bottom': theme.spacing(0.5),
+    },
+  }),
   cardWithoutBottomMargin: css`
     margin-bottom: 0;
     margin-top: ${theme.spacing(1)};
   `,
-  inlineFieldWidth: 15,
-  inlineFieldInputWidth: 40,
 });
