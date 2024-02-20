@@ -84,6 +84,92 @@ func TestCallResource(t *testing.T) {
 	}
 }
 
+func TestMergeSecureJSONData(t *testing.T) {
+	ctx := context.Background()
+	// Initialize app
+	inst, err := NewApp(ctx, backend.AppInstanceSettings{
+		DecryptedSecureJSONData: map[string]string{
+			openAIKey:                "abcd1234",
+			encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+		},
+	})
+	if err != nil {
+		t.Fatalf("new app: %s", err)
+	}
+	if inst == nil {
+		t.Fatal("inst must not be nil")
+	}
+	app, ok := inst.(*App)
+	if !ok {
+		t.Fatal("inst must be of type *App")
+	}
+
+	// Set up and run test cases
+	for _, tc := range []struct {
+		name string
+
+		secureJSONData []byte
+
+		expMerged map[string]string
+	}{
+		{
+			name: "empty",
+
+			secureJSONData: []byte(`{}`),
+
+			expMerged: map[string]string{
+				openAIKey:                "abcd1234",
+				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+			},
+		},
+		{
+			name: "override",
+
+			secureJSONData: []byte(`{"openAIKey": "value1"}`),
+
+			expMerged: map[string]string{
+				openAIKey:                "value1",
+				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+			},
+		},
+		{
+			name: "addition",
+
+			secureJSONData: []byte(`{"someOtherKey": "test"}`),
+
+			expMerged: map[string]string{
+				openAIKey:                "abcd1234",
+				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+				"someOtherKey":           "test",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := []byte(`{"secureJsonData": ` + string(tc.secureJSONData) + `}`)
+			merged, err := app.mergeSecureJSONData(body)
+			if err != nil {
+				t.Fatalf("mergeSecureJSONData error: %s", err)
+			}
+
+			secureJsonString := merged.Get("secureJsonData")
+			var updatedSecureJson map[string]string
+			err = json.Unmarshal([]byte(secureJsonString), &updatedSecureJson)
+			if err != nil {
+				t.Fatalf("unmarshal error: %s", err)
+			}
+			if len(tc.expMerged) != len(updatedSecureJson) {
+				t.Fatalf("expected merged length %d, got %d", len(tc.expMerged), len(updatedSecureJson))
+			}
+			for k, v := range tc.expMerged {
+				if updatedSecureJson[k] != v {
+					t.Fatalf("expected merged key %s value %s, got %s", k, v, updatedSecureJson[k])
+				}
+			}
+
+		})
+	}
+}
+
 type mockServer struct {
 	server  *httptest.Server
 	request *http.Request

@@ -3,7 +3,6 @@ package plugin
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -500,24 +499,16 @@ type pluginSettings struct {
 	SecureJSONData map[string]string      `json:"secureJsonData"`
 }
 
-func (a *App) mergeSecureJSONData(body io.ReadCloser) (url.Values, error) {
-	// Read the request body
-	if body == nil {
-		return nil, errors.New("request body required")
-	}
-	b, err := io.ReadAll(body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read request body to bytes %w", err)
-	}
+func (a *App) mergeSecureJSONData(b []byte) (url.Values, error) {
 	// Unmarshal the request body to JSON
 	var requestData pluginSettings
-	err = json.Unmarshal(b, &requestData)
+	err := json.Unmarshal(b, &requestData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
 	}
 
 	// Update mandatory fields
-	requestData.SecureJSONData[encodedTenantAndTokenKey] = base64.StdEncoding.EncodeToString([]byte(a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]))
+	requestData.SecureJSONData[encodedTenantAndTokenKey] = a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
 
 	// Insert existing plugin secureJSONData fields if missing from request
 	for key, value := range a.settings.DecryptedSecureJSONData {
@@ -572,7 +563,18 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	}
 
 	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
-	newReqBody, err := a.mergeSecureJSONData(req.Body)
+
+	// Read the request body
+	if req.Body == nil {
+		handleError(w, errors.New("request body required"), http.StatusBadRequest)
+		return
+	}
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
+		return
+	}
+	newReqBody, err := a.mergeSecureJSONData(b)
 	if err != nil {
 		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
 		return
