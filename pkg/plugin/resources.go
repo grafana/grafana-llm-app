@@ -507,15 +507,15 @@ func (a *App) mergeSecureJSONData(b []byte) (url.Values, error) {
 		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
 	}
 
-	// Update mandatory fields
-	requestData.SecureJSONData[encodedTenantAndTokenKey] = a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
-
 	// Insert existing plugin secureJSONData fields if missing from request
 	for key, value := range a.settings.DecryptedSecureJSONData {
-		if existingValue, exists := requestData.SecureJSONData[key]; !exists || existingValue == "" {
+		if _, exists := requestData.SecureJSONData[key]; !exists {
 			requestData.SecureJSONData[key] = value
 		}
 	}
+
+	// Update mandatory fields
+	requestData.SecureJSONData[encodedTenantAndTokenKey] = a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
 
 	// Marshal the request body back to JSON
 	jsonData, err := json.Marshal(requestData.JSONData)
