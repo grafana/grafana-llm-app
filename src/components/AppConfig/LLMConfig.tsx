@@ -187,24 +187,26 @@ export function LLMConfig({
           </Card>
         </div>
       )}
-      <Card isSelected={llmOption === 'openai'} onClick={selectOpenAI} className={s.cardWithoutBottomMargin}>
-        <Card.Heading>Use your own OpenAI account</Card.Heading>
-        <Card.Description>
-          <p>Enable LLM features in Grafana using your own OpenAI account</p>
-          {llmOption === 'openai' && (
-            <OpenAIConfig
-              settings={settings.openAI ?? {}}
-              onChange={(openAI) => onChange({ ...settings, openAI })}
-              secrets={secrets}
-              secretsSet={secretsSet}
-              onChangeSecrets={onChangeSecrets}
-            />
-          )}
-        </Card.Description>
-        <Card.Figure>
-          <OpenAILogo width={20} height={20} />
-        </Card.Figure>
-      </Card>
+      <div onClick={selectOpenAI}>
+        <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
+          <Card.Heading>Use your own OpenAI account</Card.Heading>
+          <Card.Description>
+            <p>Enable LLM features in Grafana using your own OpenAI account</p>
+            {llmOption === 'openai' && (
+              <OpenAIConfig
+                settings={settings.openAI ?? {}}
+                onChange={(openAI) => onChange({ ...settings, openAI })}
+                secrets={secrets}
+                secretsSet={secretsSet}
+                onChangeSecrets={onChangeSecrets}
+              />
+            )}
+          </Card.Description>
+          <Card.Figure>
+            <OpenAILogo width={20} height={20} />
+          </Card.Figure>
+        </Card>
+      </div>
       <Card isSelected={llmOption === 'disabled'} onClick={selectLLMDisabled} className={s.cardWithoutBottomMargin}>
         <Card.Heading>Disable all LLM features in Grafana</Card.Heading>
         <Card.Description>&nbsp;</Card.Description>
