@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.6.1
+
+* Store Grafana-managed OpenAI opt-in in ML cloud backend DB (Grafana Cloud only)
+* Updated Grafana-managed OpenAI opt-in messaging (Grafana Cloud only)
+* UI update for LLM provider selection
+
 ## 0.6.0
 
 * Add Grafana-managed OpenAI as a provider option (Grafana Cloud only)
