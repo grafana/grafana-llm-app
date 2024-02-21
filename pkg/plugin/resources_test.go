@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/stretchr/testify/require"
 )
 
 // mockCallResourceResponseSender implements backend.CallResourceResponseSender
@@ -80,6 +81,82 @@ func TestCallResource(t *testing.T) {
 					t.Errorf("response body should be %s, got %s", tc.expBody, tb)
 				}
 			}
+		})
+	}
+}
+
+func TestMergeSecureJSONData(t *testing.T) {
+	ctx := context.Background()
+	// Initialize app
+	inst, err := NewApp(ctx, backend.AppInstanceSettings{
+		DecryptedSecureJSONData: map[string]string{
+			openAIKey:                "abcd1234",
+			encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+		},
+	})
+	if err != nil {
+		t.Fatalf("new app: %s", err)
+	}
+	if inst == nil {
+		t.Fatal("inst must not be nil")
+	}
+	app, ok := inst.(*App)
+	if !ok {
+		t.Fatal("inst must be of type *App")
+	}
+
+	// Set up and run test cases
+	for _, tc := range []struct {
+		name string
+
+		secureJSONData []byte
+
+		expMerged map[string]string
+	}{
+		{
+			name: "empty",
+
+			secureJSONData: []byte(`{}`),
+
+			expMerged: map[string]string{
+				openAIKey:                "abcd1234",
+				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+			},
+		},
+		{
+			name: "override",
+
+			secureJSONData: []byte(`{"openAIKey": "value1"}`),
+
+			expMerged: map[string]string{
+				openAIKey:                "value1",
+				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+			},
+		},
+		{
+			name: "addition",
+
+			secureJSONData: []byte(`{"someOtherKey": "test"}`),
+
+			expMerged: map[string]string{
+				openAIKey:                "abcd1234",
+				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+				"someOtherKey":           "test",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := []byte(`{"secureJsonData": ` + string(tc.secureJSONData) + `}`)
+			merged, err := app.mergeSecureJSONData(body)
+
+			require.NoError(t, err)
+
+			secureJsonString := merged.Get("secureJsonData")
+			var updatedSecureJson map[string]string
+			err = json.Unmarshal([]byte(secureJsonString), &updatedSecureJson)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expMerged, updatedSecureJson)
 		})
 	}
 }
