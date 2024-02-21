@@ -80,8 +80,15 @@ export function LLMConfig({
   const selectOpenAI = () => {
     if (llmOption !== 'openai') {
       // Restore the provider (OpenAI or Azure) & clear the cache
-      onChange({ ...settings, openAI: { provider: previousOpenAIProvider } });
-      setPreviousOpenAIProvider(undefined);
+      // If the previous provider was not a valid openAI vendor, default to openai
+      // Otherwise the state would revert to the incorrect previous provider
+      if (previousOpenAIProvider === 'openai' || previousOpenAIProvider === 'azure') {
+        onChange({ ...settings, openAI: { provider: previousOpenAIProvider } });
+        setPreviousOpenAIProvider(undefined);
+      } else {
+        onChange({ ...settings, openAI: { provider: "openai" } });
+        setPreviousOpenAIProvider(undefined);
+      }
 
       setLLMOption('openai');
     }
