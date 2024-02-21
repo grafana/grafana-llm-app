@@ -549,6 +549,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	// NOT_HG is only used for localdev
 	notHG := os.Getenv("NOT_HG")
 	if !a.settings.EnableGrafanaManagedLLM || notHG != "" {
 		log.DefaultLogger.Info("Plugin not provisioned; skipping saving settings to grafana.com")
