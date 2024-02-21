@@ -199,7 +199,6 @@ export const getStyles = (theme: GrafanaTheme2) => ({
 });
 
 export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<PluginMeta>) => {
-  console.log('Updating plugin', pluginId, data)
   const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/settings`,
     method: 'POST',
@@ -210,7 +209,6 @@ export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<Plug
 };
 
 export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) => {
-  console.log('Saving plugin settings', data)
   const response = getBackendSrv().fetch({
     url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
     method: 'POST',
