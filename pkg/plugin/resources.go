@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -548,7 +549,8 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if !a.settings.EnableGrafanaManagedLLM {
+	notHG := os.Getenv("NOT_HG")
+	if !a.settings.EnableGrafanaManagedLLM || notHG != "" {
 		log.DefaultLogger.Info("Plugin not provisioned; skipping saving settings to grafana.com")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "Success"}`))
