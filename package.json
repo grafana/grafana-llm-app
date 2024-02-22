@@ -1,0 +1,17 @@
+{
+  "name": "grafana-llm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces"
+  },
+  "author": "Grafana",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/grafana-llm-frontend",
+    "packages/grafana-llm-app"
+  ]
+}
