@@ -549,9 +549,9 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	// NOT_HG is only used for localdev
-	notHG := os.Getenv("NOT_HG")
-	if !a.settings.EnableGrafanaManagedLLM || notHG != "" {
+	// DEV_MODE is only used for local dev to avoid sending request to gcom
+	devMode := os.Getenv("DEV_MODE")
+	if !a.settings.EnableGrafanaManagedLLM || devMode != "" {
 		log.DefaultLogger.Info("Plugin not provisioned; skipping saving settings to grafana.com")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "Success"}`))
