@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run test --workspaces",
     "build": "npm run build --workspaces",
     "dev": "npm run build --workspace=@grafana/llm && npm run dev --workspace=@grafana/llm-app & npm run dev --workspace=@grafana/llm"
   },
