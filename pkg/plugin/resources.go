@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -548,7 +549,9 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if !a.settings.EnableGrafanaManagedLLM {
+	// DEV_MODE is only used for local dev to avoid sending request to gcom
+	devMode := os.Getenv("DEV_MODE")
+	if !a.settings.EnableGrafanaManagedLLM || devMode != "" {
 		log.DefaultLogger.Info("Plugin not provisioned; skipping saving settings to grafana.com")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status": "Success"}`))
