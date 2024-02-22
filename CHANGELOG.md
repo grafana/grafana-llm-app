@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.2
+
+* Fix UI issues around OpenAI provider introduced in 0.6.1
+
 ## 0.6.1
 
 * Store Grafana-managed OpenAI opt-in in ML cloud backend DB (Grafana Cloud only)
