@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "npm run test --workspaces",
+    "test": "jest",
     "build": "npm run build --workspaces",
     "dev": "npm run build --workspace=@grafana/llm && npm run dev --workspace=@grafana/llm-app & npm run dev --workspace=@grafana/llm"
   },
@@ -9,5 +9,12 @@
   "workspaces": [
     "packages/grafana-llm-frontend",
     "packages/grafana-llm-app"
-  ]
+  ],
+  "devDependencies": {
+    "@swc/jest": "^0.2.29",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@types/jest": "^29.5.10",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
 }
