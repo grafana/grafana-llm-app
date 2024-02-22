@@ -603,6 +603,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 }
 
 func doRequest(req *http.Request) ([]byte, error) {
+	log.DefaultLogger.Debug("Sending request to grafana.com", "req", fmt.Sprintf("%+v", req))
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -614,7 +615,7 @@ func doRequest(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("read http response: %w", err)
 	}
 	if resp.StatusCode/100 != 2 {
-		return respBody, fmt.Errorf("HTTP error %d", resp.StatusCode)
+		return respBody, fmt.Errorf("HTTP error %d: %s", resp.StatusCode, string(respBody))
 	}
 	return respBody, nil
 }
