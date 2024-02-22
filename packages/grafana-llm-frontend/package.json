@@ -16,7 +16,8 @@
   "sideEffects": false,
   "scripts": {
     "dev": "rollup --config --watch",
-    "build": "rollup --config"
+    "build": "rollup --config",
+    "test": "jest"
   },
   "keywords": [],
   "author": "Grafana",
