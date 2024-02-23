@@ -2,7 +2,9 @@
   "scripts": {
     "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "test:ci": "npm run test:ci --workspaces",
-    "build": "npm run build --workspaces && npm run build:backend --workspace=@grafana/llm-app",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build:backend --workspace=@grafana/llm-app",
+    "build:all": "npm run build --workspaces && npm run build:backend --workspace=@grafana/llm-app",
     "dev": "npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "update-sdk": "npm run update-sdk --workspace=@grafana/llm-app",
     "server": "npm run server --workspace=@grafana/llm-app"
