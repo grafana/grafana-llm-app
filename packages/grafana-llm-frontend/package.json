@@ -17,7 +17,8 @@
   "scripts": {
     "dev": "rollup --config --watch",
     "build": "rollup --config",
-    "test": "jest --watch --onlyChanged",
+    "test": "jest",
+    "test:watch": "jest --watch --onlyChanged",
     "test:ci": "jest"
   },
   "keywords": [],
