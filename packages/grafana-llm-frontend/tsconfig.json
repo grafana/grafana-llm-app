@@ -1,4 +1,5 @@
 {
+  "extends": "@grafana/tsconfig",
   "compilerOptions": {
     "declarationDir": "./dist",
     "module": "commonjs",
