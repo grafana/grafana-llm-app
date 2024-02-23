@@ -11,7 +11,8 @@
     "server": "npm run server --workspace=@grafana/llm-app",
     "server:detach": "npm run server --workspace=@grafana/llm-app -- -d",
     "server:down": "npm run server:down --workspace=@grafana/llm-app",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "npm run lint --workspaces"
   },
   "author": "Grafana",
   "license": "Apache-2.0",
@@ -20,6 +21,7 @@
     "packages/grafana-llm-app"
   ],
   "devDependencies": {
+    "@grafana/eslint-config": "^6.0.1",
     "@swc/core": "1.3.102",
     "@swc/helpers": "^0.5.3",
     "@swc/jest": "^0.2.29",
