@@ -1,10 +1,11 @@
 {
   "scripts": {
-    "test": "concurrently --names 'llm-packages,llm-app' 'npm run test -w @grafana/llm' 'npm run test -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
-    "test:watch": "concurrently --names 'llm-packages,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "test:ci": "npm run test:ci --workspaces",
-    "build": "npm run build --workspaces",
-    "dev": "npm run build -w @grafana/llm && concurrently --names 'llm-package,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'"
+    "build": "npm run build --workspaces && npm run build:backend --workspace=@grafana/llm-app",
+    "dev": "npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "update-sdk": "npm run update-sdk --workspace=@grafana/llm-app",
+    "server": "npm run server --workspace=@grafana/llm-app"
   },
   "author": "Grafana",
   "license": "Apache-2.0",

@@ -19,7 +19,8 @@
     "build": "rollup --config",
     "test": "jest",
     "test:watch": "jest --watch --onlyChanged",
-    "test:ci": "jest"
+    "test:ci": "jest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "Grafana",
