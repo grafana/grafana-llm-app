@@ -235,10 +235,10 @@ export const getStyles = (theme: GrafanaTheme2) => ({
     margin-left: ${theme.spacing(3)};
   `,
   openaiTermsBox: css({
-    'overflow-y': 'auto',
+    overflowY: 'auto',
     height: '250px',
-    'margin-right': theme.spacing(3),
-    'margin-bottom': theme.spacing(1),
+    marginRight: theme.spacing(3),
+    marginBottom: theme.spacing(1),
     padding: `${theme.spacing(1)} ${theme.spacing(2)} ${theme.spacing(1)} ${theme.spacing(2)}`,
     border: `1px solid ${theme.colors.border.medium}`,
     background: theme.colors.background.primary,
@@ -246,11 +246,11 @@ export const getStyles = (theme: GrafanaTheme2) => ({
 
     ' ul': {
       // space important, matches all children of type 'ul'
-      'padding-left': theme.spacing(2),
+      'paddingLeft': theme.spacing(2),
     },
     '> ul > li:not(:last-child)': {
       // slight vertical padding between main bullet points
-      'margin-bottom': theme.spacing(0.5),
+      'marginBottom': theme.spacing(0.5),
     },
   }),
   cardWithoutBottomMargin: css`
