@@ -9,7 +9,7 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     env:
-      plugin-dist-folder: /packages/grafana-llm-app/dist
+      plugin-dist-folder: ./packages/grafana-llm-app/dist
 
     # env:
     #   GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_SIGNING_KEY }} # Requires a Grafana API key from Grafana.com.
