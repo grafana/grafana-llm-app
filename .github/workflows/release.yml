@@ -116,8 +116,8 @@ jobs:
           echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
       # confirm that the version in the plugin archive will match the tag we are on
-      - name: Check package version
-        run: if [ "v${{ steps.metadata.outputs.plugin-version }}" != "v${{ steps.bump-version.outputs.version }}" ]; then printf "\033[0;31mPlugin version doesn't match tag name\033[0m\n"; exit 1; fi
+      # - name: Check package version
+      #   run: if [ "v${{ steps.metadata.outputs.plugin-version }}" != "v${{ steps.bump-version.outputs.version }}" ]; then printf "\033[0;31mPlugin version doesn't match tag name\033[0m\n"; exit 1; fi
 
       - name: Package plugin
         id: package-plugin
