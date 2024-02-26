@@ -21,7 +21,8 @@
     "test:watch": "jest --watch --onlyChanged",
     "test:ci": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint --cache --ignore-path ../../.gitignore --ext .js,.jsx,.ts,.tsx ."
+    "lint": "eslint --cache --ignore-path ../../.gitignore --ext .js,.jsx,.ts,.tsx .",
+    "lint:fix": "npm run lint -- --fix"
   },
   "keywords": [],
   "author": "Grafana",
