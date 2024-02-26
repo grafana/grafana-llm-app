@@ -17,5 +17,5 @@ jobs:
         run: npm run build
       - name: Compatibility check plugin
         run: npx @grafana/levitate@latest is-compatible --path packages/grafana-llm-app/src/module.ts --target @grafana/data,@grafana/ui,@grafana/runtime
-      - name: Compatibility check frontend
+      - name: Compatibility check frontend library
         run: npx @grafana/levitate@latest is-compatible --path packages/grafana-llm-frontend/src/index.ts --target @grafana/data,@grafana/ui,@grafana/runtime

@@ -1,18 +1,17 @@
 {
   "scripts": {
-    "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
-    "test:ci": "npm run test:ci --workspaces",
     "build": "npm run build --workspaces",
     "build:all": "npm run build --workspaces && npm run backend:build --workspace=@grafana/llm-app",
     "dev": "npm run backend:build && npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "e2e:ci": "npm run e2e:ci --workspace=@grafana/llm-app",
     "backend:update-sdk": "npm run backend:update-sdk --workspace=@grafana/llm-app",
     "backend:build": "npm run backend:build --workspace=@grafana/llm-app",
     "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
+    "lint": "npm run lint --workspaces",
     "server": "npm run server --workspace=@grafana/llm-app",
-    "server:detach": "npm run server --workspace=@grafana/llm-app -- -d",
-    "server:down": "npm run server:down --workspace=@grafana/llm-app",
-    "typecheck": "npm run typecheck --workspaces",
-    "lint": "npm run lint --workspaces"
+    "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "test:ci": "npm run test:ci --workspaces",
+    "typecheck": "npm run typecheck --workspaces"
   },
   "author": "Grafana",
   "license": "Apache-2.0",
