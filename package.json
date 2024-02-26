@@ -8,6 +8,7 @@
     "backend:build": "npm run backend:build --workspace=@grafana/llm-app",
     "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
     "lint": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces",
     "server": "npm run server --workspace=@grafana/llm-app",
     "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "test:ci": "npm run test:ci --workspaces",
