@@ -1,7 +1,8 @@
 name: Release
 
 on:
-  workflow_dispatch
+  pull_request # Temporary for testing this action TODO: REMOVE THIS LINE
+  # workflow_dispatch TODO: UNCOMMENT THIS LINE
 
 
 jobs:
@@ -26,7 +27,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           # Releases should always be made off of 'main'
-          ref: 'main'
+          # ref: 'main' TODO: UNCOMMENT THIS LINE
         #   token: ${{ steps.get_installation_token.outputs.token }}
           fetch-depth: 0
 
