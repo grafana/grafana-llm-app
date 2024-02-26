@@ -4,7 +4,7 @@
     "test:ci": "npm run test:ci --workspaces",
     "build": "npm run build --workspaces",
     "build:all": "npm run build --workspaces && npm run backend:build --workspace=@grafana/llm-app",
-    "dev": "npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "dev": "npm run backend:build && npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "backend:update-sdk": "npm run backend:update-sdk --workspace=@grafana/llm-app",
     "backend:build": "npm run backend:build --workspace=@grafana/llm-app",
     "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
