@@ -122,7 +122,7 @@ jobs:
       - name: Package plugin
         id: package-plugin
         run: |
-          ${{ env.plugin-dist-folder }} dist ${{ steps.metadata.outputs.plugin-id }}
+          mv ${{ env.plugin-dist-folder }} ${{ steps.metadata.outputs.plugin-id }}
           zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
           md5sum ${{ steps.metadata.outputs.archive }} > ${{ steps.metadata.outputs.archive-checksum }}
           
