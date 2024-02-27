@@ -3,7 +3,6 @@ import { Button, FieldSet, Input, Modal, Spinner } from "@grafana/ui";
 import { useAsync } from "react-use";
 import { finalize } from "rxjs";
 import { openai } from "@grafana/llm";
-// import { openai } from "llms";
 
 const BasicChatTest = () => {
   // The current input value.
@@ -113,7 +112,6 @@ export const DevSandbox = () => {
     const closeModal = () => {
       setModalIsOpen(false);
     }
-
 
     return (
         <FieldSet label="Development Sandbox">
