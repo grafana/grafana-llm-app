@@ -21,7 +21,6 @@ jobs:
         id: get_installation_token
         with:
           app_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_ID }}
-          installation_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_INSTALLATION_ID }}
           private_key: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v3
         with:
