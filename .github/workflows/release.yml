@@ -17,7 +17,7 @@ jobs:
       version-tag: ${{ steps.metadata.outputs.plugin-version }}
 
     steps:
-      - uses: tibdex/github-app-token@v2
+      - uses: tibdex/github-app-token@v1
         id: get_installation_token
         with:
           app_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_ID }}
