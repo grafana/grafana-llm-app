@@ -108,7 +108,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       });
     } catch (e) {
       setIsUpdating(false);
-      throw (e);
+      throw e;
     }
     // If disabling LLM features, no health check needed
     if (settings.openAI?.provider !== undefined) {
@@ -212,13 +212,17 @@ export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) =
   const response = getBackendSrv().fetch({
     url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
     method: 'POST',
-    data
+    data,
   });
 
   return lastValueFrom(response);
 };
 
-export const updateAndSavePluginSettings = async (pluginId: string, persistToGcom = false, data: Partial<PluginMeta>) => {
+export const updateAndSavePluginSettings = async (
+  pluginId: string,
+  persistToGcom = false,
+  data: Partial<PluginMeta>
+) => {
   const gcomPluginData = {
     jsonData: data.jsonData,
     secureJsonData: data.secureJsonData,
@@ -234,6 +238,9 @@ export const updateAndSavePluginSettings = async (pluginId: string, persistToGco
   await updateGrafanaPluginSettings(pluginId, data).then((response: FetchResponse) => {
     if (!response.ok) {
       throw response.data;
+    } else {
+      // Reloading the page as the plugin meta changes made here wouldn't be propagated throughout the app.
+      window.location.reload();
     }
   });
 };
