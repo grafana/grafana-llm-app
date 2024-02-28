@@ -84,7 +84,10 @@ jobs:
         if: ${{ env.GRAFANA_API_KEY == '' }}
 
       - name: Sign plugin
-        run: npx --yes @grafana/sign-plugin@latest
+        run: |
+          pushd ./packages/grafana-llm-app/
+          npx --yes @grafana/sign-plugin@latest
+          popd
         if: ${{ env.GRAFANA_API_KEY != '' }}
 
       - name: Get plugin metadata
