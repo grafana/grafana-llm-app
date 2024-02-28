@@ -84,7 +84,7 @@ jobs:
         if: ${{ env.GRAFANA_API_KEY == '' }}
 
       - name: Sign plugin
-        run: yarn sign
+        run: npx --yes @grafana/sign-plugin@latest
         if: ${{ env.GRAFANA_API_KEY != '' }}
 
       - name: Get plugin metadata
