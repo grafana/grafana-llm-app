@@ -77,12 +77,7 @@ type Settings struct {
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
-	settings := Settings{
-		OpenAI: OpenAISettings{
-			URL:      "https://api.openai.com",
-			Provider: openAIProviderOpenAI,
-		},
-	}
+	settings := Settings{}
 
 	if len(appSettings.JSONData) != 0 {
 		err := json.Unmarshal(appSettings.JSONData, &settings)
