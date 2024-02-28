@@ -1,9 +1,13 @@
 name: Release
 
 on:
-  pull_request # Temporary for testing this action TODO: REMOVE THIS LINE
-  # workflow_dispatch TODO: UNCOMMENT THIS LINE
-
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release a new version of the plugin'
+        required: true
+        default: false
+        type: 'boolean'
 
 jobs:
   build-release:
@@ -26,7 +30,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           # Releases should always be made off of 'main'
-          # ref: 'main' TODO: UNCOMMENT THIS LINE
+          ref: 'main'
           fetch-depth: 0
 
       - name: Setup Node.js environment
@@ -138,13 +142,12 @@ jobs:
           popd
           plugincheck2 -config ./plugin-validator/config/default.yaml ${{ steps.metadata.outputs.upload-folder }}/${{ steps.metadata.outputs.archive }}
 
-    #   - name: Create tag
-    #     uses: rickstaa/action-create-tag@v1
-    #     with:
-    #       commit_sha: ${{ steps.commit-version-bump.outputs.commit-sha }}
-    #       github_token: ${{ steps.get_installation_token.outputs.token }}
-    #       message: "chore(tag): tag version ${{ steps.bump-version.outputs.version }} [BOT]"
-    #       tag: v${{ steps.bump-version.outputs.version }}
+      - name: Create tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          github_token: ${{ steps.get_installation_token.outputs.token }}
+          message: "chore(tag): tag version ${{ steps.metadata.outputs.plugin-version }} [BOT]"
+          tag: v${{ steps.metadata.outputs.plugin-version }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
@@ -178,7 +181,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            ./${{ needs.build-release.outputs.upload-folder }}/**/*.zip?(.md5)
+            ./${{ needs.build-release.outputs.upload-folder }}/**/*${{ needs.build-release.outputs.version-tag }}*.zip?(.md5)
           tag_name: ${{ needs.build-release.outputs.version-tag }}
 
       - id: 'auth'
@@ -187,10 +190,18 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_PLACEHOLDER_CI_PRIVATE_KEY }}'
 
-      - id: 'upload-to-gcs'
-        name: 'Upload assets'
+      - id: 'upload-current-to-gcs'
+        name: 'Upload assets to latest'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: ./${{ needs.build-release.outputs.upload-folder }}
-          destination: 'clexporter-app-prod'
+          path: ./${{ needs.build-release.outputs.upload-folder }}*${{ needs.build-release.outputs.version-tag }}*
+          destination: 'integration-artifacts/grafana-llm-app/release/${{ needs.build-release.outputs.version-tag }}'
+          parent: false
+
+      - id: 'upload-latest-to-gcs'
+        name: 'Upload assets to latest'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: ./${{ needs.build-release.outputs.upload-folder }}*latest*
+          destination: 'integration-artifacts/grafana-llm-app/release/latest'
           parent: false
