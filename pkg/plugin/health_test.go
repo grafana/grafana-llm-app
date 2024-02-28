@@ -57,7 +57,7 @@ func TestCheckHealth(t *testing.T) {
 			},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
-					Error:  "No models are working",
+					Error:  "No functioning models are available",
 					Models: map[string]openAIModelHealth{},
 				},
 				Vector:  vectorHealthDetails{},
@@ -122,7 +122,7 @@ func TestCheckHealth(t *testing.T) {
 			vService: &mockVectorService{},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
-					Error:  "No models are working",
+					Error:  "No functioning models are available",
 					Models: map[string]openAIModelHealth{},
 				},
 				Vector: vectorHealthDetails{
@@ -136,6 +136,9 @@ func TestCheckHealth(t *testing.T) {
 			name: "vector enabled with openai",
 			settings: backend.AppInstanceSettings{
 				JSONData: json.RawMessage(`{
+					"openai": {
+						"provider": "openai"
+					},
 					"vector": {
 						"enabled": true,
 						"embed": {
