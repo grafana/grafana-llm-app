@@ -613,7 +613,10 @@ func doRequest(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read http response: %w", err)
 	}
-	if resp.StatusCode/100 != 2 {
+	if resp.StatusCode == 409 {
+		// Retry usually helps if this happens
+		return doRequest(req)
+	} else if resp.StatusCode/100 != 2 {
 		return respBody, fmt.Errorf("HTTP error %d", resp.StatusCode)
 	}
 	return respBody, nil
