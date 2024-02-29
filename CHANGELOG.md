@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.6.2
+## 0.6.3
 
 - Fix additional UI bugs
 - Fix issue where health check returned true even if LLM was disabled
