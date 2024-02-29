@@ -44,7 +44,8 @@ export function LLMConfig({
   const allowGrafanaManagedLLM = settings.enableGrafanaManagedLLM === true;
 
   // llmOption is the currently chosen LLM option in the UI
-  const [llmOption, setLLMOption] = useState<LLMOptions>(getLLMOptionFromSettings(settings));
+  const llmOption = getLLMOptionFromSettings(settings);
+
   // previousOpenAIProvider caches the value of the openAI provider, as it is overwritten by the grafana option
   const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<OpenAIProvider>();
 
@@ -61,7 +62,6 @@ export function LLMConfig({
       }
 
       onChange({ ...settings, openAI: { provider: undefined } });
-      setLLMOption('disabled');
     }
   };
 
@@ -73,7 +73,6 @@ export function LLMConfig({
       }
 
       onChange({ ...settings, openAI: { provider: 'grafana' } });
-      setLLMOption('grafana-provided');
     }
   };
 
@@ -86,11 +85,9 @@ export function LLMConfig({
         onChange({ ...settings, openAI: { provider: previousOpenAIProvider } });
         setPreviousOpenAIProvider(undefined);
       } else {
-        onChange({ ...settings, openAI: { provider: "openai" } });
+        onChange({ ...settings, openAI: { provider: 'openai' } });
         setPreviousOpenAIProvider(undefined);
       }
-
-      setLLMOption('openai');
     }
   };
 

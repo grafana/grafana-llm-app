@@ -394,6 +394,11 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 
 	user := httpadapter.UserFromContext(req.Context())
 
+	devMode := os.Getenv("DEV_MODE") != ""
+	if devMode {
+		user.Email = "admin@localhost.com"
+	}
+
 	if user == nil || user.Email == "" {
 		handleError(w, fmt.Errorf("valid user not found (please sign in and retry)"), http.StatusUnauthorized)
 		return

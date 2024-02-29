@@ -68,11 +68,6 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   };
   const errorState = validateInputs();
 
-  const updateManagedLLMOptIn = async (newOptIn: boolean): Promise<void> => {
-    await saveLLMOptInState(newOptIn);
-    setManagedLLMOptIn(newOptIn);
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       const optIn = await getLLMOptInState();
@@ -83,6 +78,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       fetchData();
     }
   }, [settings.enableGrafanaManagedLLM]);
+
+  useEffect(() => {
+    // clear health check status if any setting changed
+    if (updated) {
+      setHealthCheck(undefined);
+    }
+  }, [updated]);
 
   const doSave = async () => {
     if (errorState !== undefined) {
@@ -108,17 +110,27 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       });
     } catch (e) {
       setIsUpdating(false);
-      throw (e);
+      throw e;
     }
-    // If disabling LLM features, no health check needed
+
+    // Note: health-check uses the state saved in the plugin settings.
+    let healthCheckResult: HealthCheckResult | undefined = undefined;
     if (settings.openAI?.provider !== undefined) {
       const result = await checkPluginHealth(plugin.meta.id);
-      setHealthCheck(result.data);
+      healthCheckResult = result.data;
     }
+    setHealthCheck(healthCheckResult);
+
     // If moving away from Grafana-managed LLM, opt-out of the feature automatically
     if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
-      updateManagedLLMOptIn(false);
+      await saveLLMOptInState(false);
+    } else {
+      await saveLLMOptInState(managedLLMOptIn);
     }
+
+    // Update the frontend settings explicitly, it is otherwise not updated until page reload
+    plugin.meta.jsonData = settings;
+
     setIsUpdating(false);
     setUpdated(false);
   };
@@ -134,7 +146,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         secrets={newSecrets}
         secretsSet={configuredSecrets}
         optIn={managedLLMOptIn}
-        setOptIn={updateManagedLLMOptIn}
+        setOptIn={(optIn) => {
+          setManagedLLMOptIn(optIn);
+          setUpdated(true);
+        }}
         onChangeSecrets={(secrets: Secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
@@ -212,13 +227,17 @@ export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) =
   const response = getBackendSrv().fetch({
     url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
     method: 'POST',
-    data
+    data,
   });
 
   return lastValueFrom(response);
 };
 
-export const updateAndSavePluginSettings = async (pluginId: string, persistToGcom = false, data: Partial<PluginMeta>) => {
+export const updateAndSavePluginSettings = async (
+  pluginId: string,
+  persistToGcom = false,
+  data: Partial<PluginMeta>
+) => {
   const gcomPluginData = {
     jsonData: data.jsonData,
     secureJsonData: data.secureJsonData,
