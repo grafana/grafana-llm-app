@@ -323,6 +323,52 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			expStatus: http.StatusOK,
 		},
+		{
+			name: "pulze with specific model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider:   openAIProviderPulze,
+					PulzeModel: "pulze",
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/pulze/v1/chat/completions",
+			body:   []byte(`{"model": "openai/gpt-3.5-turbo", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "openai/gpt-3.5.turbo", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "pulze without model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider:   openAIProviderPulze,
+					PulzeModel: "pulze",
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/pulze/v1/chat/completions",
+			body:   []byte(`{"model": "", "messages": ["some stuff"]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer abcd1234"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "pulze", "messages": ["some stuff"]}`),
+
+			expStatus: http.StatusOK,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()

@@ -7,7 +7,8 @@ import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 
-export type OpenAIProvider = 'openai' | 'azure' | 'grafana';
+export type OpenAIProvider = 'openai' | 'azure' | 'grafana' | 'pulze';
+export type PulzeModel = 'pulze' | 'pulze-v0';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
@@ -18,6 +19,8 @@ export interface OpenAISettings {
   provider?: OpenAIProvider;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
+  // Default pulze model to use if no model is specified.
+  pulzeModel?: PulzeModel;
 }
 
 export function OpenAIConfig({
@@ -51,6 +54,7 @@ export function OpenAIConfig({
             [
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
+              { label: 'Pulze', value: 'pulze' },
             ] as Array<SelectableValue<OpenAIProvider>>
           }
           value={settings.provider ?? 'openai'}
@@ -68,7 +72,11 @@ export function OpenAIConfig({
           data-testid={testIds.appConfig.openAIUrl}
           value={settings.url}
           placeholder={
-            settings.provider === 'azure' ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`
+            settings.provider === 'azure'
+              ? 'https://<resource-name>.openai.azure.com'
+              : settings.provider === 'pulze'
+              ? 'https://api.pulze.ai/v1'
+              : 'https://api.openai.com'
           }
           onChange={onChangeField}
         />
@@ -90,7 +98,7 @@ export function OpenAIConfig({
         />
       </Field>
 
-      {settings.provider !== 'azure' && (
+      {settings.provider !== 'azure' && settings.provider !== 'pulze' && (
         <Field label="OpenAI API Organization ID" description="Your OpenAI API Organization ID">
           <Input
             width={60}
@@ -117,6 +125,26 @@ export function OpenAIConfig({
                 azureModelMapping,
               })
             }
+          />
+        </Field>
+      )}
+
+      {settings.provider === 'pulze' && (
+        <Field
+          label="Default Pulze Model"
+          description="The default pulze model to use"
+          data-testid={testIds.appConfig.pulzeModel}
+        >
+          <Select
+            options={
+              [
+                { label: 'pulze', value: 'pulze' },
+                { label: 'pulze-v0', value: 'pulze-v0' },
+              ] as Array<SelectableValue<PulzeModel>>
+            }
+            value={settings.pulzeModel ?? 'pulze'}
+            onChange={(e) => onChange({ ...settings, pulzeModel: e.value })}
+            width={60}
           />
         </Field>
       )}

@@ -11,7 +11,13 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 )
 
-var openAIModels = []string{"gpt-3.5-turbo", "gpt-4"}
+// Define models for each provider to be included in the health check.
+var providerModels = map[openAIProvider][]string{
+	openAIProviderOpenAI:  {"gpt-3.5-turbo", "gpt-4"},
+	openAIProviderGrafana: {"gpt-3.5-turbo", "gpt-4"},
+	openAIProviderAzure:   {"gpt-3.5-turbo", "gpt-4"},
+	openAIProviderPulze:   {"pulze", "openai/gpt-4"},
+}
 
 type healthCheckClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -79,11 +85,11 @@ func (a *App) testOpenAIModel(ctx context.Context, model string) error {
 	return nil
 }
 
-// openAIHealth checks the health of the OpenAI configuration and caches the
+// openAIHealth performs a health check for the selected provider and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
-func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest) (openAIHealthDetails, error) {
+func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest) openAIHealthDetails {
 	if a.healthOpenAI != nil {
-		return *a.healthOpenAI, nil
+		return *a.healthOpenAI
 	}
 
 	d := openAIHealthDetails{
@@ -92,7 +98,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		Models:     map[string]openAIModelHealth{},
 	}
 
-	for _, model := range openAIModels {
+	for _, model := range providerModels[a.settings.OpenAI.Provider] {
 		health := openAIModelHealth{OK: false, Error: "OpenAI not configured"}
 		if d.Configured {
 			health.OK = true
@@ -121,7 +127,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 	if d.OK {
 		a.healthOpenAI = &d
 	}
-	return d, nil
+	return d
 }
 
 // testVectorService checks the health of VectorAPI and caches the result if
@@ -137,6 +143,8 @@ func (a *App) testVectorService(ctx context.Context) error {
 	return nil
 }
 
+// vectorHealth performs a health check for the Vector service and caches the
+// result if successful. The caller must lock a.healthCheckMutex.
 func (a *App) vectorHealth(ctx context.Context) vectorHealthDetails {
 	if a.healthVector != nil {
 		return *a.healthVector
@@ -169,10 +177,9 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
 
-	openAI, err := a.openAIHealth(ctx, req)
-	if err != nil {
-		openAI.OK = false
-		openAI.Error = err.Error()
+	openAI := a.openAIHealth(ctx, req)
+	if openAI.Error == "" {
+		a.healthOpenAI = &openAI
 	}
 
 	vector := a.vectorHealth(ctx)

@@ -12,15 +12,17 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-const openAIKey = "openAIKey"
-const encodedTenantAndTokenKey = "base64EncodedAccessToken"
-
 type openAIProvider string
 
 const (
 	openAIProviderOpenAI  openAIProvider = "openai"
 	openAIProviderAzure   openAIProvider = "azure"
 	openAIProviderGrafana openAIProvider = "grafana" // via llm-gateway
+	openAIProviderPulze   openAIProvider = "pulze"
+
+	openAIKey                = "openAIKey"
+	llmGatewayKey            = "llmGatewayKey"
+	encodedTenantAndTokenKey = "base64EncodedAccessToken"
 )
 
 // OpenAISettings contains the user-specified OpenAI connection details
@@ -36,6 +38,9 @@ type OpenAISettings struct {
 
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
+
+	// The pulze model to use
+	PulzeModel string `json:"pulzeModel"`
 
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
 	// provider (excluding the LLMGateway). Stored securely.
@@ -112,6 +117,10 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 			// llm-gateway not available, this provider is invalid so switch to disabled
 			log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
 			settings.OpenAI.Provider = ""
+		}
+	case openAIProviderPulze:
+		if settings.OpenAI.URL == "" {
+			settings.OpenAI.URL = "https://api.pulze.ai/v1"
 		}
 	default:
 		// Default to disabled LLM support if an unknown provider was specified.

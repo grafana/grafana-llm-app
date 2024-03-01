@@ -22,6 +22,8 @@ func (a *App) newAuthenticatedOpenAIRequest(ctx context.Context, method string, 
 		req.Header.Set("OpenAI-Organization", a.settings.OpenAI.OrganizationID)
 	case openAIProviderAzure:
 		req.Header.Set("api-key", a.settings.OpenAI.apiKey)
+	case openAIProviderPulze:
+		req.Header.Set("Authorization", "Bearer "+a.settings.OpenAI.apiKey)
 	case openAIProviderGrafana:
 		req.SetBasicAuth(a.settings.Tenant, a.settings.GrafanaComAPIKey)
 		req.Header.Add("X-Scope-OrgID", a.settings.Tenant)
@@ -34,6 +36,8 @@ func (a *App) newOpenAIChatCompletionsRequest(ctx context.Context, body map[stri
 	var err error
 
 	switch a.settings.OpenAI.Provider {
+	case openAIProviderPulze:
+		fallthrough
 	case openAIProviderOpenAI:
 		url, err = url.Parse(a.settings.OpenAI.URL)
 		if err != nil {
