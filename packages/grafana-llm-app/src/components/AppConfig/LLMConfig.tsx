@@ -7,6 +7,7 @@ import { Button, Card, Checkbox, FieldSet, Icon, useStyles2 } from '@grafana/ui'
 import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
 import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
+import { DevSandbox} from './DevSandbox';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
 export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
@@ -96,6 +97,8 @@ export function LLMConfig({
   };
 
   return (
+    <>
+    {process.env.NODE_ENV === 'development' && <DevSandbox/>}
     <FieldSet label="OpenAI Settings" className={s.sidePadding}>
       {allowGrafanaManagedLLM && (
         <div onClick={selectGrafanaManaged}>
@@ -223,6 +226,7 @@ export function LLMConfig({
         </Card.Figure>
       </Card>
     </FieldSet>
+    </>
   );
 }
 
@@ -235,10 +239,10 @@ export const getStyles = (theme: GrafanaTheme2) => ({
     margin-left: ${theme.spacing(3)};
   `,
   openaiTermsBox: css({
-    'overflow-y': 'auto',
+    overflowY: 'auto',
     height: '250px',
-    'margin-right': theme.spacing(3),
-    'margin-bottom': theme.spacing(1),
+    marginRight: theme.spacing(3),
+    marginBottom: theme.spacing(1),
     padding: `${theme.spacing(1)} ${theme.spacing(2)} ${theme.spacing(1)} ${theme.spacing(2)}`,
     border: `1px solid ${theme.colors.border.medium}`,
     background: theme.colors.background.primary,
@@ -246,11 +250,11 @@ export const getStyles = (theme: GrafanaTheme2) => ({
 
     ' ul': {
       // space important, matches all children of type 'ul'
-      'padding-left': theme.spacing(2),
+      'paddingLeft': theme.spacing(2),
     },
     '> ul > li:not(:last-child)': {
       // slight vertical padding between main bullet points
-      'margin-bottom': theme.spacing(0.5),
+      'marginBottom': theme.spacing(0.5),
     },
   }),
   cardWithoutBottomMargin: css`
