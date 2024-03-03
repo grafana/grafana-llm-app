@@ -113,26 +113,10 @@ jobs:
           echo "archive-checksum=${GRAFANA_PLUGIN_ARTIFACT_CHECKSUM}" >> $GITHUB_OUTPUT
           echo "archive-latest=${GRAFANA_PLUGIN_ARTIFACT_LATEST}" >> $GITHUB_OUTPUT
           echo "archive-latest-checksum=${GRAFANA_PLUGIN_ARTIFACT_LATEST_CHECKSUM}" >> $GITHUB_OUTPUT
-          echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
       - name: Package plugin
         id: package-plugin
-        run: |
-          mv ${{ env.plugin-dist-folder }} ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
-          md5sum ${{ steps.metadata.outputs.archive }} > ${{ steps.metadata.outputs.archive-checksum }}
-          
-          # move assets to upload folder for mass upload
-          mkdir ${{ steps.metadata.outputs.upload-folder }}
-          mv ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.archive-checksum }} ${{ steps.metadata.outputs.upload-folder }}/
-
-      - name: Create latest zip
-        id: latest-zip
-        run: |
-          cd ${{ steps.metadata.outputs.upload-folder }}
-          cp ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.archive-latest }}
-          md5sum ${{ steps.metadata.outputs.archive-latest }} > ${{ steps.metadata.outputs.archive-latest-checksum }}
-          cd ..
+        run: npx @sandersaarond/zip-plugin --distDir ${{ env.plugin-dist-folder }}
 
       - name: Validate plugin
         run: |
@@ -195,10 +179,10 @@ jobs:
         with:
           credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
 
-      - id: 'upload-latest-to-gcs'
+      - id: 'upload-to-gcs'
         name: 'Upload assets to latest'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: ./${{ needs.build-release.outputs.upload-folder }}*latest*
-          destination: 'integration-artifacts/grafana-llm-app/release/latest'
+          path: ./${{ needs.build-release.outputs.upload-folder }}
+          destination: 'integration-artifacts/grafana-llm-app/release/'
           parent: false
