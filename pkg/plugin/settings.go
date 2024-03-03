@@ -67,6 +67,10 @@ type Settings struct {
 	// It is used when persisting the plugin's settings after setup.
 	GrafanaComAPIKey string
 
+	DecryptedSecureJSONData map[string]string
+
+	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
+
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
@@ -78,12 +82,7 @@ type Settings struct {
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
-	settings := Settings{
-		OpenAI: OpenAISettings{
-			URL:      "https://api.openai.com",
-			Provider: openAIProviderOpenAI,
-		},
-	}
+	settings := Settings{}
 
 	if len(appSettings.JSONData) != 0 {
 		err := json.Unmarshal(appSettings.JSONData, &settings)
@@ -103,7 +102,8 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
-
+	const openAIKey = "openAIKey"
+	const encodedTenantAndTokenKey = "base64EncodedAccessToken"
 	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
 	if settings.LLMGateway.URL == "" {
 		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, the LLM Gateway support is disabled")
@@ -128,12 +128,13 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.OpenAI.Provider = ""
 	}
 
-	// Read user's OpenAI key & the LLMGateway key
-	settings.OpenAI.apiKey = appSettings.DecryptedSecureJSONData[openAIKey]
+	settings.DecryptedSecureJSONData = appSettings.DecryptedSecureJSONData
+
+	settings.OpenAI.apiKey = settings.DecryptedSecureJSONData[openAIKey]
 
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
-	encodedTenantAndToken, ok := appSettings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
-	if ok {
+	encodedTenantAndToken := settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
+	if encodedTenantAndToken != "" {
 		token, err := base64.StdEncoding.DecodeString(encodedTenantAndToken)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())

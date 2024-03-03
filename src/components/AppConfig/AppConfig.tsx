@@ -62,16 +62,11 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
-      return 'You must click the "accept limited data sharing with OpenAI" checkbox to use OpenAI provided by Grafana';
+      return 'You must click the "I Accept" checkbox to use OpenAI provided by Grafana';
     }
     return;
   };
   const errorState = validateInputs();
-
-  const updateManagedLLMOptIn = async (newOptIn: boolean): Promise<void> => {
-    await saveLLMOptInState(newOptIn);
-    setManagedLLMOptIn(newOptIn);
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +78,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
       fetchData();
     }
   }, [settings.enableGrafanaManagedLLM]);
+
+  useEffect(() => {
+    // clear health check status if any setting changed
+    if (updated) {
+      setHealthCheck(undefined);
+    }
+  }, [updated]);
 
   const doSave = async () => {
     if (errorState !== undefined) {
@@ -99,21 +101,36 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         secureJsonData[key] = newSecrets[key];
       }
     }
-    await updatePlugin(plugin.meta.id, {
-      enabled,
-      pinned,
-      jsonData: settings,
-      secureJsonData,
-    });
-    // If disabling LLM features, no health check needed
+    try {
+      await updateAndSavePluginSettings(plugin.meta.id, settings.enableGrafanaManagedLLM, {
+        enabled,
+        pinned,
+        jsonData: settings,
+        secureJsonData,
+      });
+    } catch (e) {
+      setIsUpdating(false);
+      throw e;
+    }
+
+    // Note: health-check uses the state saved in the plugin settings.
+    let healthCheckResult: HealthCheckResult | undefined = undefined;
     if (settings.openAI?.provider !== undefined) {
       const result = await checkPluginHealth(plugin.meta.id);
-      setHealthCheck(result.data);
+      healthCheckResult = result.data;
     }
+    setHealthCheck(healthCheckResult);
+
     // If moving away from Grafana-managed LLM, opt-out of the feature automatically
     if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
-      updateManagedLLMOptIn(false);
+      await saveLLMOptInState(false);
+    } else {
+      await saveLLMOptInState(managedLLMOptIn);
     }
+
+    // Update the frontend settings explicitly, it is otherwise not updated until page reload
+    plugin.meta.jsonData = settings;
+
     setIsUpdating(false);
     setUpdated(false);
   };
@@ -129,7 +146,10 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         secrets={newSecrets}
         secretsSet={configuredSecrets}
         optIn={managedLLMOptIn}
-        setOptIn={updateManagedLLMOptIn}
+        setOptIn={(optIn) => {
+          setManagedLLMOptIn(optIn);
+          setUpdated(true);
+        }}
         onChangeSecrets={(secrets: Secrets) => {
           // Update the new secrets.
           setNewSecrets(secrets);
@@ -193,7 +213,7 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   inlineFieldInputWidth: 40,
 });
 
-export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
+export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<PluginMeta>) => {
   const response = getBackendSrv().fetch({
     url: `/api/plugins/${pluginId}/settings`,
     method: 'POST',
@@ -201,6 +221,40 @@ export const updatePlugin = (pluginId: string, data: Partial<PluginMeta>) => {
   });
 
   return lastValueFrom(response);
+};
+
+export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) => {
+  const response = getBackendSrv().fetch({
+    url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
+    method: 'POST',
+    data,
+  });
+
+  return lastValueFrom(response);
+};
+
+export const updateAndSavePluginSettings = async (
+  pluginId: string,
+  persistToGcom = false,
+  data: Partial<PluginMeta>
+) => {
+  const gcomPluginData = {
+    jsonData: data.jsonData,
+    secureJsonData: data.secureJsonData,
+  };
+
+  if (persistToGcom === true) {
+    await updateGcomProvisionedPluginSettings(gcomPluginData).then((response: FetchResponse) => {
+      if (!response.ok) {
+        throw response.data;
+      }
+    });
+  }
+  await updateGrafanaPluginSettings(pluginId, data).then((response: FetchResponse) => {
+    if (!response.ok) {
+      throw response.data;
+    }
+  });
 };
 
 const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckResult>> => {

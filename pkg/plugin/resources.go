@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -469,6 +471,11 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 
 	user := httpadapter.UserFromContext(req.Context())
 
+	devMode := os.Getenv("DEV_MODE") != ""
+	if devMode {
+		user.Email = "admin@localhost.com"
+	}
+
 	if user == nil || user.Email == "" {
 		handleError(w, fmt.Errorf("valid user not found (please sign in and retry)"), http.StatusUnauthorized)
 		return
@@ -541,6 +548,162 @@ func (a *App) handleLLMState(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// provisionedPlugin is the response returned by a call to grafana.com's provisioned-plugin's endpoint
+// for an specific instance's plugin.
+type provisionedPlugin struct {
+	ID int `json:"id"`
+}
+
+// getPluginID gets the *ID* of the *provisioned plugin* from grafana.com.
+// Note that this differs to the plugin ID referred to by the `backend.CallResourceRequest`,
+// which is 'grafana-llm-app'
+func getPluginID(ctx context.Context, slug string, grafanaAppURL string, saToken string, gcomAPIKey string) (int, error) {
+	gcomPath := "/api/gnet/instances/" + slug + "/provisioned-plugins/grafana-llm-app"
+	req, err := http.NewRequestWithContext(ctx, "GET", grafanaAppURL+gcomPath, nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", saToken))
+	req.Header.Set("X-Api-Key", gcomAPIKey)
+	if err != nil {
+		return 0, fmt.Errorf("create http request: %w", err)
+	}
+	respBody, err := doRequest(req)
+	if err != nil {
+		return 0, err
+	}
+	plugin := provisionedPlugin{}
+	err = json.Unmarshal(respBody, &plugin)
+	if err != nil {
+		return 0, fmt.Errorf("unmarshal json: %w", err)
+	}
+	return plugin.ID, nil
+}
+
+type pluginSettings struct {
+	JSONData       map[string]interface{} `json:"jsonData"`
+	SecureJSONData map[string]string      `json:"secureJsonData"`
+}
+
+func (a *App) mergeSecureJSONData(b []byte) (url.Values, error) {
+	// Unmarshal the request body to JSON
+	var requestData pluginSettings
+	err := json.Unmarshal(b, &requestData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
+	}
+
+	// Insert existing plugin secureJSONData fields if missing from request
+	for key, value := range a.settings.DecryptedSecureJSONData {
+		if _, exists := requestData.SecureJSONData[key]; !exists {
+			requestData.SecureJSONData[key] = value
+		}
+	}
+
+	// Update mandatory fields
+	requestData.SecureJSONData[encodedTenantAndTokenKey] = a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
+
+	// Marshal the request body back to JSON
+	jsonData, err := json.Marshal(requestData.JSONData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request jsonData %w", err)
+	}
+
+	secureJSONData, err := json.Marshal(requestData.SecureJSONData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request secureJSONData %w", err)
+	}
+
+	newBody := url.Values{}
+	newBody.Set("jsonData", string(jsonData))
+	newBody.Set("secureJsonData", string(secureJSONData))
+
+	return newBody, nil
+}
+
+func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		handleError(w, fmt.Errorf("method not allowed: %s", req.Method), http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Read the request body
+	if req.Body == nil {
+		log.DefaultLogger.Warn("Request body is nil")
+		handleError(w, errors.New("request body required"), http.StatusBadRequest)
+		return
+	}
+
+	// DEV_MODE is only used for local dev to avoid sending request to gcom
+	devMode := os.Getenv("DEV_MODE")
+	if !a.settings.EnableGrafanaManagedLLM || devMode != "" {
+		log.DefaultLogger.Info("Plugin not provisioned; skipping saving settings to grafana.com")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status": "Success"}`))
+		return
+	}
+
+	log.DefaultLogger.Debug("Getting provisioned plugin ID from grafana.com")
+	pluginID, err := getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
+	if err != nil {
+		handleError(w, fmt.Errorf("get plugin ID: %w", err), http.StatusInternalServerError)
+		return
+	}
+
+	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
+
+	// Read the request body
+	if req.Body == nil {
+		handleError(w, errors.New("request body required"), http.StatusBadRequest)
+		return
+	}
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
+		return
+	}
+	newReqBody, err := a.mergeSecureJSONData(b)
+	if err != nil {
+		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
+		return
+	}
+	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, strings.NewReader(newReqBody.Encode()))
+	if err != nil {
+		handleError(w, fmt.Errorf("create gcom request: %w", err), http.StatusInternalServerError)
+		return
+	}
+	gcomReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.saToken))
+	gcomReq.Header.Set("X-Api-Key", a.settings.GrafanaComAPIKey)
+	gcomReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	_, err = doRequest(gcomReq)
+	if err != nil {
+		handleError(w, fmt.Errorf("saving plugin setting to gcom: %w", err), http.StatusInternalServerError)
+		return
+	}
+
+	// write a success response body since backendSrv.* needs a valid json response body
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status": "Success"}`))
+}
+
+func doRequest(req *http.Request) ([]byte, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("send http request: %w", err)
+	}
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
+	if err != nil {
+		return nil, fmt.Errorf("read http response: %w", err)
+	}
+	if resp.StatusCode == 409 {
+		// Retry usually helps if this happens
+		return doRequest(req)
+	} else if resp.StatusCode/100 != 2 {
+		return respBody, fmt.Errorf("HTTP error %d", resp.StatusCode)
+	}
+	return respBody, nil
+}
+
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 	switch settings.OpenAI.Provider {
@@ -557,5 +720,5 @@ func (a *App) registerRoutes(mux *http.ServeMux, settings Settings) {
 	}
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 	mux.HandleFunc("/grafana-llm-state", a.handleLLMState)
-
+	mux.HandleFunc("/save-plugin-settings", a.handleSavePluginSettings)
 }

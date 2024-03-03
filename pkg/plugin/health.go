@@ -94,7 +94,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 
 	d := openAIHealthDetails{
 		OK:         true,
-		Configured: a.settings.OpenAI.apiKey != "" || a.settings.OpenAI.Provider == openAIProviderGrafana,
+		Configured: ((a.settings.OpenAI.Provider == openAIProviderAzure || a.settings.OpenAI.Provider == openAIProviderOpenAI) && a.settings.OpenAI.apiKey != "") || a.settings.OpenAI.Provider == openAIProviderGrafana,
 		Models:     map[string]openAIModelHealth{},
 	}
 
@@ -120,7 +120,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 	}
 	if !anyOK {
 		d.OK = false
-		d.Error = "No models are working"
+		d.Error = "No functioning models are available"
 	}
 
 	// Only cache result if openAI is ok to use.
