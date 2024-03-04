@@ -8,7 +8,7 @@ require (
 	github.com/grafana/grafana-plugin-sdk-go v0.212.0
 	github.com/launchdarkly/eventsource v1.7.1
 	github.com/qdrant/go-client v1.7.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.62.0
 )
 
