@@ -48,7 +48,14 @@ func modifyURL(openAIUrl string, req *http.Request) error {
 	}
 	req.URL.Scheme = u.Scheme
 	req.URL.Host = u.Host
-	return nil
+	// At this point:
+	// - u.Path is something like '' or '/llm', depending on the OpenAI provider.
+	// - req.URL.Path is something like '/openai/v1/chat/completions', since we require the
+	//   '/openai' prefix to be present in the request URL.
+	// We want the final URL to be something like '/llm/openai/v1/chat/completions'
+	// or '/openai/v1/chat/completions', depending on the OpenAI provider.
+	req.URL.Path, err = url.JoinPath("/", u.Path, req.URL.Path)
+	return err
 }
 
 // openAIProxy is a reverse proxy for OpenAI API calls.
@@ -81,6 +88,7 @@ func (a *openAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.DefaultLogger.Error("Unable to write error response", "err", err)
 		}
+		return
 	}
 	a.rp.ServeHTTP(w, req)
 }
@@ -202,7 +210,7 @@ type grafanaOpenAIProxy struct {
 }
 
 func (a *grafanaOpenAIProxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := modifyURL(a.settings.LLMGateway.URL+"/openai", req) // GER: FIXME - not durable to / added
+	err := modifyURL(a.settings.LLMGateway.URL, req)
 	if err != nil {
 		// Attempt to write the error as JSON.
 		jd, err := json.Marshal(map[string]string{"error": err.Error()})
