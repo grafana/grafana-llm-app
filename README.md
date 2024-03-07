@@ -19,7 +19,9 @@ Each package has its own package.json with its own npm commands, but the intenti
 
 This will watch the frontend dependencies and update live. If you are changing backend dependencies you will need to exit from `npm run dev` and `npm run server` and repeat those steps, because the backend dependencies do not build or update within the server automatically.
 
-It is recommended to develop functionality against the "developer sandbox" that can be opened from the configuration page, because it gives you a clean end to end test of any changes.
+### Dev Sandbox
+
+It is recommended to develop functionality against the "developer sandbox", only available when the app is run in dev mode, that can be opened from the configuration page, because it gives you a clean end to end test of any changes. This can be used for modifications to the @grafana/llm library, the backend plugin, or functionality built on top of those packages.
 
 ### Backend
 
