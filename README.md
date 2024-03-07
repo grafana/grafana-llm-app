@@ -106,6 +106,7 @@ It is recommended to run these using npm commands from root so that the entire p
 
 ### Plugin Release
 - Bump version in package.json (e.g., 0.2.0 to 0.2.1)
+- Bump version in `packages/grafana-llm-app/package.json` (e.g., 0.2.0 to 0.2.1)
 - Add notes to changelog describing changes since last release
 - Merge PR for a branch containing those changes into main
 
