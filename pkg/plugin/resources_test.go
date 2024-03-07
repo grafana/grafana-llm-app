@@ -293,7 +293,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
-			expReqPath: "/openai/v1/chat/completions",
+			expReqPath: "/llm/openai/v1/chat/completions",
 			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
 
 			expStatus: http.StatusOK,
@@ -318,7 +318,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
-			expReqPath: "/openai/v1/chat/completions",
+			expReqPath: "/llm/openai/v1/chat/completions",
 			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
 
 			expStatus: http.StatusOK,
@@ -331,7 +331,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			// Update the OpenAI/LLMGateway URL with the mock server's URL.
 			if tc.settings.OpenAI.Provider == openAIProviderGrafana {
-				tc.settings.LLMGateway.URL = server.server.URL
+				// Make sure our tests work when the LLM gateway is at a subpath.
+				tc.settings.LLMGateway.URL = server.server.URL + "/llm"
 			} else {
 				tc.settings.OpenAI.URL = server.server.URL
 			}
