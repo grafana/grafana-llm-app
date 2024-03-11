@@ -1,0 +1,13 @@
+{
+  "extends": "@grafana/tsconfig",
+  "compilerOptions": {
+    "declarationDir": "./dist",
+    "module": "commonjs",
+    "target": "es6",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "rootDirs": ["."]
+  },
+  "include": ["src/**/*.ts*"]
+}

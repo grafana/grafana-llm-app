@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.7.0
+
+* Refactors repo into monorepo together with frontend dependencies
+* Creates developer sandbox for developing frontend dependencies
+* Switches CI/CD to github actions
 ## 0.6.4
 
 - Fix bug where resource calls to OpenAI would fail for Grafana managed LLMs
