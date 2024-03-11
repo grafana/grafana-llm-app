@@ -61,7 +61,7 @@
     "@grafana/data": "10.2.1",
     "@grafana/llm": "*",
     "@grafana/runtime": "10.2.1",
-    "@grafana/ui": "10.2.3",
+    "@grafana/ui": "10.4.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^5.2.0",
