@@ -124,7 +124,9 @@ jobs:
           pushd ./plugin-validator/pkg/cmd/plugincheck2
           go install
           popd
-          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.archive }}
+          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive }}
+          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
+
 
       - name: Create tag
         uses: rickstaa/action-create-tag@v1
