@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.4
+
+- Fix bug where resource calls to OpenAI would fail for Grafana managed LLMs
+
 ## 0.6.3
 
 - Fix additional UI bugs
