@@ -33,29 +33,29 @@ used and requests are routed appropriately.
 ## For plugin developers
 
 This plugin is not designed to be directly interacted with; instead, use the convenience functions
-in the [`@grafana/experimental`](https://www.npmjs.com/package/@grafana/experimental)
+in the [`@grafana/llm`](https://www.npmjs.com/package/@grafana/llm)
 package which will communicate with this plugin, if installed.
 
 Looking for working examples? Check https://github.com/grafana/grafana-llmexamples-app
 
-First, add the latest version of `@grafana/experimental` to your dependencies in package.json:
+First, add the latest version of `@grafana/llm` to your dependencies in package.json:
 
 ```json
 {
   "dependencies": {
-    "@grafana/experimental": "1.7.0"
+    "@grafana/llm": "1.7.0"
   }
 }
 ```
 
-Then in your components you can use the `llm` object from `@grafana/experimental` like so:
+Then in your components you can use the `llm` object from `@grafana/llm` like so:
 
 ```typescript
 import React, { useState } from 'react';
 import { useAsync } from 'react-use';
 import { scan } from 'rxjs/operators';
 
-import { llms } from '@grafana/experimental';
+import { llms } from '@grafana/llm';
 import { PluginPage } from '@grafana/runtime';
 
 import { Button, Input, Spinner } from '@grafana/ui';
