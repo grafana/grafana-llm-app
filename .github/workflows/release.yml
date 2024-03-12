@@ -126,12 +126,12 @@ jobs:
           plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
 
 
-      # - name: Create tag
-      #   uses: rickstaa/action-create-tag@v1
-      #   with:
-      #     github_token: ${{ steps.get_installation_token.outputs.token }}
-      #     message: "chore(tag): tag version ${{ steps.metadata.outputs.plugin-version }} [BOT]"
-      #     tag: v${{ steps.metadata.outputs.plugin-version }}
+      - name: Create tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          github_token: ${{ steps.get_installation_token.outputs.token }}
+          message: "chore(tag): tag version ${{ steps.metadata.outputs.plugin-version }} [BOT]"
+          tag: v${{ steps.metadata.outputs.plugin-version }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
