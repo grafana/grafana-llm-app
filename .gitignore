@@ -35,3 +35,6 @@ e2e-results/
 
 .eslintcache
 .DS_Store
+
+# CI directory
+__to-upload__
