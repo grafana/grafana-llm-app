@@ -117,6 +117,7 @@ jobs:
           echo "archive-checksum=${GRAFANA_PLUGIN_ARTIFACT_CHECKSUM}" >> $GITHUB_OUTPUT
           echo "archive-latest=${GRAFANA_PLUGIN_ARTIFACT_LATEST}" >> $GITHUB_OUTPUT
           echo "archive-latest-checksum=${GRAFANA_PLUGIN_ARTIFACT_LATEST_CHECKSUM}" >> $GITHUB_OUTPUT
+          echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
       - name: Package plugin
         id: package-plugin
