@@ -36,14 +36,14 @@ This plugin is not designed to be directly interacted with; instead, use the con
 in the [`@grafana/llm`](https://www.npmjs.com/package/@grafana/llm)
 package which will communicate with this plugin, if installed.
 
-Looking for working examples? Check https://github.com/grafana/grafana-llmexamples-app
+Working examples can be found in the ['@grafana/llm README'](https://github.com/grafana/grafana-llm-app/tree/main/packages/grafana-llm-frontend/README.md) and in the DevSandbox.tsx class.
 
 First, add the latest version of `@grafana/llm` to your dependencies in package.json:
 
 ```json
 {
   "dependencies": {
-    "@grafana/llm": "1.7.0"
+    "@grafana/llm": "0.8.0"
   }
 }
 ```
