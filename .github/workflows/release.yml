@@ -1,7 +1,13 @@
 name: Release
 
 on:
-  pull_request
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release a new version of the plugin'
+        required: true
+        default: false
+        type: 'boolean'
 
 permissions:
   contents: write
