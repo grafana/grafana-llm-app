@@ -30,7 +30,7 @@
     "@grafana/e2e": "10.2.2",
     "@grafana/e2e-selectors": "10.2.3",
     "@grafana/tsconfig": "^1.2.0-rc1",
-    "@types/lodash": "^4.14.202",
+    "@types/lodash": "^4.17.0",
     "@types/node": "^18.15.11",
     "@types/react-router-dom": "^5.3.3",
     "copy-webpack-plugin": "^11.0.0",
