@@ -22,7 +22,7 @@
   ],
   "devDependencies": {
     "@grafana/eslint-config": "^7.0.0",
-    "@swc/core": "1.3.102",
+    "@swc/core": "1.4.6",
     "@swc/helpers": "^0.5.3",
     "@swc/jest": "^0.2.29",
     "@testing-library/jest-dom": "^6.1.4",
