@@ -133,7 +133,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: upload-dir
-          path: ${{ steps.metadata.outputs.upload-folder }}
+          path: __to-upload__
 
   release-and-upload:
     runs-on: ubuntu-latest
