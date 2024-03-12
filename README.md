@@ -107,10 +107,10 @@ It is recommended to run these using npm commands from root so that the entire p
 ## Release process
 
 ### Plugin Release
-- Bump version in package.json (e.g., 0.2.0 to 0.2.1)
 - Bump version in `packages/grafana-llm-app/package.json` (e.g., 0.2.0 to 0.2.1)
 - Add notes to changelog describing changes since last release
 - Merge PR for a branch containing those changes into main
+- Trigger release from "actions" tab on Github.
 
 ### llmclient Release
 - Push a new tag to the repo (e.g., `git tag -a llmclient/v0.X.X -m "llmclient v0.X.X release"`)
