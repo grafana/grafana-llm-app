@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@grafana/data": "10.2.1",
-    "@grafana/runtime": "10.2.1",
+    "@grafana/runtime": "10.4.0",
     "react": "18.2.0",
     "react-use": "17.4.0",
     "rxjs": "7.8.1",
