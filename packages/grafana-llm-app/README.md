@@ -184,25 +184,25 @@ apps:
 
 ## Adding LLM features to your plugin or Grafana core
 
-To make use of this plugin when adding LLM-based features, you can use the helper functions in the `@grafana/experimental` package.
+To make use of this plugin when adding LLM-based features, you can use the helper functions in the `@grafana/llm` package.
 
-First, add the correct version of `@grafana/experimental` to your dependencies in package.json:
+First, add the correct version of `@grafana/llm` to your dependencies in package.json:
 
 ```json
 {
   "dependencies": {
-    "@grafana/experimental": "1.7.0"
+    "@grafana/llm": "0.8.0"
   }
 }
 ```
 
-Then in your components you can use the `llm` object from `@grafana/experimental` like so:
+Then in your components you can use the `llm` object from `@grafana/llm` like so:
 
 ```typescript
 import React, { useState } from 'react';
 import { useAsync } from 'react-use';
 
-import { llms } from '@grafana/experimental';
+import { llms } from '@grafana/llm';
 import { PluginPage } from '@grafana/runtime';
 
 import { Button, Input, Spinner } from '@grafana/ui';

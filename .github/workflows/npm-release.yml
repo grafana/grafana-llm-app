@@ -1,0 +1,86 @@
+name: NPM Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release a new version of the npm library'
+        required: true
+        default: false
+        type: 'boolean'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Releases should always be made off of 'main'
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Store Go cache paths
+        id: go-cache-paths
+        run: echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+
+      - name: Restore go-build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-build-
+
+      - name: Install utilities
+        run: sudo apt-get install jq
+
+      - name: Install Mage
+        uses: magefile/mage-action@v3
+        with:
+            install-only: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build:all
+
+      - name: Run frontend tests
+        run: npm run test:ci
+
+      - name: Run backend tests
+        run: npm run backend:test
+
+      - name: Run E2E tests
+        run: npm run e2e:ci
+        id: run-e2e-tests
+
+      - name: Archive E2E output
+        uses: actions/upload-artifact@v3
+        if: steps.run-e2e-tests.outcome != 'success'
+        with:
+            name: cypress-videos
+            path: cypress/videos
+            retention-days: 5
+
+      - name: Publish to NPM
+        run: |
+          cd packages/grafana-llm-frontend
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GRAFANABOT_NPM_TOKEN }}
