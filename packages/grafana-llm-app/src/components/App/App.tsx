@@ -7,7 +7,7 @@ export function App(props: AppRootProps) {
   return (
     <Routes>
       {/* Default page */}
-      <Route Component={Models} />
+      <Route element={<Models />} />
     </Routes>
   );
 }
