@@ -2,11 +2,16 @@
 
 ## Unreleased
 
+## 0.8.1
+
+- Add mitigation for side channel attacks
+
 ## 0.7.0
 
 * Refactors repo into monorepo together with frontend dependencies
 * Creates developer sandbox for developing frontend dependencies
 * Switches CI/CD to github actions
+
 ## 0.6.4
 
 - Fix bug where resource calls to OpenAI would fail for Grafana managed LLMs
