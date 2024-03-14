@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -88,7 +89,17 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 				log.DefaultLogger.Error(err.Error())
 				return err
 			}
-			err = sender.SendJSON([]byte(event.Data()))
+			// Pad the response with up to 35 characters to mitigate side
+			// channel attacks. See
+			// https://blog.cloudflare.com/ai-side-channel-attack-mitigated.
+			body["p"] = strings.Repeat("p", rand.Int()%35)
+			data, err := json.Marshal(body)
+			if err != nil {
+				err = fmt.Errorf("proxy: stream: error marshaling padded event data: %w", err)
+				log.DefaultLogger.Error(err.Error())
+				return err
+			}
+			err = sender.SendJSON(data)
 			if err != nil {
 				err = fmt.Errorf("proxy: stream: error sending event data: %w", err)
 				log.DefaultLogger.Error(err.Error())
