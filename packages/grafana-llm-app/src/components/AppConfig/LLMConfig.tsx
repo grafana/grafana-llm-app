@@ -105,17 +105,17 @@ export function LLMConfig({
           >
             <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
             <Card.Description>
-              <p>Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana</p>
+              <div>Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana</div>
               {llmOption === 'grafana-provided' && (
                 <>
                   <div className={s.openaiTermsBox}>
                     <h4>Terms of Usage (Last updated: February 16th, 2024)</h4>
-                    <p>
+                    <div>
                       To enable OpenAI via Grafana Labs, please note that some data from your Grafana instance will be
                       sent to OpenAI when you use the LLM-based features. Grafana Labs imposes usage limits for this
                       service.
-                    </p>
-                    <p>
+                    </div>
+                    <div>
                       Additionally, the following terms (&quot;AI Terms&quot;) are hereby added to and become part of
                       your licensing agreement with Grafana Labs (the &quot;Agreement&quot;) as additional terms.
                       Capitalized terms not defined in these AI Terms have the meanings given in the Agreement. These
@@ -123,7 +123,7 @@ export function LLMConfig({
                       necessary terms regarding your use of this feature and therefore are not &apos;click-wrap&apos;,
                       &apos;shrink-wrap&apos;, different or additional terms, or the like, to the extent your licensing
                       agreement with Grafana Labs purports to supersede any such terms.
-                    </p>
+                    </div>
                     <ul>
                       <li>Grafana Labs uses OpenAI&apos;s API platform to provide the LLM features.</li>
                       <li>
@@ -179,11 +179,11 @@ export function LLMConfig({
                       </li>
                     </ul>
                   </div>
-                  <p>
+                  <div>
                     By clicking the &quot;I Accept&quot; button, you agree to these additional AI Terms on behalf of
                     yourself and/or your organization. Please read these terms carefully before proceeding. If you do
                     not agree to these terms, do not click the &quot;I Accept&quot; button.
-                  </p>
+                  </div>
                   <Checkbox value={optIn} onClick={optInChange} label="I Accept" />
                 </>
               )}
@@ -198,7 +198,7 @@ export function LLMConfig({
         <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
           <Card.Heading>Use your own OpenAI account</Card.Heading>
           <Card.Description>
-            <p>Enable LLM features in Grafana using your own OpenAI account</p>
+            <div>Enable LLM features in Grafana using your own OpenAI account</div>
             {llmOption === 'openai' && (
               <OpenAIConfig
                 settings={settings.openAI ?? {}}
