@@ -98,13 +98,6 @@ jobs:
           echo Once done please follow the instructions found here: https://github.com/${{github.repository}}/blob/main/README.md#using-github-actions-release-workflow
         if: ${{ env.GRAFANA_API_KEY == '' }}
 
-      - name: Sign plugin
-        run: |
-          pushd ./packages/grafana-llm-app/
-          npx --yes @grafana/sign-plugin@latest
-          popd
-        if: ${{ env.GRAFANA_API_KEY != '' }}
-
       - name: Get plugin metadata
         id: metadata
         run: |
