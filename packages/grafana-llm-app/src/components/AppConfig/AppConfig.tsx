@@ -122,10 +122,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     setHealthCheck(healthCheckResult);
 
     // If moving away from Grafana-managed LLM, opt-out of the feature automatically
-    if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
-      await saveLLMOptInState(false);
-    } else {
-      await saveLLMOptInState(managedLLMOptIn);
+    // This logic should only be triggered if the Grafana-managed LLM feature is enabled (Grafana Cloud Only)
+    if (settings.enableGrafanaManagedLLM === true) {
+      if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
+        await saveLLMOptInState(false);
+      } else {
+        await saveLLMOptInState(managedLLMOptIn);
+      }
     }
 
     // Update the frontend settings explicitly, it is otherwise not updated until page reload
