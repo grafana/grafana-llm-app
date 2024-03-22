@@ -1,0 +1,198 @@
+name: Test bundle action
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release a new version of the plugin'
+        required: true
+        default: false
+        type: 'boolean'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    env:
+      plugin-dist-folder: ./packages/grafana-llm-app/dist
+      GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_API_SIGNING_KEY }} # Requires a Grafana API key from Grafana.com.
+
+    outputs:
+      upload-folder: ${{ steps.metadata.outputs.upload-folder }}
+      version-tag: ${{ steps.metadata.outputs.plugin-version }}
+
+    steps:
+      - uses: tibdex/github-app-token@v1
+        id: get_installation_token
+        with:
+          app_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_ID }}
+          installation_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_INSTALLATION_ID }}
+          private_key: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v3
+        with:
+          # Releases should always be made off of 'main'
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Store Go cache paths
+        id: go-cache-paths
+        run: echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+
+      - name: Restore go-build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-build-
+
+      - name: Install utilities
+        run: sudo apt-get install jq
+
+      - name: Install Mage
+        uses: magefile/mage-action@v3
+        with:
+            install-only: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build:all
+
+      - name: Run frontend tests
+        run: npm run test:ci
+
+      - name: Run backend tests
+        run: npm run backend:test
+
+      - name: Run E2E tests
+        run: npm run e2e:ci
+        id: run-e2e-tests
+
+      - name: Archive E2E output
+        uses: actions/upload-artifact@v3
+        if: steps.run-e2e-tests.outcome != 'success'
+        with:
+            name: cypress-videos
+            path: cypress/videos
+            retention-days: 5
+
+      - name: Warn missing Grafana API key
+        run: |
+          echo Please generate a Grafana API key: https://grafana.com/docs/grafana/latest/developers/plugins/sign-a-plugin/#generate-an-api-key
+          echo Once done please follow the instructions found here: https://github.com/${{github.repository}}/blob/main/README.md#using-github-actions-release-workflow
+        if: ${{ env.GRAFANA_API_KEY == '' }}
+
+      - name: Get plugin metadata
+        id: metadata
+        run: |
+          export GRAFANA_PLUGIN_ID=$(cat ${{ env.plugin-dist-folder }}/plugin.json | jq -r .id)
+          export GRAFANA_PLUGIN_VERSION=$(cat ${{ env.plugin-dist-folder }}/plugin.json | jq -r .info.version)
+          export GRAFANA_PLUGIN_TYPE=$(cat ${{ env.plugin-dist-folder }}/plugin.json | jq -r .type)
+          export GRAFANA_PLUGIN_ARTIFACT=${GRAFANA_PLUGIN_ID}-${GRAFANA_PLUGIN_VERSION}.zip
+          export GRAFANA_PLUGIN_ARTIFACT_CHECKSUM=${GRAFANA_PLUGIN_ARTIFACT}.md5
+          
+          export GRAFANA_PLUGIN_ARTIFACT_LATEST=${GRAFANA_PLUGIN_ID}-latest.zip
+          export GRAFANA_PLUGIN_ARTIFACT_LATEST_CHECKSUM=${GRAFANA_PLUGIN_ARTIFACT_LATEST}.md5
+
+          echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
+          echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
+          echo "plugin-type=${GRAFANA_PLUGIN_TYPE}" >> $GITHUB_OUTPUT
+          echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+          echo "archive-checksum=${GRAFANA_PLUGIN_ARTIFACT_CHECKSUM}" >> $GITHUB_OUTPUT
+          echo "archive-latest=${GRAFANA_PLUGIN_ARTIFACT_LATEST}" >> $GITHUB_OUTPUT
+          echo "archive-latest-checksum=${GRAFANA_PLUGIN_ARTIFACT_LATEST_CHECKSUM}" >> $GITHUB_OUTPUT
+          echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
+
+      - name: Package plugin
+        uses: sandersaarond/shared-workflows/actions/bundle-plugin@add-bundle-plugin
+        with:
+          distDir: ${{ env.plugin-dist-folder }}
+
+#       - name: Validate plugin
+#         run: |
+#           git clone https://github.com/grafana/plugin-validator
+#           pushd ./plugin-validator/pkg/cmd/plugincheck2
+#           go install
+#           popd
+#           plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive }}
+#           plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
+
+
+#       - name: Create tag
+#         uses: rickstaa/action-create-tag@v1
+#         with:
+#           github_token: ${{ steps.get_installation_token.outputs.token }}
+#           message: "chore(tag): tag version ${{ steps.metadata.outputs.plugin-version }} [BOT]"
+#           tag: v${{ steps.metadata.outputs.plugin-version }}
+
+#       - name: Upload artifacts
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: upload-dir
+#           path: __to-upload__
+
+#   release-and-upload:
+#     runs-on: ubuntu-latest
+#     needs: [ 'build-release' ]
+#     steps:
+
+#       - uses: tibdex/github-app-token@v1
+#         id: get_installation_token
+#         with:
+#           app_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_ID }}
+#           installation_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_INSTALLATION_ID }}
+#           private_key: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_PRIVATE_KEY }}
+
+#       - uses: actions/checkout@v3
+#         with:
+#           ref: main
+#           token: ${{ steps.get_installation_token.outputs.token }}
+
+#       - name: Download artifacts
+#         uses: actions/download-artifact@v3
+#         with:
+#           name: upload-dir
+#           path: ${{ needs.build-release.outputs.upload-folder }}
+
+#       - name: Create Github release
+#         uses: softprops/action-gh-release@v1
+#         with:
+#           generate_release_notes: true
+#           files: |
+#             ./${{ needs.build-release.outputs.upload-folder }}/**/*${{ needs.build-release.outputs.version-tag }}*.zip?(.md5)
+#           tag_name: ${{ needs.build-release.outputs.version-tag }}
+
+#       - id: get-secrets
+#         uses: grafana/shared-workflows/actions/get-vault-secrets@main
+#         with:
+#           common_secrets: |
+#             GCP_UPLOAD_ARTIFACTS_KEY=grafana/integration-artifacts-uploader-service-account:'credentials.json'
+
+#       - id: 'auth'
+#         uses: 'google-github-actions/auth@v2'
+#         with:
+#           credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
+
+#       - id: 'upload-to-gcs'
+#         name: 'Upload assets to latest'
+#         uses: 'google-github-actions/upload-cloud-storage@v1'
+#         with:
+#           path: ./${{ needs.build-release.outputs.upload-folder }}
+#           destination: 'integration-artifacts/grafana-llm-app/release/'
+#           parent: false
