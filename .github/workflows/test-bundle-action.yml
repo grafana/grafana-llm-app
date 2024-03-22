@@ -1,13 +1,9 @@
 name: Test bundle action
 
 on:
-  workflow_dispatch:
-    inputs:
-      release:
-        description: 'Release a new version of the plugin'
-        required: true
-        default: false
-        type: 'boolean'
+    push:
+      branches:
+        - test-bundle-action
 
 permissions:
   contents: write
