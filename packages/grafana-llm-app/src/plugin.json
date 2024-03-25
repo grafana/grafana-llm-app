@@ -9,7 +9,7 @@
   "preload": true,
   "info": {
     "keywords": [
-      "app"
+      "app", "generative", "AI", "LLM", "OpenAI", "assistant"
     ],
     "description": "Plugin to easily allow LLM based extensions to grafana",
     "author": {
