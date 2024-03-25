@@ -23,6 +23,7 @@ jobs:
     outputs:
       upload-folder: ${{ steps.metadata.outputs.upload-folder }}
       version-tag: ${{ steps.metadata.outputs.plugin-version }}
+      plugin-id: ${{ steps.metadata.outputs.plugin-id }}
 
     steps:
       - uses: tibdex/github-app-token@v1
@@ -120,8 +121,9 @@ jobs:
           echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
       - name: Package plugin
-        id: package-plugin
-        run: npx @sandersaarond/zip-plugin --distDir ${{ env.plugin-dist-folder }}
+        uses: sandersaarond/shared-workflows/actions/bundle-plugin@add-bundle-plugin
+        with:
+          distDir: ${{ env.plugin-dist-folder }}
 
       - name: Validate plugin
         run: |
@@ -149,6 +151,9 @@ jobs:
   release-and-upload:
     runs-on: ubuntu-latest
     needs: [ 'build-release' ]
+    env:
+      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_SIGNING_KEY }}
+      GCOM_ROOT : ${{ secrets.GCOM_ROOT }}
     steps:
 
       - uses: tibdex/github-app-token@v1
@@ -195,3 +200,14 @@ jobs:
           path: ./${{ needs.build-release.outputs.upload-folder }}
           destination: 'integration-artifacts/grafana-llm-app/release/'
           parent: false
+
+      - id: 'publish-to-gcom'
+        name: 'Publish to Grafana.com'
+        uses: 'sandersaarond/shared-workflows/actions/publish-backend-plugin-on-site@publish-plugin-on-site'
+        with:
+          plugin-id: ${{ needs.build-release.outputs.plugin-id }}
+          plugin-version: ${{ needs.build-release.outputs.version-tag }}
+          plugin-dist: "https://www.github.com/grafana/grafana-llm-app/tree/main/packages/grafana-llm-app/dist"
+          gcp-bucket: integration-artifacts
+          gcom-token: ${{ env.GRAFANA_API_KEY }}
+          gcom-api: ${{ env.GCOM_ROOT }}
