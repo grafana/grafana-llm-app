@@ -27,7 +27,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "@grafana/e2e": "10.2.2",
+    "@grafana/e2e": "10.4.1",
     "@grafana/e2e-selectors": "10.2.3",
     "@grafana/tsconfig": "^1.2.0-rc1",
     "@types/lodash": "^4.17.0",
