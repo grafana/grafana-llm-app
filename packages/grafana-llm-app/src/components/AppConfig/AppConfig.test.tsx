@@ -18,6 +18,7 @@ describe('Components/AppConfig', () => {
           type: PluginType.app,
           enabled: true,
           jsonData: {
+            displayVectorStoreOptions: true,
             vector: {
               enabled: true,
               store: {

@@ -20,6 +20,7 @@ export interface AppPluginSettings {
   // The enableGrafanaManagedLLM flag will enable the plugin to use Grafana-managed OpenAI
   // This will only work for Grafana Cloud install plugins
   enableGrafanaManagedLLM?: boolean;
+  displayVectorStoreOptions?: boolean;
 }
 
 export type Secrets = {
@@ -164,26 +165,27 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           setUpdated(true);
         }}
       />
-
-      <VectorConfig
-        settings={settings.vector}
-        secrets={newSecrets}
-        secretsSet={configuredSecrets}
-        onChange={(vector) => {
-          setSettings({ ...settings, vector });
-          setUpdated(true);
-        }}
-        onChangeSecrets={(secrets) => {
-          // Update the new secrets.
-          setNewSecrets(secrets);
-          // Mark each secret as not configured. This will cause it to be included
-          // in the request body when the user clicks "Save settings".
-          for (const key of Object.keys(secrets)) {
-            setConfiguredSecrets({ ...configuredSecrets, [key]: false });
-          }
-          setUpdated(true);
-        }}
-      />
+      {settings.displayVectorStoreOptions === true &&
+        <VectorConfig
+          settings={settings.vector}
+          secrets={newSecrets}
+          secretsSet={configuredSecrets}
+          onChange={(vector) => {
+            setSettings({ ...settings, vector });
+            setUpdated(true);
+          }}
+          onChangeSecrets={(secrets) => {
+            // Update the new secrets.
+            setNewSecrets(secrets);
+            // Mark each secret as not configured. This will cause it to be included
+            // in the request body when the user clicks "Save settings".
+            for (const key of Object.keys(secrets)) {
+              setConfiguredSecrets({ ...configuredSecrets, [key]: false });
+            }
+            setUpdated(true);
+          }}
+        />
+      }
 
       {errorState !== undefined && <Alert title={errorState} severity="error" />}
       {isUpdating ? (
