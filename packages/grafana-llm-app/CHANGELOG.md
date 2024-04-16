@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.8.5
+
+- Added a `displayVectorStoreOptions` flag to optionally display the vector store configs
+
 ## 0.8.1
 
 - Add mitigation for side channel attacks
