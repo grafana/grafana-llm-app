@@ -33,19 +33,20 @@ func newMockOpenAIStreamServer(t *testing.T, statusCode int, finish chan (struct
 		}
 
 		w.Header().Set("Content-Type", "text/event-stream")
+		streamMessages := []byte{}
 		for i := 0; i < 10; i++ {
 			// Actual body isn't really important here.
 			data := fmt.Sprintf(`{"id":"%d","object":"completion","created":1598069254,"model":"gpt-3.5-turbo","choices":[{"text":"response%d"}]}`, i, i)
 			dataBytes := []byte("data: " + data + "\n\n")
-			_, err := w.Write([]byte(dataBytes))
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			w.(http.Flusher).Flush()
+			streamMessages = append(streamMessages, dataBytes...)
 		}
 
-		_, _ = w.Write([]byte(`event: done\n`))
-		_, _ = w.Write([]byte(`data: [DONE]\n\n`))
+		streamMessages = append(streamMessages, []byte("event: done\n")...)
+		streamMessages = append(streamMessages, []byte("data: [DONE]\n\n")...)
+		_, err := w.Write(streamMessages)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		w.(http.Flusher).Flush()
 	})
 	server.server = httptest.NewServer(handler)

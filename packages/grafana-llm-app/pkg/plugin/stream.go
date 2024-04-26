@@ -71,14 +71,13 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		case event := <-eventStream.Events:
 			var body map[string]interface{}
 			if event == nil {
-				// make sure we have an event, otherwise, event.Data will be empty panic
-				// this can happen if for final messages with no data, e.g. "event: done\n\n"
-				log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: event is nil, ending (in happy branch): %s", req.Path))
+				// make sure we have an event, otherwise, event.Data() will panic
+				log.DefaultLogger.Warn(fmt.Sprintf("proxy: stream: event is nil, ending (in sad branch): %s", req.Path))
 				return nil
 			}
 			eventData := event.Data()
 			// If the event data is "[DONE]", then we're done.
-			if eventData == "[DONE]" {
+			if eventData == "[DONE]" || event.Event() == "done" {
 				err = sender.SendJSON([]byte(`{"choices": [{"delta": {"done": true}}]}`))
 				if err != nil {
 					err = fmt.Errorf("proxy: stream: error sending done: %w", err)
