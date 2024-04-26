@@ -35,15 +35,17 @@ func newMockOpenAIStreamServer(t *testing.T, statusCode int, finish chan (struct
 		w.Header().Set("Content-Type", "text/event-stream")
 		for i := 0; i < 10; i++ {
 			// Actual body isn't really important here.
-			body := fmt.Sprintf(`data: {"choices": [{"text": "%d"}]}\n`, i)
-			_, err := w.Write([]byte(body))
+			data := fmt.Sprintf(`{"id":"%d","object":"completion","created":1598069254,"model":"gpt-3.5-turbo","choices":[{"text":"response%d"}]}`, i, i)
+			dataBytes := []byte("data: " + data + "\n\n")
+			_, err := w.Write([]byte(dataBytes))
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 			w.(http.Flusher).Flush()
 		}
 
-		_, _ = w.Write([]byte(`data: [DONE]`))
+		_, _ = w.Write([]byte(`event: done\n`))
+		_, _ = w.Write([]byte(`data: [DONE]\n\n`))
 		w.(http.Flusher).Flush()
 	})
 	server.server = httptest.NewServer(handler)
@@ -64,7 +66,8 @@ func TestRunStream(t *testing.T) {
 		"model": "gpt-3.5-turbo",
 		"messages": []
 	}`)
-	for _, tc := range []struct {
+
+	testCases := []struct {
 		name       string
 		settings   Settings
 		statusCode int
@@ -90,7 +93,17 @@ func TestRunStream(t *testing.T) {
 			expErr:          "401",
 			expMessageCount: 0,
 		},
-	} {
+		{
+			name:       "happy path",
+			settings:   Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
+			statusCode: http.StatusOK,
+
+			expErr:          "",
+			expMessageCount: 11, // 10 messages + 1 done
+		},
+	}
+
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			finish := make(chan struct{})
@@ -142,8 +155,8 @@ func TestRunStream(t *testing.T) {
 				t.Fatalf("RunStream error: %s", err)
 			}
 
+			n := len(r.messages)
 			if tc.expErr != "" {
-				n := len(r.messages)
 				var got EventError
 				if err = json.Unmarshal(r.messages[n-1], &got); err != nil {
 					t.Fatalf("got non-JSON error message %s", r.messages[n-1])
@@ -154,7 +167,14 @@ func TestRunStream(t *testing.T) {
 				if tc.expMessageCount != n-1 {
 					t.Fatalf("expected %d non-error messages, got %d", tc.expMessageCount, n-1)
 				}
+				return
 			}
+
+			// expect the right number of messages
+			if tc.expMessageCount != n {
+				t.Fatalf("expected %d messages, got %d", tc.expMessageCount, n)
+			}
+
 		})
 	}
 }
