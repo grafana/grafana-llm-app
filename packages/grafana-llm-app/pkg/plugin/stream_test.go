@@ -36,11 +36,15 @@ func newMockOpenAIStreamServer(t *testing.T, statusCode int, finish chan (struct
 		streamMessages := []byte{}
 		for i := 0; i < 10; i++ {
 			// Actual body isn't really important here.
-			data := fmt.Sprintf(`{"id":"%d","object":"completion","created":1598069254,"model":"gpt-3.5-turbo","choices":[{"text":"response%d"}]}`, i, i)
+			data := fmt.Sprintf(`{"choices":[{"delta":{"content":"response%d"},"finish_reason":null,"index":0,"logprobs":null}],"id":"mock-chat-id","model":"gpt-4-turbo","object":"chat.completion.chunk","p":"p","system_fingerprint":"abc"}`, i)
 			dataBytes := []byte("data: " + data + "\n\n")
 			streamMessages = append(streamMessages, dataBytes...)
 		}
 
+		// final message has finish reason
+		streamMessages = append(streamMessages, []byte(`{"choices":[{"delta":{},"finish_reason":"stop","index":0,"logprobs":null}],"created":1714142715,"id":"mock-chat-id","model":"gpt-4-turbo","object":"chat.completion.chunk","p":"ppppppppppp","system_fingerprint":"abc"}}}`)...)
+
+		// done messages
 		streamMessages = append(streamMessages, []byte("event: done\n")...)
 		streamMessages = append(streamMessages, []byte("data: [DONE]\n\n")...)
 		_, err := w.Write(streamMessages)
@@ -100,7 +104,7 @@ func TestRunStream(t *testing.T) {
 			statusCode: http.StatusOK,
 
 			expErr:          "",
-			expMessageCount: 11, // 10 messages + 1 done
+			expMessageCount: 11, // 9 messages + 1 finish reason + 1 done
 		},
 	}
 
