@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.8.6
+
+- Fix panic with stream EOF (#308)
+
 ## 0.8.5
 
 - Added a `displayVectorStoreOptions` flag to optionally display the vector store configs
