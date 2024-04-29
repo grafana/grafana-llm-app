@@ -18,7 +18,7 @@ type mockStreamServer struct {
 	request *http.Request
 }
 
-func newMockOpenAIStreamServer(t *testing.T, statusCode int, finish chan (struct{})) *mockStreamServer {
+func newMockOpenAIStreamServer(t *testing.T, statusCode int, includeDone bool) *mockStreamServer {
 	server := &mockStreamServer{}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Logf("mock server got request: %s", r.URL.String())
@@ -45,8 +45,10 @@ func newMockOpenAIStreamServer(t *testing.T, statusCode int, finish chan (struct
 		streamMessages = append(streamMessages, []byte(`{"choices":[{"delta":{},"finish_reason":"stop","index":0,"logprobs":null}],"created":1714142715,"id":"mock-chat-id","model":"gpt-4-turbo","object":"chat.completion.chunk","p":"ppppppppppp","system_fingerprint":"abc"}}}`)...)
 
 		// done messages
-		streamMessages = append(streamMessages, []byte("event: done\n")...)
-		streamMessages = append(streamMessages, []byte("data: [DONE]\n\n")...)
+		if includeDone {
+			streamMessages = append(streamMessages, []byte("event: done\n")...)
+			streamMessages = append(streamMessages, []byte("data: [DONE]\n\n")...)
+		}
 		_, err := w.Write(streamMessages)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -73,9 +75,10 @@ func TestRunStream(t *testing.T) {
 	}`)
 
 	testCases := []struct {
-		name       string
-		settings   Settings
-		statusCode int
+		name        string
+		settings    Settings
+		statusCode  int
+		includeDone bool
 
 		expErr          string
 		expMessageCount int
@@ -99,7 +102,16 @@ func TestRunStream(t *testing.T) {
 			expMessageCount: 0,
 		},
 		{
-			name:       "happy path",
+			name:        "happy path",
+			settings:    Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
+			statusCode:  http.StatusOK,
+			includeDone: true,
+
+			expErr:          "",
+			expMessageCount: 11, // 9 messages + 1 finish reason + 1 done
+		},
+		{
+			name:       "happy path without EOF",
 			settings:   Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
 			statusCode: http.StatusOK,
 
@@ -111,9 +123,8 @@ func TestRunStream(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			finish := make(chan struct{})
 			// Start up a mock server that just captures the request and sends a 200 OK response.
-			server := newMockOpenAIStreamServer(t, tc.statusCode, finish)
+			server := newMockOpenAIStreamServer(t, tc.statusCode, tc.includeDone)
 
 			// Initialize app (need to set OpenAISettings:URL in here)
 			settings := tc.settings
