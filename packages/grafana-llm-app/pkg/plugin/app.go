@@ -31,6 +31,7 @@ type App struct {
 
 	vectorService vector.Service
 
+	llmProvider       LLMProvider
 	healthCheckClient healthCheckClient
 	healthCheckMutex  sync.Mutex
 	healthOpenAI      *openAIHealthDetails
@@ -53,11 +54,20 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		return nil, err
 	}
 
+	switch app.settings.OpenAI.Provider {
+	case openAIProviderOpenAI:
+		app.llmProvider = NewOpenAIProvider(app.settings.OpenAI)
+	case openAIProviderAzure:
+		app.llmProvider = NewAzureProvider(app.settings.OpenAI)
+	case openAIProviderGrafana:
+		app.llmProvider = NewGrafanaProvider(*app.settings)
+	}
+
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
 	// to use a *http.ServeMux for resource calls, so we can map multiple routes
 	// to CallResource without having to implement extra logic.
 	mux := http.NewServeMux()
-	app.registerRoutes(mux, *app.settings)
+	app.registerRoutes(mux)
 	app.CallResourceHandler = httpadapter.New(mux)
 
 	// Getting the service account token that has been shared with the plugin
