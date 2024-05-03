@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.8.7
+## 0.9.0
 
 - Initial backend support for abstracted models (#315) 
 
