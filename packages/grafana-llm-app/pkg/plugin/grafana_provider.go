@@ -30,8 +30,9 @@ func NewGrafanaProvider(settings Settings) LLMProvider {
 func (p *grafanaProvider) Models(ctx context.Context) (ModelResponse, error) {
 	return ModelResponse{
 		Data: []ModelInfo{
-			{ID: ModelDefault},
-			{ID: ModelHighAccuracy},
+			{ID: ModelSmall},
+			{ID: ModelMedium},
+			{ID: ModelLarge},
 		},
 	}, nil
 }

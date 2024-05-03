@@ -28,8 +28,9 @@ func NewOpenAIProvider(settings OpenAISettings) LLMProvider {
 func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
 	return ModelResponse{
 		Data: []ModelInfo{
-			{ID: ModelDefault},
-			{ID: ModelHighAccuracy},
+			{ID: ModelSmall},
+			{ID: ModelMedium},
+			{ID: ModelLarge},
 		},
 	}, nil
 }

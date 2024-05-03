@@ -12,19 +12,39 @@ var errBadRequest = errors.New("bad request")
 type Model string
 
 const (
-	ModelDefault      = "default"
-	ModelHighAccuracy = "high-accuracy"
+	ModelSmall  = "small"
+	ModelMedium = "medium"
+	ModelLarge  = "large"
 )
+
+var GPT4LargeModels = []string{
+	"gpt-4",
+	"gpt-4-0613",
+	"gpt-4-32k",
+	"gpt-4-32k-0613",
+}
+
+func contains[T comparable](s []T, e T) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
 
 // UnmarshalJSON accepts either OpenAI named models for backwards
 // compatability, or the new abstract model names.
 func ModelFromString(m string) (Model, error) {
 	switch {
-	case strings.HasPrefix(m, "gpt-3.5") || m == ModelDefault:
-		return ModelDefault, nil
-	case strings.HasPrefix(m, "gpt-4") || m == ModelHighAccuracy:
-		return ModelHighAccuracy, nil
+	case m == ModelLarge || contains(GPT4LargeModels, m):
+		return ModelLarge, nil
+	case m == ModelMedium || strings.HasPrefix(m, "gpt-4"):
+		return ModelMedium, nil
+	case m == ModelSmall || strings.HasPrefix(m, "gpt-3.5"):
+		return ModelSmall, nil
 	}
+	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
 	return "", fmt.Errorf("unrecognized model: %s", m)
 }
 
@@ -33,21 +53,28 @@ func ModelFromString(m string) (Model, error) {
 func (m *Model) UnmarshalJSON(data []byte) error {
 	dataString := string(data)
 	switch {
-	case dataString == fmt.Sprintf(`"%s"`, ModelDefault) || strings.HasPrefix(dataString, `"gpt-3.5`):
-		*m = ModelDefault
+	case dataString == fmt.Sprintf(`"%s"`, ModelLarge) || contains(GPT4LargeModels, dataString[1:len(dataString)-1]):
+		*m = ModelLarge
 		return nil
-	case dataString == fmt.Sprintf(`"%s"`, ModelHighAccuracy) || strings.HasPrefix(dataString, `"gpt-4`):
-		*m = ModelHighAccuracy
+	case dataString == fmt.Sprintf(`"%s"`, ModelMedium) || strings.HasPrefix(dataString, `"gpt-4`):
+		*m = ModelMedium
+		return nil
+	case dataString == fmt.Sprintf(`"%s"`, ModelSmall) || strings.HasPrefix(dataString, `"gpt-3.5`):
+		*m = ModelSmall
 		return nil
 	}
+	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
 	return fmt.Errorf("unrecognized model: %s", dataString)
 }
 
 func (m Model) toOpenAI() string {
+	// TODO: Add ability to change which model is used for each abstraction in settings.
 	switch m {
-	case ModelDefault:
+	case ModelSmall:
 		return "gpt-3.5-turbo"
-	case ModelHighAccuracy:
+	case ModelMedium:
+		return "gpt-4-turbo"
+	case ModelLarge:
 		return "gpt-4"
 	}
 	panic("unknown model: " + m)
