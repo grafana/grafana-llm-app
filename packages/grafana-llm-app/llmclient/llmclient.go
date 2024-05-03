@@ -19,6 +19,23 @@ const (
 	appResourcesPrefix = appPrefix + "/resources"
 )
 
+// Model is an abstraction over the different models available in different providers
+type Model string
+
+const (
+	// ModelSmall is the small model, which is the fastest and cheapest to use. OpenAI default: gpt-3.5-turbo
+	ModelSmall = "small"
+	// ModelMedium is the medium model, which is a good balance between speed and cost. OpenAI default: gpt-4-turbo
+	ModelMedium = "medium"
+	// ModelLarge is the large model, which is the most powerful and accurate. OpenAI default: gpt-4
+	ModelLarge = "large"
+)
+
+type ChatCompletionRequest struct {
+	openai.ChatCompletionRequest
+	Model Model `json:"model"`
+}
+
 // OpenAI is an interface for talking to OpenAI via the Grafana LLM app.
 // Requests made using this interface will be routed to the OpenAI backend
 // configured in the Grafana LLM app's settings, with authentication handled
@@ -28,9 +45,9 @@ type OpenAI interface {
 	// with OpenAI.
 	Enabled(ctx context.Context) (bool, error)
 	// ChatCompletions makes a request to the OpenAI Chat Completion API.
-	ChatCompletions(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error)
+	ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error)
 	// ChatCompletionsStream makes a streaming request to the OpenAI Chat Completion API.
-	ChatCompletionsStream(ctx context.Context, req openai.ChatCompletionRequest) (*openai.ChatCompletionStream, error)
+	ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error)
 }
 
 type openAI struct {
@@ -70,10 +87,10 @@ type openAIModelHealth struct {
 }
 
 type openAIHealthDetails struct {
-	Configured bool                         `json:"configured"`
-	OK         bool                         `json:"ok"`
-	Error      string                       `json:"error,omitempty"`
-	Models     map[string]openAIModelHealth `json:"models"`
+	Configured bool                        `json:"configured"`
+	OK         bool                        `json:"ok"`
+	Error      string                      `json:"error,omitempty"`
+	Models     map[Model]openAIModelHealth `json:"models"`
 }
 
 type vectorHealthDetails struct {
@@ -132,10 +149,14 @@ func (o *openAI) Enabled(ctx context.Context) (bool, error) {
 	return response.Details.OpenAI.OK, err
 }
 
-func (o *openAI) ChatCompletions(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
-	return o.client.CreateChatCompletion(ctx, req)
+func (o *openAI) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
+	r := req.ChatCompletionRequest
+	r.Model = string(req.Model)
+	return o.client.CreateChatCompletion(ctx, r)
 }
 
-func (o *openAI) ChatCompletionsStream(ctx context.Context, req openai.ChatCompletionRequest) (*openai.ChatCompletionStream, error) {
-	return o.client.CreateChatCompletionStream(ctx, req)
+func (o *openAI) ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error) {
+	r := req.ChatCompletionRequest
+	r.Model = string(req.Model)
+	return o.client.CreateChatCompletionStream(ctx, r)
 }
