@@ -46,10 +46,16 @@ func (p *openAI) ChatCompletions(ctx context.Context, req ChatCompletionRequest)
 		return ChatCompletionsResponse{}, err
 	}
 	u.Path, err = url.JoinPath(u.Path, "v1/chat/completions")
+	if err != nil {
+		return ChatCompletionsResponse{}, err
+	}
 	reqBody, err := json.Marshal(openAIChatCompletionRequest{
 		ChatCompletionRequest: req,
 		Model:                 req.Model.toOpenAI(),
 	})
+	if err != nil {
+		return ChatCompletionsResponse{}, err
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return ChatCompletionsResponse{}, err

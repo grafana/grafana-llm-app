@@ -62,7 +62,13 @@ func (p *azure) ChatCompletions(ctx context.Context, req ChatCompletionRequest) 
 		ChatCompletionRequest: req,
 		Model:                 req.Model.toOpenAI(),
 	})
+	if err != nil {
+		return ChatCompletionsResponse{}, err
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
+	if err != nil {
+		return ChatCompletionsResponse{}, err
+	}
 	httpReq.Header.Set("api-key", p.settings.apiKey)
 	return doOpenAIRequest(p.c, httpReq)
 }

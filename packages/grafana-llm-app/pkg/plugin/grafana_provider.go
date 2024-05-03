@@ -43,10 +43,16 @@ func (p *grafanaProvider) ChatCompletions(ctx context.Context, req ChatCompletio
 	}
 	// We keep the openai prefix when using llm-gateway.
 	u.Path, err = url.JoinPath(u.Path, "openai/v1/chat/completions")
+	if err != nil {
+		return ChatCompletionsResponse{}, err
+	}
 	reqBody, err := json.Marshal(openAIChatCompletionRequest{
 		ChatCompletionRequest: req,
 		Model:                 req.Model.toOpenAI(),
 	})
+	if err != nil {
+		return ChatCompletionsResponse{}, err
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return ChatCompletionsResponse{}, err
