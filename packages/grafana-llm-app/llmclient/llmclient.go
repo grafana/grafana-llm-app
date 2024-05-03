@@ -31,6 +31,7 @@ const (
 	ModelLarge = "large"
 )
 
+// ChatCompletionRequest is a request for chat completions using an abstract model.
 type ChatCompletionRequest struct {
 	openai.ChatCompletionRequest
 	Model Model `json:"model"`
