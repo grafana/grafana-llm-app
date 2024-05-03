@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.9.0
+
+- Initial backend support for abstracted models (#315) 
+
 ## 0.8.6
 
 - Fix panic with stream EOF (#308)
