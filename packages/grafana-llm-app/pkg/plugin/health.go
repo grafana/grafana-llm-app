@@ -11,7 +11,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 )
 
-var openAIModels = []string{"gpt-3.5-turbo", "gpt-4"}
+var openAIModels = []Model{ModelSmall, ModelMedium}
 
 type healthCheckClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -23,10 +23,10 @@ type openAIModelHealth struct {
 }
 
 type openAIHealthDetails struct {
-	Configured bool                         `json:"configured"`
-	OK         bool                         `json:"ok"`
-	Error      string                       `json:"error,omitempty"`
-	Models     map[string]openAIModelHealth `json:"models"`
+	Configured bool                        `json:"configured"`
+	OK         bool                        `json:"ok"`
+	Error      string                      `json:"error,omitempty"`
+	Models     map[Model]openAIModelHealth `json:"models"`
 }
 
 type vectorHealthDetails struct {
@@ -49,9 +49,9 @@ func getVersion() string {
 	return buildInfo.Version
 }
 
-func (a *App) testOpenAIModel(ctx context.Context, model string) error {
+func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
 	body := map[string]interface{}{
-		"model": model,
+		"model": model.toOpenAI(),
 		"messages": []map[string]interface{}{
 			{
 				"role":    "user",
@@ -89,7 +89,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 	d := openAIHealthDetails{
 		OK:         true,
 		Configured: ((a.settings.OpenAI.Provider == openAIProviderAzure || a.settings.OpenAI.Provider == openAIProviderOpenAI) && a.settings.OpenAI.apiKey != "") || a.settings.OpenAI.Provider == openAIProviderGrafana,
-		Models:     map[string]openAIModelHealth{},
+		Models:     map[Model]openAIModelHealth{},
 	}
 
 	for _, model := range openAIModels {
