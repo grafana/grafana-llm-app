@@ -37,7 +37,7 @@ const BasicChatTest = () => {
     if (!useStream) {
       // Make a single request to the LLM.
       const response = await openai.chatCompletions({
-        model: 'gpt-3.5-turbo',
+        model: 'small',
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
