@@ -27,7 +27,7 @@ func TestModelFromString(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			input:    "high_accuracy",
+			input:    "high-accuracy",
 			expected: ModelHighAccuracy,
 			wantErr:  false,
 		},

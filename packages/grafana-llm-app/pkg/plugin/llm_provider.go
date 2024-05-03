@@ -13,7 +13,7 @@ type Model string
 
 const (
 	ModelDefault      = "default"
-	ModelHighAccuracy = "high_accuracy"
+	ModelHighAccuracy = "high-accuracy"
 )
 
 // UnmarshalJSON accepts either OpenAI named models for backwards
