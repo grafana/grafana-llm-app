@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 var errBadRequest = errors.New("bad request")
@@ -18,10 +19,10 @@ const (
 // UnmarshalJSON accepts either OpenAI named models for backwards
 // compatability, or the new abstract model names.
 func ModelFromString(m string) (Model, error) {
-	switch m {
-	case "gpt-3.5-turbo", ModelDefault:
+	switch {
+	case strings.HasPrefix(m, "gpt-3.5") || m == ModelDefault:
 		return ModelDefault, nil
-	case "gpt-4", ModelHighAccuracy:
+	case strings.HasPrefix(m, "gpt-4") || m == ModelHighAccuracy:
 		return ModelHighAccuracy, nil
 	}
 	return "", fmt.Errorf("unrecognized model: %s", m)
@@ -30,15 +31,16 @@ func ModelFromString(m string) (Model, error) {
 // UnmarshalJSON accepts either OpenAI named models for backwards
 // compatability, or the new abstract model names.
 func (m *Model) UnmarshalJSON(data []byte) error {
-	switch string(data) {
-	case `"gpt-3.5-turbo"`, fmt.Sprintf(`"%s"`, ModelDefault):
+	dataString := string(data)
+	switch {
+	case dataString == fmt.Sprintf(`"%s"`, ModelDefault) || strings.HasPrefix(dataString, `"gpt-3.5`):
 		*m = ModelDefault
 		return nil
-	case `"gpt-4"`, fmt.Sprintf(`"%s"`, ModelHighAccuracy):
+	case dataString == fmt.Sprintf(`"%s"`, ModelHighAccuracy) || strings.HasPrefix(dataString, `"gpt-4`):
 		*m = ModelHighAccuracy
 		return nil
 	}
-	return fmt.Errorf("unrecognized model: %s", string(data))
+	return fmt.Errorf("unrecognized model: %s", dataString)
 }
 
 func (m Model) toOpenAI() string {
