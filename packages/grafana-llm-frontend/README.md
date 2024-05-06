@@ -40,7 +40,7 @@ const MyComponent = (): JSX.Element => {
     // Stream the completions. Each element is the next stream chunk.
     const stream = llms.openai
       .streamChatCompletions({
-        model: 'gpt-3.5-turbo',
+        model: llms.openai.Model.SMALL,
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
