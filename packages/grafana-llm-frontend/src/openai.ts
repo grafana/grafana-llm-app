@@ -28,6 +28,16 @@ const OPENAI_CHAT_COMPLETIONS_PATH = 'openai/v1/chat/completions';
 
 /** The role of a message's author. */
 export type Role = 'system' | 'user' | 'assistant' | 'function';
+export enum Model {
+  Small = 'small',
+  Medium = 'medium',
+  Large = 'large',
+}
+
+/**
+ * @deprecated Use {@link Model} instead.
+ */
+type DeprecatedString = string;
 
 /** A message in a conversation. */
 export interface Message {
@@ -74,11 +84,9 @@ export interface Function {
 
 export interface ChatCompletionsRequest {
   /**
-   * ID of the model to use.
-   *
-   * See the model endpoint compatibility table for details on which models work with the Chat Completions API.
+   * Model abstraction to use. These abstractions are then translated back into specific models based on the users settings.
    */
-  model: string;
+  model: Model | DeprecatedString;
   /** A list of messages comprising the conversation so far. */
   messages: Message[];
   /** A list of functions the model may generate JSON inputs for. */
