@@ -1,5 +1,6 @@
 import React, { ChangeEvent } from 'react';
 
+import { openai } from '@grafana/llm';
 import { Field, FieldSet, Input, SecretInput, Select, useStyles2 } from '@grafana/ui';
 
 import { SelectableValue } from '@grafana/data';
@@ -110,7 +111,7 @@ export function OpenAIConfig({
         >
           <AzureModelDeploymentConfig
             modelMapping={settings.azureModelMapping ?? []}
-            modelNames={['gpt-3.5-turbo', 'gpt-4']}
+            modelNames={Object.values(openai.Model)}
             onChange={(azureModelMapping) =>
               onChange({
                 ...settings,

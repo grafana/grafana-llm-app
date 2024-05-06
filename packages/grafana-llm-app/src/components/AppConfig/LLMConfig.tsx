@@ -224,7 +224,7 @@ export function LLMConfig({
         </Card>
       </FieldSet>
       {llmOption === 'openai' && (
-        <FieldSet label="Chat Model Settings" className={s.sidePadding}>
+        <FieldSet label="Models" className={s.sidePadding}>
           <ModelConfig
             settings={settings.models ?? { models: [] }}
             onChange={(models) => onChange({ ...settings, models })}

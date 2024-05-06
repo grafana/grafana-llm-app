@@ -96,7 +96,7 @@ type Settings struct {
 	// VectorDB settings. May rely on OpenAI settings.
 	Vector vector.VectorSettings `json:"vector"`
 
-	// Models contains the user-specified chat models.
+	// Models contains the user-specified models.
 	Models *ModelSettings `json:"models"`
 
 	// LLMGateway provides Grafana-managed OpenAI.
