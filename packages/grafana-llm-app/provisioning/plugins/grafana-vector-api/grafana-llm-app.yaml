@@ -5,6 +5,7 @@ apps:
     jsonData:
       base64EncodedAccessTokenSet: True
       # enableGrafanaManagedLLM: True
+      # displayVectorStoreOptions: False
       openAI:
         provider: openai
         url: https://api.openai.com

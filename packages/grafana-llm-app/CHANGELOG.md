@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.9.0
+
+- Initial backend support for abstracted models (#315) 
+
+## 0.8.6
+
+- Fix panic with stream EOF (#308)
+
+## 0.8.5
+
+- Added a `displayVectorStoreOptions` flag to optionally display the vector store configs
+
 ## 0.8.1
 
 - Add mitigation for side channel attacks

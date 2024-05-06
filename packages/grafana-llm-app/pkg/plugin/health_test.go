@@ -58,7 +58,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
 					Error:  "No functioning models are available",
-					Models: map[string]openAIModelHealth{},
+					Models: map[Model]openAIModelHealth{},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -88,9 +88,9 @@ func TestCheckHealth(t *testing.T) {
 				OpenAI: openAIHealthDetails{
 					Configured: true,
 					OK:         true,
-					Models: map[string]openAIModelHealth{
-						"gpt-3.5-turbo": {OK: true, Error: ""},
-						"gpt-4":         {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
+					Models: map[Model]openAIModelHealth{
+						ModelSmall:  {OK: true, Error: ""},
+						ModelMedium: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
 					},
 				},
 				Vector:  vectorHealthDetails{},
@@ -123,7 +123,7 @@ func TestCheckHealth(t *testing.T) {
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
 					Error:  "No functioning models are available",
-					Models: map[string]openAIModelHealth{},
+					Models: map[Model]openAIModelHealth{},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -170,9 +170,9 @@ func TestCheckHealth(t *testing.T) {
 					Configured: true,
 					OK:         true,
 					Error:      "",
-					Models: map[string]openAIModelHealth{
-						"gpt-3.5-turbo": {OK: true, Error: ""},
-						"gpt-4":         {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
+					Models: map[Model]openAIModelHealth{
+						ModelSmall:  {OK: true, Error: ""},
+						ModelMedium: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
 					},
 				},
 				Vector: vectorHealthDetails{

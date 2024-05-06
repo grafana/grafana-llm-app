@@ -171,6 +171,7 @@ func newMockOpenAIServer(t *testing.T) *mockServer {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.request = r
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
 	})
 	server.server = httptest.NewServer(handler)
 	return server
@@ -211,14 +212,14 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
-			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization":       {"Bearer abcd1234"},
 				"OpenAI-Organization": {"myOrg"},
 			},
 			expReqPath: "/v1/chat/completions",
-			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expStatus: http.StatusOK,
 		},
@@ -239,14 +240,14 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
-			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"api-key": {"abcd1234"},
 			},
 			expReqPath: "/openai/deployments/gpt-35-turbo/chat/completions",
 			// the 'model' field should have been removed.
-			expReqBody: []byte(`{"messages":["some stuff"]}`),
+			expReqBody: []byte(`{"messages":[{"content":"some stuff"}]}`),
 
 			expStatus: http.StatusOK,
 		},
@@ -267,7 +268,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
 			// note no gpt-4 in AzureMapping.
-			body: []byte(`{"model": "gpt-4", "messages": ["some stuff"]}`),
+			body: []byte(`{"model": "gpt-4", "messages": [{"content":"some stuff"}]}`),
 
 			expNilRequest: true,
 
@@ -287,14 +288,14 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
-			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/llm/openai/v1/chat/completions",
-			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expStatus: http.StatusOK,
 		},
@@ -312,14 +313,14 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
-			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/llm/openai/v1/chat/completions",
-			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": ["some stuff"]}`),
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"]}}`),
 
 			expStatus: http.StatusOK,
 		},
