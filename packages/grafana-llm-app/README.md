@@ -73,7 +73,9 @@ apps:
         provider: azure
         url: https://<resource>.openai.azure.com
         azureModelMapping:
-          - ["gpt-3.5-turbo", "gpt-35-turbo"]
+          - ["small", "gpt-35-turbo"]
+          - ["medium", "gpt-4-turbo"]
+          - ["large", "gpt-4"]
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
 ```
