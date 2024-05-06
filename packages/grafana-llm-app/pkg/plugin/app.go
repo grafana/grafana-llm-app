@@ -71,7 +71,11 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	app.CallResourceHandler = httpadapter.New(mux)
 
 	// Getting the service account token that has been shared with the plugin
-	app.saToken = os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+	cfg := backend.GrafanaConfigFromContext(ctx)
+	app.saToken, err = cfg.PluginAppClientSecret()
+	if err != nil {
+		log.DefaultLogger.Warn("Unable to get service account token", "err", err)
+	}
 
 	// The Grafana URL is required to request Grafana API later
 	app.grafanaAppURL = strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
