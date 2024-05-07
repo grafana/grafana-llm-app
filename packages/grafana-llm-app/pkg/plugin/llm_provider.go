@@ -116,11 +116,16 @@ type ChatCompletionStreamResponse struct {
 	// Random padding used to mitigate side channel attacks.
 	// See https://blog.cloudflare.com/ai-side-channel-attack-mitigated.
 	Padding string `json:"p"`
+	// Error indicates that an error occurred mid-stream.
+	Error error `json:"-"`
 }
 
 func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
+	// Define a wrapper type to avoid infinite recursion when calling MarshalJSON below.
 	r.Padding = strings.Repeat("p", rand.Int()%35)
-	return json.Marshal(r)
+	type Wrapper ChatCompletionStreamResponse
+	a := (Wrapper)(r)
+	return json.Marshal(a)
 }
 
 type Choice struct {
