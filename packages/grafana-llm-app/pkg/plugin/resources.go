@@ -16,6 +16,7 @@ import (
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/sashabaranov/go-openai"
 )
 
 func handleError(w http.ResponseWriter, err error, status int) {
@@ -491,24 +492,44 @@ func (a *App) handleChatCompletionsStream(
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.WriteHeader(http.StatusOK)
 	log.DefaultLogger.Info("about to loop over stream channel")
+	var writeErr error
 	for resp := range c {
+		// Clear the queue without doing anything in the event of a failed write or error.
+		if writeErr != nil {
+			continue
+		}
 		chunk, err := json.Marshal(resp)
 		if err != nil {
-			// TODO send a proper OpenAI compatible error chunk
-			w.Write([]byte(`invalid JSON`))
-			return
+			errResp := openai.ErrorResponse{
+				Error: &openai.APIError{
+					// Invalid JSON is either something we have wrong in the client
+					// or an OpenAI error, either way not the user's fault.
+					Code:           http.StatusInternalServerError,
+					Message:        "Invalid JSON received from OpenAI",
+					HTTPStatusCode: http.StatusInternalServerError,
+				},
+			}
+			resp, marshalErr := json.Marshal(errResp)
+			if marshalErr != nil {
+				// If we can't marshal error messages we can't write anything valid either.
+				writeErr = marshalErr
+				continue
+			}
+			_, writeErr = w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(resp))))
+			continue
 		}
 
 		log.DefaultLogger.Info("got a chunk")
 
-		// Write the data as a SSE.
+		// Write the data as a SSE. If writing fails we finish reading the
+		// channel to avoid a memory leak and handle the error outside of the
+		// loop.
 		data := "data: " + string(chunk) + "\n\n"
-		_, err = w.Write([]byte(data))
-		if err != nil {
-			// TODO send a proper OpenAI compatible error chunk
-			w.Write([]byte(`invalid JSON`))
-			return
-		}
+		_, writeErr = w.Write([]byte(data))
+	}
+	if writeErr != nil {
+		log.DefaultLogger.Warn("failed to write stream", "err", writeErr)
+		return
 	}
 	// Channel has closed, send a DONE SSE.
 	w.Write([]byte("data: [DONE]\n\n"))
