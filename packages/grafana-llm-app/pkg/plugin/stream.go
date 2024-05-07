@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/launchdarkly/eventsource"
 )
 
 const openAIChatCompletionsPath = "openai/v1/chat/completions"
@@ -27,91 +25,33 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 }
 
 func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-
-	requestBody := map[string]interface{}{}
+	requestBody := ChatCompletionRequest{}
 	var err error
 	err = json.Unmarshal(req.Data, &requestBody)
 	if err != nil {
 		return fmt.Errorf("Unable to unmarshal request body: %w", err)
 	}
 
-	// set stream to true
-	requestBody["stream"] = true
+	// Always set stream to true for streaming requests.
+	requestBody.Stream = true
 
-	httpReq, err := a.newOpenAIChatCompletionsRequest(ctx, requestBody)
+	// Delegate to configured provider for chat completions stream.
+	c, err := a.llmProvider.StreamChatCompletions(ctx, requestBody)
 	if err != nil {
-		return fmt.Errorf("proxy: stream: error creating request: %w", err)
+		return fmt.Errorf("establish chat completions stream: %w", err)
 	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Subscribe to the stream, handling errors by immediately sending an 'error' message over the
-	// stream sender, then closing the underlying stream.
-	// This is the only way we can handle errors from the initial connection; see the docs for
-	// eventsource.StreamOptionErrorHandler for more details.
-	eventStream, err := eventsource.SubscribeWithRequestAndOptions(httpReq, eventsource.StreamOptionErrorHandler(func(err error) eventsource.StreamErrorHandlerResult {
-		payload := EventError{Error: err.Error()}
-		sendError(payload, sender)
-		return eventsource.StreamErrorHandlerResult{CloseNow: true}
-	}))
-	if err != nil {
-		return fmt.Errorf("proxy: stream: eventsource.SubscribeWithRequest: %s: %w", httpReq.URL, err)
-	}
-	log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: stream opened: %s", req.Path))
-	defer func() {
-		log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: stream closed: %s", req.Path))
-		eventStream.Close()
-	}()
-
-	// Stream response back to frontend.
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case event := <-eventStream.Events:
-			var body map[string]interface{}
-			if event == nil {
-				// make sure we have an event, otherwise, event.Data() will panic
-				log.DefaultLogger.Warn(fmt.Sprintf("proxy: stream: event is nil, ending (in sad branch): %s", req.Path))
-				return nil
-			}
-			eventData := event.Data()
-			// If the event data is "[DONE]", then we're done.
-			if eventData == "[DONE]" || event.Event() == "done" {
-				err = sender.SendJSON([]byte(`{"choices": [{"delta": {"done": true}}]}`))
-				if err != nil {
-					err = fmt.Errorf("proxy: stream: error sending done: %w", err)
-					log.DefaultLogger.Error(err.Error())
-					return err
-				}
-				log.DefaultLogger.Debug(fmt.Sprintf("proxy: stream: done==true, ending (in happy branch): %s", req.Path))
-				return nil
-			}
-			// Make sure we can unmarshal the data.
-			err = json.Unmarshal([]byte(eventData), &body)
-			if err != nil {
-				err = fmt.Errorf("proxy: stream: error unmarshalling event data %s: %w", eventData, err)
-				log.DefaultLogger.Error(err.Error())
-				return err
-			}
-			// Pad the response with up to 35 characters to mitigate side
-			// channel attacks. See
-			// https://blog.cloudflare.com/ai-side-channel-attack-mitigated.
-			body["p"] = strings.Repeat("p", rand.Int()%35)
-			data, err := json.Marshal(body)
-			if err != nil {
-				err = fmt.Errorf("proxy: stream: error marshaling padded event data: %w", err)
-				log.DefaultLogger.Error(err.Error())
-				return err
-			}
-			err = sender.SendJSON(data)
-			if err != nil {
-				err = fmt.Errorf("proxy: stream: error sending event data: %w", err)
-				log.DefaultLogger.Error(err.Error())
-				return err
-			}
+	// Send all messages to the sender.
+	for resp := range c {
+		data, err := json.Marshal(resp)
+		if err != nil {
+			return fmt.Errorf("marshal chat completions stream response: %w", err)
+		}
+		err = sender.SendJSON(data)
+		if err != nil {
+			return fmt.Errorf("send stream data: %w", err)
 		}
 	}
+	return nil
 }
 
 func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
