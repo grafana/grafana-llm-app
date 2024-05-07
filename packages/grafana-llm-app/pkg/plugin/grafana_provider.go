@@ -62,3 +62,8 @@ func (p *grafanaProvider) ChatCompletions(ctx context.Context, req ChatCompletio
 	httpReq.Header.Add("X-Scope-OrgID", p.tenant)
 	return doOpenAIRequest(p.c, httpReq)
 }
+
+func (p *grafanaProvider) StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	// TODO: implement
+	return nil, nil
+}

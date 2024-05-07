@@ -87,3 +87,8 @@ func (p *azure) getAzureMapping() (map[Model]string, error) {
 	}
 	return result, nil
 }
+
+func (p *azure) StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	// TODO: implement
+	return nil, nil
+}

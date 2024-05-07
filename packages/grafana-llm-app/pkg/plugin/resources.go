@@ -476,6 +476,43 @@ func (a *App) handleModels(llmProvider LLMProvider) http.HandlerFunc {
 	}
 }
 
+func (a *App) handleChatCompletionsStream(
+	ctx context.Context,
+	llmProvider LLMProvider,
+	req ChatCompletionRequest,
+	w http.ResponseWriter,
+) {
+	log.DefaultLogger.Info("handling stream request")
+	c, err := llmProvider.StreamChatCompletions(ctx, req)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.WriteHeader(http.StatusOK)
+	for resp := range c {
+		chunk, err := json.Marshal(resp)
+		if err != nil {
+			// TODO send a proper OpenAI compatible error chunk
+			w.Write([]byte(`invalid JSON`))
+			return
+		}
+
+		// Write the data as a SSE.
+		data := "data: " + string(chunk) + "\n\n"
+		_, err = w.Write([]byte(data))
+		if err != nil {
+			// TODO send a proper OpenAI compatible error chunk
+			w.Write([]byte(`invalid JSON`))
+			return
+		}
+	}
+	// Channel has closed, send a DONE SSE.
+	w.Write([]byte("data: [DONE]\n\n"))
+	log.DefaultLogger.Info("handled stream request")
+
+}
+
 func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if llmProvider == nil {
@@ -495,6 +532,11 @@ func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
 		err = json.Unmarshal(reqBody, &req)
 		if err != nil {
 			handleError(w, fmt.Errorf("could not decode request: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		if req.Stream {
+			a.handleChatCompletionsStream(r.Context(), llmProvider, req, w)
 			return
 		}
 

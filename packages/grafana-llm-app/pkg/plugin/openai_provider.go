@@ -4,24 +4,35 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/sashabaranov/go-openai"
 )
 
 type openAI struct {
 	settings OpenAISettings
 	c        *http.Client
+	oc       *openai.Client
 }
 
 func NewOpenAIProvider(settings OpenAISettings) LLMProvider {
+	client := &http.Client{
+		Timeout: 2 * time.Minute,
+	}
+	cfg := openai.DefaultConfig(settings.apiKey)
+	cfg.BaseURL = settings.URL
+	cfg.HTTPClient = client
+	cfg.OrgID = settings.OrganizationID
 	return &openAI{
 		settings: settings,
-		c: &http.Client{
-			Timeout: 2 * time.Minute,
-		},
+		c:        client,
+		oc:       openai.NewClientWithConfig(cfg),
 	}
 }
 
@@ -88,4 +99,33 @@ func doOpenAIRequest(c *http.Client, req *http.Request) (ChatCompletionsResponse
 		return ChatCompletionsResponse{}, err
 	}
 	return completions, nil
+}
+
+func (p *openAI) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	r := req.ChatCompletionRequest
+	r.Model = req.Model.toOpenAI()
+	stream, err := p.oc.CreateChatCompletionStream(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	defer stream.Close()
+	c := make(chan ChatCompletionStreamResponse, 10)
+
+	// TODO: should we use a pool rather than spawning unbounded goroutines?
+	go func() {
+		defer close(c)
+		for {
+			resp, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				return
+			}
+			if err != nil {
+				log.DefaultLogger.Error("openai stream error: %w", err)
+				return
+			}
+
+			c <- ChatCompletionStreamResponse{ChatCompletionStreamResponse: resp}
+		}
+	}()
+	return c, nil
 }

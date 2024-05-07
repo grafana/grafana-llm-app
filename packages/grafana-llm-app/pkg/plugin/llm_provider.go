@@ -2,9 +2,13 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 var errBadRequest = errors.New("bad request")
@@ -94,11 +98,8 @@ type Message struct {
 }
 
 type ChatCompletionRequest struct {
-	Model       Model     `json:"model"`
-	Messages    []Message `json:"messages"`
-	Temperature *float64  `json:"temperature,omitempty"`
-	TopP        *float64  `json:"top_p,omitempty"`
-	MaxTokens   *int      `json:"max_tokens,omitempty"`
+	openai.ChatCompletionRequest
+	Model Model `json:"model"`
 }
 
 type ChatCompletionsResponse struct {
@@ -110,6 +111,18 @@ type ChatCompletionsResponse struct {
 	Usage   Usage    `json:"usage"`
 }
 
+type ChatCompletionStreamResponse struct {
+	openai.ChatCompletionStreamResponse
+	// Random padding used to mitigate side channel attacks.
+	// See https://blog.cloudflare.com/ai-side-channel-attack-mitigated.
+	Padding string `json:"p"`
+}
+
+func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
+	r.Padding = strings.Repeat("p", rand.Int()%35)
+	return json.Marshal(r)
+}
+
 type Choice struct {
 	Message Message `json:"message"`
 }
@@ -118,19 +131,6 @@ type Usage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
-}
-
-type StreamChatCompletionResponse struct {
-	ID      string                       `json:"id"`
-	Object  string                       `json:"object"`
-	Created int64                        `json:"created"`
-	Model   string                       `json:"model"`
-	Choices []ChatCompletionStreamChoice `json:"choices"`
-}
-
-type ChatCompletionStreamChoice struct {
-	Delta        ChoiceDelta `json:"delta"`
-	FinishReason *string     `json:"finish_reason"`
 }
 
 type ChoiceDelta struct {
@@ -147,10 +147,11 @@ type ModelInfo struct {
 }
 
 type LLMProvider interface {
-	// Models returns a list of models
+	// Models returns a list of models supported by the provider.
 	Models(context.Context) (ModelResponse, error)
+	// ChatCompletions provides text completion in a chat-like interface.
 	ChatCompletions(context.Context, ChatCompletionRequest) (ChatCompletionsResponse, error)
-	// TODO: Add StreamChatCompletions to this interface so we have one place
-	// to implement a new provider.
-	// StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan StreamChatCompletionResponse, error)
+	// StreamChatCompletions provides text completion in a chat-like interface with
+	// tokens being sent as they are ready.
+	StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error)
 }
