@@ -498,24 +498,13 @@ func (a *App) handleChatCompletionsStream(
 		if writeErr != nil {
 			continue
 		}
+		if resp.Error != nil {
+			writeErr = handleStreamError(w, resp.Error, http.StatusInternalServerError)
+			continue
+		}
 		chunk, err := json.Marshal(resp)
 		if err != nil {
-			errResp := openai.ErrorResponse{
-				Error: &openai.APIError{
-					// Invalid JSON is either something we have wrong in the client
-					// or an OpenAI error, either way not the user's fault.
-					Code:           http.StatusInternalServerError,
-					Message:        "Invalid JSON received from OpenAI",
-					HTTPStatusCode: http.StatusInternalServerError,
-				},
-			}
-			resp, marshalErr := json.Marshal(errResp)
-			if marshalErr != nil {
-				// If we can't marshal error messages we can't write anything valid either.
-				writeErr = marshalErr
-				continue
-			}
-			_, writeErr = w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(resp))))
+			writeErr = handleStreamError(w, errors.New("failed to marshal streaming response"), http.StatusInternalServerError)
 			continue
 		}
 
@@ -534,6 +523,32 @@ func (a *App) handleChatCompletionsStream(
 	// Channel has closed, send a DONE SSE.
 	w.Write([]byte("data: [DONE]\n\n"))
 	log.DefaultLogger.Info("handled stream request")
+}
+
+func handleStreamError(w http.ResponseWriter, err error, code int) error {
+	// See if the error we passed in is an openai error, if so pass that back
+	// to the user, otherwise fill in the information as best we can.
+	oaiErr := &openai.APIError{}
+	if !errors.As(err, &oaiErr) {
+		oaiErr = &openai.APIError{
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: code,
+		}
+	}
+
+	errResp := openai.ErrorResponse{
+		Error: oaiErr,
+	}
+	resp, err := json.Marshal(errResp)
+	if err != nil {
+		return fmt.Errorf("marshaling error response: %w", err)
+	}
+	_, err = w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(resp))))
+	if err != nil {
+		return fmt.Errorf("writing error response: %w", err)
+	}
+	return nil
 }
 
 func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
