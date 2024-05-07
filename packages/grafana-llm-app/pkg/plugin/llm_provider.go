@@ -49,15 +49,17 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("unrecognized model: %s", dataString)
 }
 
-func (m Model) toOpenAI() string {
-	// TODO: Add ability to change which model is used for each abstraction in settings.
-	switch m {
-	case ModelBase:
-		return "gpt-3.5-turbo"
-	case ModelLarge:
-		return "gpt-4-turbo"
+func (m Model) toOpenAI(modelSettings *ModelSettings) string {
+	if modelSettings == nil || len(modelSettings.Models) == 0 {
+		switch m {
+		case ModelBase:
+			return "gpt-3.5-turbo"
+		case ModelLarge:
+			return "gpt-4-turbo"
+		}
+		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}
-	panic("unknown model: " + m)
+	return modelSettings.getModel(m)
 }
 
 type ChatCompletionRequest struct {
