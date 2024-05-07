@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -30,22 +27,13 @@ func NewAzureProvider(settings OpenAISettings) (LLMProvider, error) {
 		c:        client,
 	}
 
-	// Try getting the Azure mapping once and fail if we can't.
-	_, err := p.getAzureMapping()
-	if err != nil {
-		return nil, err
-	}
-
 	// go-openai expects the URL without the '/openai' suffix, which is
 	// the same as us.
 	cfg := openai.DefaultAzureConfig(settings.apiKey, settings.URL)
 	cfg.HTTPClient = client
+	// We pass the deployment as the name of the model, so just return the untransformed string.
 	cfg.AzureModelMapperFunc = func(model string) string {
-		// We already checked the error when constructing the provider.
-		mapping, _ := p.getAzureMapping()
-		got := mapping[Model(model)]
-		log.DefaultLogger.Debug("mapping model", "from", model, "to", got)
-		return got
+		return model
 	}
 
 	p.oc = openai.NewClientWithConfig(cfg)
@@ -101,6 +89,22 @@ func (p *azure) ChatCompletions(ctx context.Context, req ChatCompletionRequest) 
 	return doOpenAIRequest(p.c, httpReq)
 }
 
+func (p *azure) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	mapping, err := p.getAzureMapping()
+	if err != nil {
+		return nil, err
+	}
+	deployment := mapping[req.Model]
+	if deployment == "" {
+		return nil, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
+	}
+
+	r := req.ChatCompletionRequest
+	// For the Azure mapping we want to use the name of the mapped deployment as the model.
+	r.Model = deployment
+	return streamOpenAIRequest(ctx, r, p.oc)
+}
+
 func (p *azure) getAzureMapping() (map[Model]string, error) {
 	result := make(map[Model]string, len(p.settings.AzureMapping))
 	for _, v := range p.settings.AzureMapping {
@@ -114,34 +118,4 @@ func (p *azure) getAzureMapping() (map[Model]string, error) {
 		result[model] = v[1]
 	}
 	return result, nil
-}
-
-func (p *azure) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
-	r := req.ChatCompletionRequest
-	r.Model = string(req.Model)
-	stream, err := p.oc.CreateChatCompletionStream(ctx, r)
-	if err != nil {
-		log.DefaultLogger.Error("error establishing stream", "err", err)
-		return nil, err
-	}
-	c := make(chan ChatCompletionStreamResponse)
-
-	go func() {
-		defer stream.Close()
-		defer close(c)
-		for {
-			resp, err := stream.Recv()
-			if errors.Is(err, io.EOF) {
-				return
-			}
-			if err != nil {
-				log.DefaultLogger.Error("openai stream error", "err", err)
-				c <- ChatCompletionStreamResponse{Error: err}
-				return
-			}
-
-			c <- ChatCompletionStreamResponse{ChatCompletionStreamResponse: resp}
-		}
-	}()
-	return c, nil
 }

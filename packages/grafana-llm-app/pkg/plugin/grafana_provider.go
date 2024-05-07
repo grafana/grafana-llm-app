@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -92,29 +89,5 @@ func (p *grafanaProvider) ChatCompletions(ctx context.Context, req ChatCompletio
 func (p *grafanaProvider) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI()
-	stream, err := p.oc.CreateChatCompletionStream(ctx, r)
-	if err != nil {
-		log.DefaultLogger.Error("error establishing stream", "err", err)
-		return nil, err
-	}
-	c := make(chan ChatCompletionStreamResponse)
-
-	go func() {
-		defer stream.Close()
-		defer close(c)
-		for {
-			resp, err := stream.Recv()
-			if errors.Is(err, io.EOF) {
-				return
-			}
-			if err != nil {
-				log.DefaultLogger.Error("openai stream error", "err", err)
-				c <- ChatCompletionStreamResponse{Error: err}
-				return
-			}
-
-			c <- ChatCompletionStreamResponse{ChatCompletionStreamResponse: resp}
-		}
-	}()
-	return c, nil
+	return streamOpenAIRequest(ctx, r, p.oc)
 }

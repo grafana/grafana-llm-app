@@ -81,6 +81,12 @@ func (p *openAI) ChatCompletions(ctx context.Context, req ChatCompletionRequest)
 	return doOpenAIRequest(p.c, httpReq)
 }
 
+func (p *openAI) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	r := req.ChatCompletionRequest
+	r.Model = req.Model.toOpenAI()
+	return streamOpenAIRequest(ctx, r, p.oc)
+}
+
 func doOpenAIRequest(c *http.Client, req *http.Request) (ChatCompletionsResponse, error) {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.Do(req)
@@ -105,10 +111,9 @@ func doOpenAIRequest(c *http.Client, req *http.Request) (ChatCompletionsResponse
 	return completions, nil
 }
 
-func (p *openAI) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
-	r := req.ChatCompletionRequest
-	r.Model = req.Model.toOpenAI()
-	stream, err := p.oc.CreateChatCompletionStream(ctx, r)
+func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc *openai.Client) (<-chan ChatCompletionStreamResponse, error) {
+	r.Stream = true
+	stream, err := oc.CreateChatCompletionStream(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error establishing stream", "err", err)
 		return nil, err
