@@ -6,8 +6,8 @@ toolchain go1.21.1
 
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.227.0
-	github.com/launchdarkly/eventsource v1.7.1
 	github.com/qdrant/go-client v1.9.0
+	github.com/sashabaranov/go-openai v1.23.0
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.63.2
 )
@@ -67,7 +67,6 @@ require (
 	github.com/prometheus/common v0.53.0 // indirect
 	github.com/prometheus/procfs v0.14.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sashabaranov/go-openai v1.23.0 // indirect
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
 	github.com/unknwon/log v0.0.0-20150304194804-e617c87089d3 // indirect
