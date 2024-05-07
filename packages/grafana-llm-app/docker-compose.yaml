@@ -10,6 +10,7 @@ services:
     environment:
       AZURE_OPENAI_API_KEY: $AZURE_OPENAI_API_KEY
       GF_LOG_LEVEL: debug
+      GF_SERVER_ROUTER_LOGGING: true
       OPENAI_ORGANIZATION_ID: $OPENAI_ORGANIZATION_ID
       OPENAI_API_KEY: $OPENAI_API_KEY
       VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
@@ -38,6 +39,8 @@ services:
       - 5432:5432
     environment:
       POSTGRES_PASSWORD: mysecretpassword
+    profiles:
+      - vector
 
   # For grafana/vectorapi embedder or store
   vectorapi:
@@ -50,6 +53,8 @@ services:
       - 8889:8889
     volumes:
       - sentence-transformers:/app/.sentence_transfomers
+    profiles:
+      - vector
 
 volumes:
   sentence-transformers:

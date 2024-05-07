@@ -7,6 +7,7 @@
     "backend:build": "mage -v",
     "backend:update-sdk": "go get -u github.com/grafana/grafana-plugin-sdk-go && go mod tidy",
     "backend:test": "mage coverage",
+    "backend:restart": "mage -v && echo restarting... && docker compose exec grafana pkill -HUP -f gpx_llm_linux_$(uname -m) && echo done",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "test": "jest",
     "test:watch": "jest --watch --onlyChanged",

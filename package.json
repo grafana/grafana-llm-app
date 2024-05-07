@@ -7,6 +7,7 @@
     "backend:update-sdk": "npm run backend:update-sdk --workspace=@grafana/llm-app",
     "backend:build": "npm run backend:build --workspace=@grafana/llm-app",
     "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
+    "backend:restart": "npm run backend:restart --workspace=@grafana/llm-app",
     "lint": "npm run lint --workspaces",
     "lint:fix": "npm run lint:fix --workspaces",
     "server": "npm run server --workspace=@grafana/llm-app",

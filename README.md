@@ -15,9 +15,11 @@ Each package has its own package.json with its own npm commands, but the intenti
 3. Run `npm install`
 4. Run `npm run dev`
 5. In a separate terminal from dev, run `npm run server`
+If you want to bring up the vector services, you can run `COMPOSE_PROFILES=vector yarn run server` instead
+
 6. Go to (http://localhost:3000/plugins/grafana-llm-app) to see configuration page and the developer sandbox
 
-This will watch the frontend dependencies and update live. If you are changing backend dependencies you will need to exit from `npm run dev` and `npm run server` and repeat those steps, because the backend dependencies do not build or update within the server automatically.
+This will watch the frontend dependencies and update live. If you are changing backend dependencies, you can run `npm run backend:restart` to rebuild the backend dependencies and restart the plugin in the Grafana server.
 
 ### Dev Sandbox
 
