@@ -4,24 +4,52 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/sashabaranov/go-openai"
 )
 
 type azure struct {
 	settings OpenAISettings
 	c        *http.Client
+	oc       *openai.Client
 }
 
-func NewAzureProvider(settings OpenAISettings) LLMProvider {
-	return &azure{
-		settings: settings,
-		c: &http.Client{
-			Timeout: 2 * time.Minute,
-		},
+func NewAzureProvider(settings OpenAISettings) (LLMProvider, error) {
+	client := &http.Client{
+		Timeout: 2 * time.Minute,
 	}
+	p := &azure{
+		settings: settings,
+		c:        client,
+	}
+
+	// Try getting the Azure mapping once and fail if we can't.
+	_, err := p.getAzureMapping()
+	if err != nil {
+		return nil, err
+	}
+
+	// go-openai expects the URL without the '/openai' suffix, which is
+	// the same as us.
+	cfg := openai.DefaultAzureConfig(settings.apiKey, settings.URL)
+	cfg.HTTPClient = client
+	cfg.AzureModelMapperFunc = func(model string) string {
+		// We already checked the error when constructing the provider.
+		mapping, _ := p.getAzureMapping()
+		got := mapping[Model(model)]
+		log.DefaultLogger.Debug("mapping model", "from", model, "to", got)
+		return got
+	}
+
+	p.oc = openai.NewClientWithConfig(cfg)
+	return p, nil
 }
 
 func (p *azure) Models(ctx context.Context) (ModelResponse, error) {
@@ -88,7 +116,32 @@ func (p *azure) getAzureMapping() (map[Model]string, error) {
 	return result, nil
 }
 
-func (p *azure) StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
-	// TODO: implement
-	return nil, nil
+func (p *azure) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	r := req.ChatCompletionRequest
+	r.Model = string(req.Model)
+	stream, err := p.oc.CreateChatCompletionStream(ctx, r)
+	if err != nil {
+		log.DefaultLogger.Error("error establishing stream", "err", err)
+		return nil, err
+	}
+	c := make(chan ChatCompletionStreamResponse)
+
+	go func() {
+		defer stream.Close()
+		defer close(c)
+		for {
+			resp, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				return
+			}
+			if err != nil {
+				log.DefaultLogger.Error("openai stream error", "err", err)
+				c <- ChatCompletionStreamResponse{Error: err}
+				return
+			}
+
+			c <- ChatCompletionStreamResponse{ChatCompletionStreamResponse: resp}
+		}
+	}()
+	return c, nil
 }

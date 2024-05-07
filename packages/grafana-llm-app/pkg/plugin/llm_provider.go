@@ -115,14 +115,18 @@ type ChatCompletionStreamResponse struct {
 	openai.ChatCompletionStreamResponse
 	// Random padding used to mitigate side channel attacks.
 	// See https://blog.cloudflare.com/ai-side-channel-attack-mitigated.
-	Padding string `json:"p"`
+	Padding string `json:"p,omitempty"`
 	// Error indicates that an error occurred mid-stream.
 	Error error `json:"-"`
 }
 
+var unsafeDisablePadding = false
+
 func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
-	// Define a wrapper type to avoid infinite recursion when calling MarshalJSON below.
-	r.Padding = strings.Repeat("p", rand.Int()%35)
+	if !unsafeDisablePadding {
+		// Define a wrapper type to avoid infinite recursion when calling MarshalJSON below.
+		r.Padding = strings.Repeat("p", rand.Int()%35)
+	}
 	type Wrapper ChatCompletionStreamResponse
 	a := (Wrapper)(r)
 	return json.Marshal(a)

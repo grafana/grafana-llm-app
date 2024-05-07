@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -170,14 +171,32 @@ func newMockOpenAIServer(t *testing.T) *mockServer {
 	server := &mockServer{}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.request = r
+		streaming := r.Header.Get("Accept") == "text/event-stream"
+		if streaming {
+			log.DefaultLogger.Debug("mock server handling streaming response")
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.Header().Set("Connection", "keepalive")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`data: {}\n\n`))
+			w.(http.Flusher).Flush()
+			w.Write([]byte(`data: [DONE]\n\n`))
+			w.(http.Flusher).Flush()
+			return
+		}
 		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte("{}"))
+
 	})
 	server.server = httptest.NewServer(handler)
 	return server
 }
 
 func TestCallOpenAIProxy(t *testing.T) {
+	unsafeDisablePadding = true
+	t.Cleanup(func() {
+		unsafeDisablePadding = false
+	})
 	// Set up and run test cases
 	for _, tc := range []struct {
 		name string
@@ -222,6 +241,32 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expStatus: http.StatusOK,
+		},
+		{
+			name: "openai - streaming",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderOpenAI,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "small", "stream": true, "messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization":       {"Bearer abcd1234"},
+				"OpenAI-Organization": {"myOrg"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "stream": true, "messages": [{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+
+			expBody: []byte(`data: {"id":"","object":"","created":0,"model":"","choices":null,"system_fingerprint":""}\n\ndata: [DONE]\n\n`),
 		},
 		{
 			name: "azure",

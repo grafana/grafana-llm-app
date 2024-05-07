@@ -56,11 +56,23 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	switch app.settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
-		app.llmProvider = NewOpenAIProvider(app.settings.OpenAI)
+		p, err := NewOpenAIProvider(app.settings.OpenAI)
+		if err != nil {
+			return nil, err
+		}
+		app.llmProvider = p
 	case openAIProviderAzure:
-		app.llmProvider = NewAzureProvider(app.settings.OpenAI)
+		p, err := NewAzureProvider(app.settings.OpenAI)
+		if err != nil {
+			return nil, err
+		}
+		app.llmProvider = p
 	case openAIProviderGrafana:
-		app.llmProvider = NewGrafanaProvider(*app.settings)
+		p, err := NewGrafanaProvider(*app.settings)
+		if err != nil {
+			return nil, err
+		}
+		app.llmProvider = p
 	}
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us

@@ -490,6 +490,7 @@ func (a *App) handleChatCompletionsStream(
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.WriteHeader(http.StatusOK)
+	log.DefaultLogger.Info("about to loop over stream channel")
 	for resp := range c {
 		chunk, err := json.Marshal(resp)
 		if err != nil {
@@ -497,6 +498,8 @@ func (a *App) handleChatCompletionsStream(
 			w.Write([]byte(`invalid JSON`))
 			return
 		}
+
+		log.DefaultLogger.Info("got a chunk")
 
 		// Write the data as a SSE.
 		data := "data: " + string(chunk) + "\n\n"
@@ -510,7 +513,6 @@ func (a *App) handleChatCompletionsStream(
 	// Channel has closed, send a DONE SSE.
 	w.Write([]byte("data: [DONE]\n\n"))
 	log.DefaultLogger.Info("handled stream request")
-
 }
 
 func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {

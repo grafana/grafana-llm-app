@@ -21,19 +21,23 @@ type openAI struct {
 	oc       *openai.Client
 }
 
-func NewOpenAIProvider(settings OpenAISettings) LLMProvider {
+func NewOpenAIProvider(settings OpenAISettings) (LLMProvider, error) {
 	client := &http.Client{
 		Timeout: 2 * time.Minute,
 	}
 	cfg := openai.DefaultConfig(settings.apiKey)
-	cfg.BaseURL = settings.URL
+	base, err := url.JoinPath(settings.URL, "/v1")
+	if err != nil {
+		return nil, fmt.Errorf("join url: %w", err)
+	}
+	cfg.BaseURL = base
 	cfg.HTTPClient = client
 	cfg.OrgID = settings.OrganizationID
 	return &openAI{
 		settings: settings,
 		c:        client,
 		oc:       openai.NewClientWithConfig(cfg),
-	}
+	}, nil
 }
 
 func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
@@ -106,24 +110,27 @@ func (p *openAI) StreamChatCompletions(ctx context.Context, req ChatCompletionRe
 	r.Model = req.Model.toOpenAI()
 	stream, err := p.oc.CreateChatCompletionStream(ctx, r)
 	if err != nil {
+		log.DefaultLogger.Error("error establishing stream", "err", err)
 		return nil, err
 	}
-	defer stream.Close()
-	c := make(chan ChatCompletionStreamResponse, 10)
+	c := make(chan ChatCompletionStreamResponse)
 
-	// TODO: should we use a pool rather than spawning unbounded goroutines?
 	go func() {
+		defer stream.Close()
 		defer close(c)
 		for {
 			resp, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
+				log.DefaultLogger.Debug("got EOF")
 				return
 			}
 			if err != nil {
-				log.DefaultLogger.Error("openai stream error: %w", err)
+				log.DefaultLogger.Error("openai stream error", "err", err)
+				c <- ChatCompletionStreamResponse{Error: err}
 				return
 			}
 
+			log.DefaultLogger.Debug("sending response")
 			c <- ChatCompletionStreamResponse{ChatCompletionStreamResponse: resp}
 		}
 	}()

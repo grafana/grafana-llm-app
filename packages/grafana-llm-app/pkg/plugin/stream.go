@@ -42,6 +42,9 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	}
 	// Send all messages to the sender.
 	for resp := range c {
+		if resp.Error != nil {
+			return resp.Error
+		}
 		data, err := json.Marshal(resp)
 		if err != nil {
 			return fmt.Errorf("marshal chat completions stream response: %w", err)
@@ -50,6 +53,12 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		if err != nil {
 			return fmt.Errorf("send stream data: %w", err)
 		}
+	}
+	// Finish with a done message for compatibility.
+	// Clients will use this to know when to unsubscribe to the stream.
+	err = sender.SendJSON([]byte(`{"done": true}`))
+	if err != nil {
+		return fmt.Errorf("send stream data: %w", err)
 	}
 	return nil
 }
@@ -61,7 +70,7 @@ func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, send
 		// We want to avoid returning an `error` here as much as possible because Grafana will
 		// blindly rerun the stream without notifying the UI if we do.
 		if err := a.runOpenAIChatCompletionsStream(ctx, req, sender); err != nil {
-			log.DefaultLogger.Info("error running stream", "err", err)
+			log.DefaultLogger.Error("error running stream", "err", err)
 			sendError(EventError{Error: err.Error()}, sender)
 		}
 		return nil
