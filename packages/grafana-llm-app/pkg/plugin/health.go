@@ -51,7 +51,7 @@ func getVersion() string {
 
 func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
 	body := map[string]interface{}{
-		"model": model.toOpenAI(),
+		"model": model.toOpenAI(a.settings.Models),
 		"messages": []map[string]interface{}{
 			{
 				"role":    "user",

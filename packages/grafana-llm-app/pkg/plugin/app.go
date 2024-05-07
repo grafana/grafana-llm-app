@@ -56,7 +56,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	switch app.settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
-		p, err := NewOpenAIProvider(app.settings.OpenAI)
+		p, err := NewOpenAIProvider(app.settings.OpenAI, app.settings.Models)
 		if err != nil {
 			return nil, err
 		}

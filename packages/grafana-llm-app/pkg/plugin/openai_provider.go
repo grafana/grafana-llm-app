@@ -15,10 +15,11 @@ import (
 
 type openAI struct {
 	settings OpenAISettings
+	models   *ModelSettings
 	oc       *openai.Client
 }
 
-func NewOpenAIProvider(settings OpenAISettings) (LLMProvider, error) {
+func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvider, error) {
 	client := &http.Client{
 		Timeout: 2 * time.Minute,
 	}
@@ -32,6 +33,7 @@ func NewOpenAIProvider(settings OpenAISettings) (LLMProvider, error) {
 	cfg.OrgID = settings.OrganizationID
 	return &openAI{
 		settings: settings,
+		models:   models,
 		oc:       openai.NewClientWithConfig(cfg),
 	}, nil
 }
@@ -53,7 +55,7 @@ type openAIChatCompletionRequest struct {
 
 func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
-	r.Model = req.Model.toOpenAI()
+	r.Model = req.Model.toOpenAI(p.models)
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error creating openai chat completion", "err", err)
@@ -64,7 +66,7 @@ func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) 
 
 func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
-	r.Model = req.Model.toOpenAI()
+	r.Model = req.Model.toOpenAI(p.models)
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
 
