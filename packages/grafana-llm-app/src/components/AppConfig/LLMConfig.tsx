@@ -5,7 +5,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { Button, Card, Checkbox, FieldSet, Icon, useStyles2 } from '@grafana/ui';
 
 import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
-import { ModelConfig } from './Models';
+import { ModelConfig } from './ModelConfig';
 import { DevSandbox } from './DevSandbox';
 import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';

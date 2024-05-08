@@ -310,7 +310,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
 			// note no gpt-4 in AzureMapping.
-			body: []byte(`{"model": "gpt-4", "messages": [{"content":"some stuff"}]}`),
+			body: []byte(`{"model": "gpt-4-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expNilRequest: true,
 

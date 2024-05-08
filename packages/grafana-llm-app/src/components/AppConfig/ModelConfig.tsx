@@ -17,28 +17,31 @@ export interface ModelMappingConfig extends ModelMapping {
   label: string;
   description: string;
 }
+const DEFAULT_MODEL = openai.Model.BASE;
 const DEFAULT_MODEL_NAMES: ModelMappingConfig[] = [
   {
-    model: openai.Model.SMALL,
+    model: openai.Model.BASE,
     name: 'gpt-3.5-turbo',
     label: 'Base',
     description: 'A fast and cost-effective model for efficient, high-throughput tasks.',
   },
   {
-    model: openai.Model.MEDIUM,
-    name: 'gpt-4-turbo',
-    label: 'Medium',
-    description:
-      'A more advanced model with broader general knowledge and more advanced reasoning capabilities at longer context windows.',
-  },
-  {
     model: openai.Model.LARGE,
-    name: 'gpt-4',
-    label: 'Pro',
+    name: 'gpt-4-turbo',
+    label: 'Large',
     description:
-      'A large and high-cost model, for more complex analysis, longer tasks with multiple steps, and higher-order math and coding tasks.',
+      'A larger, higher cost model for more advanced tasks with longer context windows.',
   },
 ];
+
+const initModelSettings = (settings: ModelSettings): ModelSettings => ({
+  default: settings.default ?? DEFAULT_MODEL,
+  // If the settings are empty, set the default models
+  // If the settings are not empty, filter out any models that are not in the default list
+  models: settings.models
+    ? settings.models.filter((m) => DEFAULT_MODEL_NAMES.find((d) => d.model === m.model))
+    : DEFAULT_MODEL_NAMES.map((entry) => ({ model: entry.model, name: entry.name })),
+});
 
 export function ModelConfig({
   settings,
@@ -47,6 +50,8 @@ export function ModelConfig({
   settings: ModelSettings;
   onChange: (settings: ModelSettings) => void;
 }) {
+  settings = initModelSettings(settings); 
+
   return (
     <FieldSet>
       <Field
@@ -56,8 +61,8 @@ export function ModelConfig({
         <Select
           options={DEFAULT_MODEL_NAMES.map((entry) => ({ label: entry.label, value: entry.model }))}
           width={60}
-          value={settings.default ?? openai.Model.SMALL}
-          onChange={(e) => onChange({ ...settings, default: e.value ?? openai.Model.SMALL })}
+          value={settings.default ?? DEFAULT_MODEL}
+          onChange={(e) => onChange({ ...settings, default: e.value ?? openai.Model.BASE })}
         />
       </Field>
 
