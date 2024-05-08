@@ -1,0 +1,74 @@
+apiVersion: 1
+
+apps:
+  - type: grafana-llm-app
+    jsonData:
+      base64EncodedAccessTokenSet: True
+      # enableGrafanaManagedLLM: True
+      # displayVectorStoreOptions: False
+      openAI:
+        provider: test
+        # url: https://api.openai.com
+        # organizationId: $OPENAI_ORGANIZATION_ID
+        testProvider:
+          modelsResponse: 
+            data:
+            - id: small
+            - id: medium
+            - id: large
+
+          chatCompletionResponse:
+            id: "1234"
+            model: "small"
+            choices:
+            - message:
+                role: "assistant"
+                content: "How are you today?"
+          chatCompletionError: ""
+
+          initialStreamError: ""
+          streamDeltas:
+            - role: "assistant"
+              content: "How "
+            - role: "assistant"
+              content: "are "
+            - role: "assistant"
+              content: "you "
+            - role: "assistant"
+              content: "today"
+            - role: "assistant"
+              content: "?"
+          streamFinishReason: "stop"
+          streamError: ""
+      # openAI:
+        # provider: azure
+        # url: https://<resource>.openai.azure.com
+        # azureModelMapping:
+        #   - ["gpt-3.5-turbo", "gpt-35-turbo"]
+      # vector:
+      #   enabled: true
+      #   model: BAAI/bge-small-en-v1.5
+      #   embed:
+      #     type: grafana/vectorapi
+      #     grafanaVectorAPI:
+      #       url: http://vectorapi:8889
+      #       authType: no-auth
+      #       # authType: basic-auth
+      #       # basicAuthUser: <user>
+      #   store:
+      #     type: grafana/vectorapi
+      #     grafanaVectorAPI:
+      #       url: http://vectorapi:8889
+      #       authType: no-auth
+      #       # authType: basic-auth
+      #       # basicAuthUser: <user>
+      # llmGateway:
+      #   url: http://llm-gateway:4033
+
+    secureJsonData:
+      # openAIKey: $OPENAI_API_KEY
+      # mock EncodedAccessToken "thestack:thetoken"
+      # base64EncodedAccessToken: dGhlc3RhY2s6dGhldG9rZW4=
+      # openAIKey: $AZURE_OPENAI_API_KEY
+      # vectorEmbedderBasicAuthPassword: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
+      # vectorStoreBasicAuthPassword: $VECTOR_STORE_BASIC_AUTH_PASSWORD
