@@ -58,19 +58,19 @@ type azureChatCompletionRequest struct {
 	Model string `json:"-"`
 }
 
-func (p *azure) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (ChatCompletionsResponse, error) {
+func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
 	mapping, err := p.getAzureMapping()
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	deployment := mapping[req.Model]
 	if deployment == "" {
-		return ChatCompletionsResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
+		return ChatCompletionResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
 	}
 
 	u, err := url.Parse(p.settings.URL)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
 	u.RawQuery = "api-version=2023-03-15-preview"
@@ -79,17 +79,17 @@ func (p *azure) ChatCompletions(ctx context.Context, req ChatCompletionRequest) 
 		Model:                 req.Model.toOpenAI(),
 	})
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq.Header.Set("api-key", p.settings.apiKey)
 	return doOpenAIRequest(p.c, httpReq)
 }
 
-func (p *azure) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+func (p *azure) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	mapping, err := p.getAzureMapping()
 	if err != nil {
 		return nil, err

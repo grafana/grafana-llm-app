@@ -102,7 +102,7 @@ type ChatCompletionRequest struct {
 	Model Model `json:"model"`
 }
 
-type ChatCompletionsResponse struct {
+type ChatCompletionResponse struct {
 	ID      string   `json:"id"`
 	Object  string   `json:"object"`
 	Created int64    `json:"created"`
@@ -158,9 +158,9 @@ type ModelInfo struct {
 type LLMProvider interface {
 	// Models returns a list of models supported by the provider.
 	Models(context.Context) (ModelResponse, error)
-	// ChatCompletions provides text completion in a chat-like interface.
-	ChatCompletions(context.Context, ChatCompletionRequest) (ChatCompletionsResponse, error)
-	// StreamChatCompletions provides text completion in a chat-like interface with
+	// ChatCompletion provides text completion in a chat-like interface.
+	ChatCompletion(context.Context, ChatCompletionRequest) (ChatCompletionResponse, error)
+	// ChatCompletionStream provides text completion in a chat-like interface with
 	// tokens being sent as they are ready.
-	StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error)
+	ChatCompletionStream(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error)
 }

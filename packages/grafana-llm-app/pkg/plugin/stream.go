@@ -36,7 +36,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	requestBody.Stream = true
 
 	// Delegate to configured provider for chat completions stream.
-	c, err := a.llmProvider.StreamChatCompletions(ctx, requestBody)
+	c, err := a.llmProvider.ChatCompletionStream(ctx, requestBody)
 	if err != nil {
 		return fmt.Errorf("establish chat completions stream: %w", err)
 	}

@@ -61,32 +61,32 @@ func (p *grafanaProvider) Models(ctx context.Context) (ModelResponse, error) {
 	}, nil
 }
 
-func (p *grafanaProvider) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (ChatCompletionsResponse, error) {
+func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
 	u, err := url.Parse(p.settings.URL)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	// We keep the openai prefix when using llm-gateway.
 	u.Path, err = url.JoinPath(u.Path, "openai/v1/chat/completions")
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	reqBody, err := json.Marshal(openAIChatCompletionRequest{
 		ChatCompletionRequest: req,
 		Model:                 req.Model.toOpenAI(),
 	})
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq.SetBasicAuth(p.tenant, p.gcomKey)
 	return doOpenAIRequest(p.c, httpReq)
 }
 
-func (p *grafanaProvider) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+func (p *grafanaProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI()
 	return streamOpenAIRequest(ctx, r, p.oc)

@@ -484,7 +484,7 @@ func (a *App) handleChatCompletionsStream(
 	w http.ResponseWriter,
 ) {
 	log.DefaultLogger.Info("handling stream request")
-	c, err := llmProvider.StreamChatCompletions(ctx, req)
+	c, err := llmProvider.ChatCompletionStream(ctx, req)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
@@ -574,7 +574,7 @@ func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
 			return
 		}
 
-		resp, err := llmProvider.ChatCompletions(r.Context(), req)
+		resp, err := llmProvider.ChatCompletion(r.Context(), req)
 		if errors.Is(err, errBadRequest) {
 			handleError(w, err, http.StatusBadRequest)
 		} else if err != nil {

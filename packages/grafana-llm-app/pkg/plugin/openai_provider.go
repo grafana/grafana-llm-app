@@ -56,57 +56,57 @@ type openAIChatCompletionRequest struct {
 	Model string `json:"model"`
 }
 
-func (p *openAI) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (ChatCompletionsResponse, error) {
+func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
 	u, err := url.Parse(p.settings.URL)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	u.Path, err = url.JoinPath(u.Path, "v1/chat/completions")
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	reqBody, err := json.Marshal(openAIChatCompletionRequest{
 		ChatCompletionRequest: req,
 		Model:                 req.Model.toOpenAI(),
 	})
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq.Header.Set("Authorization", "Bearer "+p.settings.apiKey)
 	httpReq.Header.Set("OpenAI-Organization", p.settings.OrganizationID)
 	return doOpenAIRequest(p.c, httpReq)
 }
 
-func (p *openAI) StreamChatCompletions(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI()
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
 
-func doOpenAIRequest(c *http.Client, req *http.Request) (ChatCompletionsResponse, error) {
+func doOpenAIRequest(c *http.Client, req *http.Request) (ChatCompletionResponse, error) {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.Do(req)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	defer resp.Body.Close()
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 
 	if resp.StatusCode/100 != 2 {
-		return ChatCompletionsResponse{}, fmt.Errorf("error from OpenAI: %d, %s", resp.StatusCode, string(respBody))
+		return ChatCompletionResponse{}, fmt.Errorf("error from OpenAI: %d, %s", resp.StatusCode, string(respBody))
 	}
 
-	completions := ChatCompletionsResponse{}
+	completions := ChatCompletionResponse{}
 	err = json.Unmarshal(respBody, &completions)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	return completions, nil
 }
