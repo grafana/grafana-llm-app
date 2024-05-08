@@ -44,6 +44,10 @@ type OpenAISettings struct {
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
 	// provider (excluding the LLMGateway). Stored securely.
 	apiKey string
+
+	// TestProvider contains the settings for the test provider.
+	// Only used when Provider is openAIProviderTest.
+	TestProvider testProvider `json:"testProvider,omitempty"`
 }
 
 func (s OpenAISettings) Configured() bool {
@@ -123,9 +127,6 @@ type Settings struct {
 
 	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
 
-	// TestProvider contains the settings for the test provider.
-	TestProvider testProvider `json:"testProvider,omitempty"`
-
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
@@ -140,7 +141,7 @@ type Settings struct {
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
-	settings := Settings{TestProvider: defaultTestProvider()}
+	settings := Settings{OpenAI: OpenAISettings{TestProvider: defaultTestProvider()}}
 
 	if len(appSettings.JSONData) != 0 {
 		err := json.Unmarshal(appSettings.JSONData, &settings)
