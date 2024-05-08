@@ -491,7 +491,6 @@ func (a *App) handleChatCompletionsStream(
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.WriteHeader(http.StatusOK)
-	log.DefaultLogger.Info("about to loop over stream channel")
 	var writeErr error
 	for resp := range c {
 		// Clear the queue without doing anything in the event of a failed write or error.
@@ -508,8 +507,6 @@ func (a *App) handleChatCompletionsStream(
 			continue
 		}
 
-		log.DefaultLogger.Info("got a chunk")
-
 		// Write the data as a SSE. If writing fails we finish reading the
 		// channel to avoid a memory leak and handle the error outside of the
 		// loop.
@@ -522,7 +519,6 @@ func (a *App) handleChatCompletionsStream(
 	}
 	// Channel has closed, send a DONE SSE.
 	w.Write([]byte("data: [DONE]\n\n"))
-	log.DefaultLogger.Info("handled stream request")
 }
 
 func handleStreamError(w http.ResponseWriter, err error, code int) error {

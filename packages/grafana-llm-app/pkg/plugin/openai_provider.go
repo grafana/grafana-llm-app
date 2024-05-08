@@ -126,7 +126,6 @@ func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc
 		for {
 			resp, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
-				log.DefaultLogger.Debug("got EOF")
 				return
 			}
 			if err != nil {
@@ -135,7 +134,6 @@ func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc
 				return
 			}
 
-			log.DefaultLogger.Debug("sending response")
 			c <- ChatCompletionStreamResponse{ChatCompletionStreamResponse: resp}
 		}
 	}()
