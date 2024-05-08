@@ -56,7 +56,7 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 	}
 	// Finish with a done message for compatibility.
 	// Clients will use this to know when to unsubscribe to the stream.
-	err = sender.SendJSON([]byte(`{"done": true}`))
+	err = sender.SendJSON([]byte(`{"choices": [{"delta": {"done": true}}]}`))
 	if err != nil {
 		return fmt.Errorf("send stream data: %w", err)
 	}
