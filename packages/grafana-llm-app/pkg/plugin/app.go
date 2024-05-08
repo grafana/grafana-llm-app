@@ -54,6 +54,11 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		return nil, err
 	}
 
+	if app.settings.Models == nil {
+		// backwards-compat: if Model settings is nil, use the default one
+		app.settings.Models = DEFAULT_MODEL_SETTINGS
+	}
+
 	switch app.settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 		p, err := NewOpenAIProvider(app.settings.OpenAI, app.settings.Models)

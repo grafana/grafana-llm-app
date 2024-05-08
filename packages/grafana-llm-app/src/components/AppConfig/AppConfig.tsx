@@ -7,7 +7,7 @@ import { FetchResponse, HealthCheckResult, getBackendSrv } from '@grafana/runtim
 import { Alert, Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
-import { ModelSettings } from './Models';
+import { ModelSettings } from './ModelConfig';
 import { ShowHealthCheckResult } from './HealthCheck';
 import { LLMConfig } from './LLMConfig';
 import { OpenAISettings } from './OpenAI';

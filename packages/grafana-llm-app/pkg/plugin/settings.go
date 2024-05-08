@@ -66,6 +66,20 @@ func (c ModelSettings) getModel(model Model) string {
 	return c.getModel(c.Default)
 }
 
+var DEFAULT_MODEL_SETTINGS = &ModelSettings{
+	Default: ModelBase,
+	Models: []ModelMapping{
+		{
+			Model: ModelBase,
+			Name:  "gpt-3.5-turbo",
+		},
+		{
+			Model: ModelLarge,
+			Name:  "gpt-4-turbo",
+		},
+	},
+}
+
 // LLMGatewaySettings contains the configuration for the Grafana Managed Key LLM solution.
 type LLMGatewaySettings struct {
 	// This is the URL of the LLM endpoint of the machine learning backend which proxies

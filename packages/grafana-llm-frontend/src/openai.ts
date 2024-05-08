@@ -77,8 +77,7 @@ export interface Function {
  * @enum {string}
  */
 export enum Model {
-  SMALL = 'small',
-  MEDIUM = 'medium',
+  BASE = 'base',
   LARGE = 'large',
 }
 
@@ -211,7 +210,7 @@ export function isErrorResponse<T>(
  * @returns An observable that emits the content messages. Each emission will be a string containing the
  *         token emitted by the model.
  * @example <caption>Example of reading all tokens in a stream.</caption>
- * const stream = streamChatCompletions({ model: Model.SMALL, messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(extractContent());
@@ -238,7 +237,7 @@ export function extractContent(): UnaryFunction<
  * @returns An observable that emits the accumulated content messages. Each emission will be a string containing the
  *         content of all messages received so far.
  * @example
- * const stream = streamChatCompletions({ model: Model.SMALL, messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(accumulateContent());
@@ -280,7 +279,7 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  * The 'done' message will not be emitted; the stream will simply end when this message is encountered.
  *
  * @example <caption>Example of reading all tokens in a stream.</caption>
- * const stream = streamChatCompletions({ model: Model.SMALL, messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(extractContent());
@@ -289,7 +288,7 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  * // ['Hello', '? ', 'How ', 'are ', 'you', '?']
  *
  * @example <caption>Example of accumulating tokens in a stream.</caption>
- * const stream = streamChatCompletions({ model: Model.SMALL, messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(accumulateContent());
