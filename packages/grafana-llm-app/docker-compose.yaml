@@ -6,7 +6,7 @@ services:
     build:
       context: ./.config
       args:
-        grafana_version: ${GRAFANA_VERSION:-10.3.0}
+        grafana_version: ${GRAFANA_VERSION:-main}
     environment:
       AZURE_OPENAI_API_KEY: $AZURE_OPENAI_API_KEY
       GF_LOG_LEVEL: debug
