@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -173,14 +172,10 @@ func newMockOpenAIServer(t *testing.T) *mockServer {
 		server.request = r
 		streaming := r.Header.Get("Accept") == "text/event-stream"
 		if streaming {
-			log.DefaultLogger.Debug("mock server handling streaming response")
 			w.Header().Set("Content-Type", "text/event-stream")
-			w.Header().Set("Connection", "keepalive")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`data: {}\n\n`))
-			w.(http.Flusher).Flush()
-			w.Write([]byte(`data: [DONE]\n\n`))
-			w.(http.Flusher).Flush()
+			w.Write([]byte("data: {}\n\n"))
+			w.Write([]byte("data: [DONE]\n\n"))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -266,7 +261,9 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			expStatus: http.StatusOK,
 
-			expBody: []byte(`data: {"id":"","object":"","created":0,"model":"","choices":null,"system_fingerprint":""}\n\ndata: [DONE]\n\n`),
+			// We need to use regular strings rather than raw strings here otherwise the double
+			// newlines (required by the SSE spec) are escaped.
+			expBody: []byte("data: {\"id\":\"\",\"object\":\"\",\"created\":0,\"model\":\"\",\"choices\":null,\"system_fingerprint\":\"\"}\n\ndata: [DONE]\n\n"),
 		},
 		{
 			name: "azure",
@@ -445,8 +442,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 				t.Errorf("response status should be %d, got %d", tc.expStatus, r.response.Status)
 			}
 			if len(tc.expBody) > 0 {
-				if tb := bytes.TrimSpace(r.response.Body); !bytes.Equal(tb, tc.expBody) {
-					t.Errorf("response body should be %s, got %s", tc.expBody, tb)
+				if !bytes.Equal(r.response.Body, tc.expBody) {
+					t.Errorf("response body should be %s, got %s", tc.expBody, r.response.Body)
 				}
 			}
 		})
