@@ -1,7 +1,10 @@
 package plugin
 
 import (
+	"encoding/json"
 	"testing"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 func TestModelFromString(t *testing.T) {
@@ -168,5 +171,29 @@ func TestUnmarshalJSON(t *testing.T) {
 				t.Errorf("UnmarshalJSON() = %v, expected %v", m, tt.expected)
 			}
 		})
+	}
+}
+
+func TestChatCompletionStreamResponseMarshalJSON(t *testing.T) {
+	resp := ChatCompletionStreamResponse{
+		ChatCompletionStreamResponse: openai.ChatCompletionStreamResponse{
+			ID: "123",
+		},
+	}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		t.Errorf("error marshaling ChatCompletionStreamResponse: %s", err)
+	}
+	var got map[string]any
+	err = json.Unmarshal(b, &got)
+	if err != nil {
+		t.Errorf("error unmarshaling ChatCompletionStreamResponse: %s", err)
+	}
+	_, ok := got["p"]
+	if !ok {
+		t.Errorf("no padding found in ChatCompletionStreamResponse")
+	}
+	if got["id"] != "123" {
+		t.Errorf("id doesn't match")
 	}
 }

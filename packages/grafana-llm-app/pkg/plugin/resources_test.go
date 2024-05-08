@@ -170,14 +170,28 @@ func newMockOpenAIServer(t *testing.T) *mockServer {
 	server := &mockServer{}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.request = r
+		streaming := r.Header.Get("Accept") == "text/event-stream"
+		if streaming {
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("data: {}\n\n"))
+			w.Write([]byte("data: [DONE]\n\n"))
+			return
+		}
 		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte("{}"))
+
 	})
 	server.server = httptest.NewServer(handler)
 	return server
 }
 
 func TestCallOpenAIProxy(t *testing.T) {
+	unsafeDisablePadding = true
+	t.Cleanup(func() {
+		unsafeDisablePadding = false
+	})
 	// Set up and run test cases
 	for _, tc := range []struct {
 		name string
@@ -222,6 +236,34 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expStatus: http.StatusOK,
+		},
+		{
+			name: "openai - streaming",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderOpenAI,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "small", "stream": true, "messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization":       {"Bearer abcd1234"},
+				"OpenAI-Organization": {"myOrg"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "stream": true, "messages": [{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+
+			// We need to use regular strings rather than raw strings here otherwise the double
+			// newlines (required by the SSE spec) are escaped.
+			expBody: []byte("data: {\"id\":\"\",\"object\":\"\",\"created\":0,\"model\":\"\",\"choices\":null,\"system_fingerprint\":\"\"}\n\ndata: [DONE]\n\n"),
 		},
 		{
 			name: "azure",
@@ -400,8 +442,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 				t.Errorf("response status should be %d, got %d", tc.expStatus, r.response.Status)
 			}
 			if len(tc.expBody) > 0 {
-				if tb := bytes.TrimSpace(r.response.Body); !bytes.Equal(tb, tc.expBody) {
-					t.Errorf("response body should be %s, got %s", tc.expBody, tb)
+				if !bytes.Equal(r.response.Body, tc.expBody) {
+					t.Errorf("response body should be %s, got %s", tc.expBody, r.response.Body)
 				}
 			}
 		})

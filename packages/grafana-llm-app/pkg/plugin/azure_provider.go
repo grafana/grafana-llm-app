@@ -8,20 +8,36 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 type azure struct {
 	settings OpenAISettings
 	c        *http.Client
+	oc       *openai.Client
 }
 
-func NewAzureProvider(settings OpenAISettings) LLMProvider {
-	return &azure{
-		settings: settings,
-		c: &http.Client{
-			Timeout: 2 * time.Minute,
-		},
+func NewAzureProvider(settings OpenAISettings) (LLMProvider, error) {
+	client := &http.Client{
+		Timeout: 2 * time.Minute,
 	}
+	p := &azure{
+		settings: settings,
+		c:        client,
+	}
+
+	// go-openai expects the URL without the '/openai' suffix, which is
+	// the same as us.
+	cfg := openai.DefaultAzureConfig(settings.apiKey, settings.URL)
+	cfg.HTTPClient = client
+	// We pass the deployment as the name of the model, so just return the untransformed string.
+	cfg.AzureModelMapperFunc = func(model string) string {
+		return model
+	}
+
+	p.oc = openai.NewClientWithConfig(cfg)
+	return p, nil
 }
 
 func (p *azure) Models(ctx context.Context) (ModelResponse, error) {
@@ -42,19 +58,19 @@ type azureChatCompletionRequest struct {
 	Model string `json:"-"`
 }
 
-func (p *azure) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (ChatCompletionsResponse, error) {
+func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
 	mapping, err := p.getAzureMapping()
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	deployment := mapping[req.Model]
 	if deployment == "" {
-		return ChatCompletionsResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
+		return ChatCompletionResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
 	}
 
 	u, err := url.Parse(p.settings.URL)
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
 	u.RawQuery = "api-version=2023-03-15-preview"
@@ -63,14 +79,30 @@ func (p *azure) ChatCompletions(ctx context.Context, req ChatCompletionRequest) 
 		Model:                 req.Model.toOpenAI(),
 	})
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
 	if err != nil {
-		return ChatCompletionsResponse{}, err
+		return ChatCompletionResponse{}, err
 	}
 	httpReq.Header.Set("api-key", p.settings.apiKey)
 	return doOpenAIRequest(p.c, httpReq)
+}
+
+func (p *azure) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	mapping, err := p.getAzureMapping()
+	if err != nil {
+		return nil, err
+	}
+	deployment := mapping[req.Model]
+	if deployment == "" {
+		return nil, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
+	}
+
+	r := req.ChatCompletionRequest
+	// For the Azure mapping we want to use the name of the mapped deployment as the model.
+	r.Model = deployment
+	return streamOpenAIRequest(ctx, r, p.oc)
 }
 
 func (p *azure) getAzureMapping() (map[Model]string, error) {
