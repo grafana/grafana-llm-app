@@ -333,7 +333,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
-				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
+				"Authorization": {"Bearer 123:abcd1234"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/llm/openai/v1/chat/completions",
@@ -358,7 +358,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
-				"Authorization": {"Basic MTIzOmFiY2QxMjM0"},
+				"Authorization": {"Bearer 123:abcd1234"},
 				"X-Scope-OrgID": {"123"},
 			},
 			expReqPath: "/llm/openai/v1/chat/completions",

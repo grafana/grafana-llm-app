@@ -1,20 +1,17 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
 )
 
 type azure struct {
 	settings OpenAISettings
-	c        *http.Client
 	oc       *openai.Client
 }
 
@@ -24,7 +21,6 @@ func NewAzureProvider(settings OpenAISettings) (LLMProvider, error) {
 	}
 	p := &azure{
 		settings: settings,
-		c:        client,
 	}
 
 	// go-openai expects the URL without the '/openai' suffix, which is
@@ -58,35 +54,24 @@ type azureChatCompletionRequest struct {
 	Model string `json:"-"`
 }
 
-func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
+func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	mapping, err := p.getAzureMapping()
 	if err != nil {
-		return ChatCompletionResponse{}, err
+		return openai.ChatCompletionResponse{}, err
 	}
 	deployment := mapping[req.Model]
 	if deployment == "" {
-		return ChatCompletionResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
+		return openai.ChatCompletionResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
 	}
 
-	u, err := url.Parse(p.settings.URL)
+	r := req.ChatCompletionRequest
+	r.Model = deployment
+	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
-		return ChatCompletionResponse{}, err
+		log.DefaultLogger.Error("error creating azure chat completion", "err", err)
+		return openai.ChatCompletionResponse{}, err
 	}
-	u.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", deployment)
-	u.RawQuery = "api-version=2023-03-15-preview"
-	reqBody, err := json.Marshal(azureChatCompletionRequest{
-		ChatCompletionRequest: req,
-		Model:                 req.Model.toOpenAI(),
-	})
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	httpReq.Header.Set("api-key", p.settings.apiKey)
-	return doOpenAIRequest(p.c, httpReq)
+	return resp, nil
 }
 
 func (p *azure) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {

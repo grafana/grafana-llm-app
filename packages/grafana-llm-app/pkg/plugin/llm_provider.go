@@ -84,31 +84,9 @@ func (m Model) toOpenAI() string {
 	panic("unknown model: " + m)
 }
 
-type Role string
-
-const (
-	RoleSystem    = "system"
-	RoleUser      = "user"
-	RoleAssistant = "assistant"
-)
-
-type Message struct {
-	Role    Role   `json:"role"`
-	Content string `json:"content"`
-}
-
 type ChatCompletionRequest struct {
 	openai.ChatCompletionRequest
 	Model Model `json:"model"`
-}
-
-type ChatCompletionResponse struct {
-	ID      string   `json:"id"`
-	Object  string   `json:"object"`
-	Created int64    `json:"created"`
-	Model   string   `json:"model"`
-	Choices []Choice `json:"choices"`
-	Usage   Usage    `json:"usage"`
 }
 
 type ChatCompletionStreamResponse struct {
@@ -132,21 +110,6 @@ func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
-type Choice struct {
-	Message Message `json:"message"`
-}
-
-type Usage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
-type ChoiceDelta struct {
-	Content string `json:"content"`
-	Role    string `json:"role"`
-}
-
 type ModelResponse struct {
 	Data []ModelInfo `json:"data"`
 }
@@ -159,7 +122,7 @@ type LLMProvider interface {
 	// Models returns a list of models supported by the provider.
 	Models(context.Context) (ModelResponse, error)
 	// ChatCompletion provides text completion in a chat-like interface.
-	ChatCompletion(context.Context, ChatCompletionRequest) (ChatCompletionResponse, error)
+	ChatCompletion(context.Context, ChatCompletionRequest) (openai.ChatCompletionResponse, error)
 	// ChatCompletionStream provides text completion in a chat-like interface with
 	// tokens being sent as they are ready.
 	ChatCompletionStream(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error)

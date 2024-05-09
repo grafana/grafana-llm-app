@@ -1,14 +1,13 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -16,7 +15,6 @@ type grafanaProvider struct {
 	settings LLMGatewaySettings
 	tenant   string
 	gcomKey  string
-	c        *http.Client
 	oc       *openai.Client
 }
 
@@ -46,7 +44,6 @@ func NewGrafanaProvider(settings Settings) (LLMProvider, error) {
 		settings: settings.LLMGateway,
 		tenant:   settings.Tenant,
 		gcomKey:  settings.GrafanaComAPIKey,
-		c:        client,
 		oc:       openai.NewClientWithConfig(cfg),
 	}, nil
 }
@@ -61,29 +58,15 @@ func (p *grafanaProvider) Models(ctx context.Context) (ModelResponse, error) {
 	}, nil
 }
 
-func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
-	u, err := url.Parse(p.settings.URL)
+func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
+	r := req.ChatCompletionRequest
+	r.Model = req.Model.toOpenAI()
+	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
-		return ChatCompletionResponse{}, err
+		log.DefaultLogger.Error("error creating grafana chat completion", "err", err)
+		return openai.ChatCompletionResponse{}, err
 	}
-	// We keep the openai prefix when using llm-gateway.
-	u.Path, err = url.JoinPath(u.Path, "openai/v1/chat/completions")
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	reqBody, err := json.Marshal(openAIChatCompletionRequest{
-		ChatCompletionRequest: req,
-		Model:                 req.Model.toOpenAI(),
-	})
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	httpReq.SetBasicAuth(p.tenant, p.gcomKey)
-	return doOpenAIRequest(p.c, httpReq)
+	return resp, nil
 }
 
 func (p *grafanaProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
