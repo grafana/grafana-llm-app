@@ -12,15 +12,19 @@ import (
 
 type azure struct {
 	settings OpenAISettings
-	oc       *openai.Client
+	// We need the model settings to determine the default model in case it's
+	// missing from a request.
+	modelSettings ModelSettings
+	oc            *openai.Client
 }
 
-func NewAzureProvider(settings OpenAISettings) (LLMProvider, error) {
+func NewAzureProvider(settings OpenAISettings, modelSettings *ModelSettings) (LLMProvider, error) {
 	client := &http.Client{
 		Timeout: 2 * time.Minute,
 	}
 	p := &azure{
-		settings: settings,
+		settings:      settings,
+		modelSettings: *modelSettings,
 	}
 
 	// go-openai expects the URL without the '/openai' suffix, which is
@@ -54,14 +58,25 @@ type azureChatCompletionRequest struct {
 	Model string `json:"-"`
 }
 
-func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
+func (p *azure) getDeployment(model Model) (string, error) {
 	mapping, err := p.getAzureMapping()
 	if err != nil {
-		return openai.ChatCompletionResponse{}, err
+		return "", err
 	}
-	deployment := mapping[req.Model]
+	if model == "" {
+		model = p.modelSettings.Default
+	}
+	deployment := mapping[model]
 	if deployment == "" {
-		return openai.ChatCompletionResponse{}, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
+		return "", fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, model)
+	}
+	return deployment, nil
+}
+
+func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
+	deployment, err := p.getDeployment(req.Model)
+	if err != nil {
+		return openai.ChatCompletionResponse{}, err
 	}
 
 	r := req.ChatCompletionRequest
@@ -75,13 +90,9 @@ func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (
 }
 
 func (p *azure) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
-	mapping, err := p.getAzureMapping()
+	deployment, err := p.getDeployment(req.Model)
 	if err != nil {
 		return nil, err
-	}
-	deployment := mapping[req.Model]
-	if deployment == "" {
-		return nil, fmt.Errorf("%w: no deployment found for model: %s", errBadRequest, req.Model)
 	}
 
 	r := req.ChatCompletionRequest
