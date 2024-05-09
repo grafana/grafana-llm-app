@@ -366,6 +366,31 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			expStatus: http.StatusOK,
 		},
+		{
+			name: "grafana-managed llm gateway - empty model",
+
+			settings: Settings{
+				Tenant:           "123",
+				GrafanaComAPIKey: "abcd1234",
+				OpenAI: OpenAISettings{
+					Provider: openAIProviderGrafana,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer 123:abcd1234"},
+				"X-Scope-OrgID": {"123"},
+			},
+			expReqPath: "/llm/openai/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"]}}`),
+
+			expStatus: http.StatusOK,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
