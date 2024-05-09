@@ -107,7 +107,7 @@ export function OpenAIConfig({
       {settings.provider === 'azure' && (
         <Field
           label="Azure OpenAI Model Mapping"
-          description="Mapping from OpenAI model names to Azure deployment names."
+          description="Mapping from model name to Azure deployment name."
         >
           <AzureModelDeploymentConfig
             modelMapping={settings.azureModelMapping ?? []}
