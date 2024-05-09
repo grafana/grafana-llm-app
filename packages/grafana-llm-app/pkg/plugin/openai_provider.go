@@ -1,9 +1,7 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +15,6 @@ import (
 
 type openAI struct {
 	settings OpenAISettings
-	c        *http.Client
 	oc       *openai.Client
 }
 
@@ -35,7 +32,6 @@ func NewOpenAIProvider(settings OpenAISettings) (LLMProvider, error) {
 	cfg.OrgID = settings.OrganizationID
 	return &openAI{
 		settings: settings,
-		c:        client,
 		oc:       openai.NewClientWithConfig(cfg),
 	}, nil
 }
@@ -56,59 +52,21 @@ type openAIChatCompletionRequest struct {
 	Model string `json:"model"`
 }
 
-func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
-	u, err := url.Parse(p.settings.URL)
+func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
+	r := req.ChatCompletionRequest
+	r.Model = req.Model.toOpenAI()
+	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
-		return ChatCompletionResponse{}, err
+		log.DefaultLogger.Error("error creating openai chat completion", "err", err)
+		return openai.ChatCompletionResponse{}, err
 	}
-	u.Path, err = url.JoinPath(u.Path, "v1/chat/completions")
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	reqBody, err := json.Marshal(openAIChatCompletionRequest{
-		ChatCompletionRequest: req,
-		Model:                 req.Model.toOpenAI(),
-	})
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(reqBody))
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	httpReq.Header.Set("Authorization", "Bearer "+p.settings.apiKey)
-	httpReq.Header.Set("OpenAI-Organization", p.settings.OrganizationID)
-	return doOpenAIRequest(p.c, httpReq)
+	return resp, nil
 }
 
 func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI()
 	return streamOpenAIRequest(ctx, r, p.oc)
-}
-
-func doOpenAIRequest(c *http.Client, req *http.Request) (ChatCompletionResponse, error) {
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.Do(req)
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-
-	if resp.StatusCode/100 != 2 {
-		return ChatCompletionResponse{}, fmt.Errorf("error from OpenAI: %d, %s", resp.StatusCode, string(respBody))
-	}
-
-	completions := ChatCompletionResponse{}
-	err = json.Unmarshal(respBody, &completions)
-	if err != nil {
-		return ChatCompletionResponse{}, err
-	}
-	return completions, nil
 }
 
 func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc *openai.Client) (<-chan ChatCompletionStreamResponse, error) {
