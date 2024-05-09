@@ -16,7 +16,7 @@ type testProvider struct {
 	ModelsResponse ModelResponse `json:"modelsResponse,omitempty"`
 
 	// ChatCompletionResponse is the response to return from ChatCompletion.
-	ChatCompletionResponse ChatCompletionResponse `json:"chatCompletionResponse,omitempty"`
+	ChatCompletionResponse openai.ChatCompletionResponse `json:"chatCompletionResponse,omitempty"`
 
 	// ChatCompletionError is an error to return from ChatCompletion.
 	// If nil (the default) ChatCompletion will not return an error.
@@ -45,10 +45,10 @@ func defaultTestProvider() testProvider {
 			},
 		},
 
-		ChatCompletionResponse: ChatCompletionResponse{
+		ChatCompletionResponse: openai.ChatCompletionResponse{
 			ID:    "0",
 			Model: "tiny",
-			Usage: Usage{
+			Usage: openai.Usage{
 				TotalTokens:      10,
 				PromptTokens:     5,
 				CompletionTokens: 5,
@@ -86,12 +86,12 @@ func validateChatCompletionRequest(req ChatCompletionRequest) error {
 	return nil
 }
 
-func (p *testProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
+func (p *testProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	if p.ChatCompletionError != "" {
-		return ChatCompletionResponse{}, errors.New(p.ChatCompletionError)
+		return openai.ChatCompletionResponse{}, errors.New(p.ChatCompletionError)
 	}
 	if err := validateChatCompletionRequest(req); err != nil {
-		return ChatCompletionResponse{}, err
+		return openai.ChatCompletionResponse{}, err
 	}
 	return p.ChatCompletionResponse, nil
 }
