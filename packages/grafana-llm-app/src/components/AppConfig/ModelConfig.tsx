@@ -3,6 +3,8 @@ import React from 'react';
 import { Field, FieldSet, Input, Label, Select } from '@grafana/ui';
 import { openai } from '@grafana/llm';
 
+import { OpenAIProvider } from './OpenAI';
+
 export interface ModelSettings {
   default?: openai.Model;
   models: ModelMapping[];
@@ -44,13 +46,15 @@ const initModelSettings = (settings: ModelSettings): ModelSettings => ({
 });
 
 export function ModelConfig({
+  provider,
   settings,
   onChange,
 }: {
+  provider: OpenAIProvider;
   settings: ModelSettings;
   onChange: (settings: ModelSettings) => void;
 }) {
-  settings = initModelSettings(settings); 
+  settings = initModelSettings(settings);
 
   return (
     <FieldSet>
@@ -66,32 +70,41 @@ export function ModelConfig({
         />
       </Field>
 
-      <Label description="Set a custom model used for the LLM features.">Custom overrides</Label>
-      {DEFAULT_MODEL_NAMES.map((entry, i) => {
-        const modelSetting = settings.models?.find((m) => m.model === entry.model);
-        // If the model is not in the settings, add it with the default name
-        if (!modelSetting) {
-          onChange({ ...settings, models: [...(settings.models ?? []), { model: entry.model, name: entry.name }] });
-        }
+      {/*
+        Only show custom model mappings for non-Azure providers.
+        When using the Azure provider users can just customise the deployments
+        instead.
+      */ }
+      {provider !== "azure" && (
+        <>
+          <Label description="Set custom models used for LLM features.">Custom overrides</Label>
+          {DEFAULT_MODEL_NAMES.map((entry, i) => {
+            const modelSetting = settings.models?.find((m) => m.model === entry.model);
+            // If the model is not in the settings, add it with the default name
+            if (!modelSetting) {
+              onChange({ ...settings, models: [...(settings.models ?? []), { model: entry.model, name: entry.name }] });
+            }
 
-        return (
-          <Field key={i} label={`${entry.label}`} description={entry.description}>
-            <Input
-              width={60}
-              type="text"
-              name="model"
-              value={modelSetting?.name ?? entry.name}
-              onChange={(e) => {
-                const newModelName = e.currentTarget.value;
-                const newSettings = settings.models.map((m) =>
-                  m.model === entry.model ? { ...m, name: newModelName } : m
-                );
-                onChange({ ...settings, models: newSettings });
-              }}
-            />
-          </Field>
-        );
-      })}
+            return (
+              <Field key={i} label={`${entry.label}`} description={entry.description}>
+                <Input
+                  width={60}
+                  type="text"
+                  name="model"
+                  value={modelSetting?.name ?? entry.name}
+                  onChange={(e) => {
+                    const newModelName = e.currentTarget.value;
+                    const newSettings = settings.models.map((m) =>
+                      m.model === entry.model ? { ...m, name: newModelName } : m
+                    );
+                    onChange({ ...settings, models: newSettings });
+                  }}
+                />
+              </Field>
+            );
+          })}
+        </>
+      )}
     </FieldSet>
   );
 }
