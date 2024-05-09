@@ -346,6 +346,62 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expStatus: http.StatusOK,
 		},
 		{
+			name: "azure - abstract model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderAzure,
+					AzureMapping: [][]string{
+						{"gpt-3.5-turbo", "gpt-35-turbo"},
+					},
+				},
+			},
+
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "base", "messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"api-key": {"abcd1234"},
+			},
+			expReqPath: "/openai/deployments/gpt-35-turbo/chat/completions",
+			// the 'model' field should have been removed.
+			expReqBody: []byte(`{"messages":[{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "azure - empty model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderAzure,
+					AzureMapping: [][]string{
+						{"gpt-3.5-turbo", "gpt-35-turbo"},
+					},
+				},
+			},
+
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"api-key": {"abcd1234"},
+			},
+			expReqPath: "/openai/deployments/gpt-35-turbo/chat/completions",
+			// the 'model' field should have been removed.
+			expReqBody: []byte(`{"messages":[{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
 			name: "azure invalid deployment",
 
 			settings: Settings{
