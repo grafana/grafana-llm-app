@@ -226,6 +226,7 @@ export function LLMConfig({
       {llmOption === 'openai' && (
         <FieldSet label="Models" className={s.sidePadding}>
           <ModelConfig
+            provider={settings.openAI?.provider ?? 'openai'}
             settings={settings.models ?? { models: [] }}
             onChange={(models) => onChange({ ...settings, models })}
           />
