@@ -71,14 +71,35 @@ func (p *testProvider) Models(context.Context) (ModelResponse, error) {
 	return p.ModelsResponse, nil
 }
 
+func validateChatCompletionRequest(req ChatCompletionRequest) error {
+	if len(req.ChatCompletionRequest.Messages) == 0 {
+		return errors.New("at least one message is required")
+	}
+	for _, m := range req.ChatCompletionRequest.Messages {
+		if m.Role == "" {
+			return errors.New("role is required for each message")
+		}
+		if m.Content == "" {
+			return errors.New("content is required for each message")
+		}
+	}
+	return nil
+}
+
 func (p *testProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (ChatCompletionResponse, error) {
 	if p.ChatCompletionError != "" {
 		return ChatCompletionResponse{}, errors.New(p.ChatCompletionError)
+	}
+	if err := validateChatCompletionRequest(req); err != nil {
+		return ChatCompletionResponse{}, err
 	}
 	return p.ChatCompletionResponse, nil
 }
 
 func (p *testProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
+	if err := validateChatCompletionRequest(req); err != nil {
+		return nil, err
+	}
 	if p.InitialStreamError != "" {
 		return nil, errors.New(p.InitialStreamError)
 	}
