@@ -52,12 +52,6 @@ func (p *azure) Models(ctx context.Context) (ModelResponse, error) {
 	return ModelResponse{Data: models}, nil
 }
 
-type azureChatCompletionRequest struct {
-	ChatCompletionRequest
-	// Azure does not use the model field.
-	Model string `json:"-"`
-}
-
 func (p *azure) getDeployment(model Model) (string, error) {
 	mapping, err := p.getAzureMapping()
 	if err != nil {
