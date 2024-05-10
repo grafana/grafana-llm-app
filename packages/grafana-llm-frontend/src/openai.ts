@@ -89,6 +89,8 @@ type DeprecatedString = string;
 export interface ChatCompletionsRequest {
   /**
    * Model abstraction to use. These abstractions are then translated back into specific models based on the users settings.
+   *
+   * If not specified, defaults to `Model.BASE`.
    */
   model?: Model | DeprecatedString;
   /** A list of messages comprising the conversation so far. */
