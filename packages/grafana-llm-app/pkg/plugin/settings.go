@@ -42,6 +42,36 @@ type OpenAISettings struct {
 	apiKey string
 }
 
+type ModelMapping struct {
+	Model Model  `json:"model"`
+	Name  string `json:"name"`
+}
+
+type ModelSettings struct {
+	// Default model to use when no model is defined, or the model is not found.
+	Default Model `json:"default"`
+
+	// Mapping is mapping from our abstract model names to the provider's model names.
+	Mapping map[Model]string `json:"mapping"`
+}
+
+func (c ModelSettings) getModel(model Model) string {
+	// Helper function to get the name of a model.
+	if name, ok := c.Mapping[model]; ok {
+		return name
+	}
+	// If the model is not found, return the default model.
+	return c.getModel(c.Default)
+}
+
+var DEFAULT_MODEL_SETTINGS = &ModelSettings{
+	Default: ModelBase,
+	Mapping: map[Model]string{
+		ModelBase:  "gpt-3.5-turbo",
+		ModelLarge: "gpt-4-turbo",
+	},
+}
+
 // LLMGatewaySettings contains the configuration for the Grafana Managed Key LLM solution.
 type LLMGatewaySettings struct {
 	// This is the URL of the LLM endpoint of the machine learning backend which proxies
@@ -71,6 +101,9 @@ type Settings struct {
 
 	// VectorDB settings. May rely on OpenAI settings.
 	Vector vector.VectorSettings `json:"vector"`
+
+	// Models contains the user-specified models.
+	Models *ModelSettings `json:"models"`
 
 	// LLMGateway provides Grafana-managed OpenAI.
 	LLMGateway LLMGatewaySettings `json:"llmGateway"`
