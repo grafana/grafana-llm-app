@@ -3,23 +3,15 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
-	"strings"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
-
-type mockHealthCheckClient struct {
-	do func(req *http.Request) (*http.Response, error)
-}
-
-func (m *mockHealthCheckClient) Do(req *http.Request) (*http.Response, error) {
-	return m.do(req)
-}
 
 type mockVectorService struct{}
 
@@ -33,6 +25,26 @@ func (m *mockVectorService) Health(ctx context.Context) error {
 
 func (m *mockVectorService) Cancel() {}
 
+type mockOpenAIHealthResponse struct {
+	code int
+	body string
+}
+
+func newMockOpenAIHealthServer(responses []mockOpenAIHealthResponse) *httptest.Server {
+	i := 0
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if i >= len(responses) {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		w.WriteHeader(responses[i].code)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(responses[i].body))
+		i += 1
+		return
+	}))
+}
+
 // TestCheckHealth tests CheckHealth calls, using backend.CheckHealthRequest and backend.CheckHealthResponse.
 func TestCheckHealth(t *testing.T) {
 
@@ -40,8 +52,9 @@ func TestCheckHealth(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		settings backend.AppInstanceSettings
-		hcClient healthCheckClient
 		vService vector.Service
+
+		responses []mockOpenAIHealthResponse
 
 		expDetails healthCheckDetails
 	}{
@@ -51,7 +64,8 @@ func TestCheckHealth(t *testing.T) {
 				DecryptedSecureJSONData: map[string]string{},
 				JSONData: json.RawMessage(`{
 					"openai": {
-						"provider": "openai"
+						"provider": "openai",
+						"url": "%s"
 					}
 				}`),
 			},
@@ -70,19 +84,14 @@ func TestCheckHealth(t *testing.T) {
 				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
 				JSONData: json.RawMessage(`{
 					"openai": {
-						"provider": "openai"
+						"provider": "openai",
+						"url": "%s"
 					}
 				}`),
 			},
-			hcClient: &mockHealthCheckClient{
-				do: func(req *http.Request) (*http.Response, error) {
-					body, _ := io.ReadAll(req.Body)
-					if strings.Contains(string(body), "gpt-4-turbo") {
-						body := io.NopCloser(strings.NewReader(`{"error": "model does not exist"}`))
-						return &http.Response{StatusCode: http.StatusNotFound, Body: body}, nil
-					}
-					return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(""))}, nil
-				},
+			responses: []mockOpenAIHealthResponse{
+				{code: http.StatusOK, body: "{}"},
+				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
 			},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
@@ -90,7 +99,7 @@ func TestCheckHealth(t *testing.T) {
 					OK:         true,
 					Models: map[Model]openAIModelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, message: model does not exist`},
 					},
 				},
 				Vector:  vectorHealthDetails{},
@@ -106,7 +115,7 @@ func TestCheckHealth(t *testing.T) {
 						"embed": {
 							"type": "openai",
 							"openai": {
-								"url": "http://localhost:3000"
+								"url": "%s"
 							}
 						},
 						"store": {
@@ -137,7 +146,8 @@ func TestCheckHealth(t *testing.T) {
 			settings: backend.AppInstanceSettings{
 				JSONData: json.RawMessage(`{
 					"openai": {
-						"provider": "openai"
+						"provider": "openai",
+						"url": "%s"
 					},
 					"vector": {
 						"enabled": true,
@@ -154,17 +164,11 @@ func TestCheckHealth(t *testing.T) {
 				}`),
 				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
 			},
-			vService: &mockVectorService{},
-			hcClient: &mockHealthCheckClient{
-				do: func(req *http.Request) (*http.Response, error) {
-					body, _ := io.ReadAll(req.Body)
-					if strings.Contains(string(body), "gpt-4-turbo") {
-						body := io.NopCloser(strings.NewReader(`{"error": "model does not exist"}`))
-						return &http.Response{StatusCode: http.StatusNotFound, Body: body}, nil
-					}
-					return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(""))}, nil
-				},
+			responses: []mockOpenAIHealthResponse{
+				{code: http.StatusOK, body: "{}"},
+				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
 			},
+			vService: &mockVectorService{},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
 					Configured: true,
@@ -172,7 +176,7 @@ func TestCheckHealth(t *testing.T) {
 					Error:      "",
 					Models: map[Model]openAIModelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, message: model does not exist`},
 					},
 				},
 				Vector: vectorHealthDetails{
@@ -185,6 +189,9 @@ func TestCheckHealth(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
+			server := newMockOpenAIHealthServer(tc.responses)
+			defer server.Close()
+			tc.settings.JSONData = []byte(fmt.Sprintf(string(tc.settings.JSONData), server.URL))
 			// Initialize app
 			inst, err := NewApp(ctx, tc.settings)
 			if err != nil {
@@ -197,7 +204,6 @@ func TestCheckHealth(t *testing.T) {
 			if !ok {
 				t.Fatal("inst must be of type *App")
 			}
-			app.healthCheckClient = tc.hcClient
 			app.vectorService = tc.vService
 			// Request by calling CheckHealth.
 			resp, err := app.CheckHealth(ctx, &backend.CheckHealthRequest{
