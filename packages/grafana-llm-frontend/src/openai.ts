@@ -90,7 +90,7 @@ export interface ChatCompletionsRequest {
   /**
    * Model abstraction to use. These abstractions are then translated back into specific models based on the users settings.
    */
-  model: Model | DeprecatedString;
+  model?: Model | DeprecatedString;
   /** A list of messages comprising the conversation so far. */
   messages: Message[];
   /** A list of functions the model may generate JSON inputs for. */
