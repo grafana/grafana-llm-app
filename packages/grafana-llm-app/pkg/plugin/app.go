@@ -66,7 +66,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		}
 		app.llmProvider = p
 	case openAIProviderAzure:
-		p, err := NewAzureProvider(app.settings.OpenAI, app.settings.Models)
+		p, err := NewAzureProvider(app.settings.OpenAI, app.settings.Models.Default)
 		if err != nil {
 			return nil, err
 		}

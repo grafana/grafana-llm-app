@@ -11,20 +11,18 @@ import (
 )
 
 type azure struct {
-	settings OpenAISettings
-	// We need the model settings to determine the default model in case it's
-	// missing from a request.
-	modelSettings ModelSettings
-	oc            *openai.Client
+	settings     OpenAISettings
+	defaultModel Model
+	oc           *openai.Client
 }
 
-func NewAzureProvider(settings OpenAISettings, modelSettings *ModelSettings) (LLMProvider, error) {
+func NewAzureProvider(settings OpenAISettings, defaultModel Model) (LLMProvider, error) {
 	client := &http.Client{
 		Timeout: 2 * time.Minute,
 	}
 	p := &azure{
-		settings:      settings,
-		modelSettings: *modelSettings,
+		settings:     settings,
+		defaultModel: defaultModel,
 	}
 
 	// go-openai expects the URL without the '/openai' suffix, which is
@@ -58,7 +56,7 @@ func (p *azure) getDeployment(model Model) (string, error) {
 		return "", err
 	}
 	if model == "" {
-		model = p.modelSettings.Default
+		model = p.defaultModel
 	}
 	deployment := mapping[model]
 	if deployment == "" {
