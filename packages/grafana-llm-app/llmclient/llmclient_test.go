@@ -56,7 +56,7 @@ func TestChatCompletions(t *testing.T) {
 				{Role: "user", Content: "Hello, how are you?"},
 			},
 		},
-		Model: ModelSmall,
+		Model: ModelBase,
 	}
 	_, err := client.ChatCompletions(ctx, req)
 	if err != nil {
@@ -114,7 +114,7 @@ func TestChatCompletionsStream(t *testing.T) {
 			},
 			Stream: true,
 		},
-		Model: ModelSmall,
+		Model: ModelBase,
 	}
 	stream, err := client.ChatCompletionsStream(ctx, req)
 	if err != nil {

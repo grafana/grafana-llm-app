@@ -11,7 +11,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 )
 
-var openAIModels = []Model{ModelSmall, ModelMedium}
+var openAIModels = []Model{ModelBase, ModelLarge}
 
 type healthCheckClient interface {
 	Do(req *http.Request) (*http.Response, error)

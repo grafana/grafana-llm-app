@@ -250,7 +250,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
-			body:   []byte(`{"model": "small", "stream": true, "messages": [{"content":"some stuff"}]}`),
+			body:   []byte(`{"model": "base", "stream": true, "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization":       {"Bearer abcd1234"},

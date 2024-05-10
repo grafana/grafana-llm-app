@@ -37,7 +37,7 @@ const BasicChatTest = () => {
     if (!useStream) {
       // Make a single request to the LLM.
       const response = await openai.chatCompletions({
-        model: 'small',
+        model: 'base',
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
@@ -50,7 +50,7 @@ const BasicChatTest = () => {
     } else {
       // Stream the completions. Each element is the next stream chunk.
       const stream = openai.streamChatCompletions({
-        model: 'gpt-3.5-turbo',
+        model: 'base',
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },

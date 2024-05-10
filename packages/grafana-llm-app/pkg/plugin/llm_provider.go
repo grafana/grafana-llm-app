@@ -16,37 +16,18 @@ var errBadRequest = errors.New("bad request")
 type Model string
 
 const (
-	ModelSmall  = "small"
-	ModelMedium = "medium"
-	ModelLarge  = "large"
+	ModelBase  = "base"
+	ModelLarge = "large"
 )
-
-var GPT4LargeModels = []string{
-	"gpt-4",
-	"gpt-4-0613",
-	"gpt-4-32k",
-	"gpt-4-32k-0613",
-}
-
-func contains[T comparable](s []T, e T) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
 
 // UnmarshalJSON accepts either OpenAI named models for backwards
 // compatability, or the new abstract model names.
 func ModelFromString(m string) (Model, error) {
 	switch {
-	case m == ModelLarge || contains(GPT4LargeModels, m):
+	case m == ModelLarge || strings.HasPrefix(m, "gpt-4"):
 		return ModelLarge, nil
-	case m == ModelMedium || strings.HasPrefix(m, "gpt-4"):
-		return ModelMedium, nil
-	case m == ModelSmall || strings.HasPrefix(m, "gpt-3.5"):
-		return ModelSmall, nil
+	case m == ModelBase || strings.HasPrefix(m, "gpt-3.5"):
+		return ModelBase, nil
 	}
 	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
 	return "", fmt.Errorf("unrecognized model: %s", m)
@@ -57,14 +38,11 @@ func ModelFromString(m string) (Model, error) {
 func (m *Model) UnmarshalJSON(data []byte) error {
 	dataString := string(data)
 	switch {
-	case dataString == fmt.Sprintf(`"%s"`, ModelLarge) || contains(GPT4LargeModels, dataString[1:len(dataString)-1]):
+	case dataString == fmt.Sprintf(`"%s"`, ModelLarge) || strings.HasPrefix(dataString, `"gpt-4`):
 		*m = ModelLarge
 		return nil
-	case dataString == fmt.Sprintf(`"%s"`, ModelMedium) || strings.HasPrefix(dataString, `"gpt-4`):
-		*m = ModelMedium
-		return nil
-	case dataString == fmt.Sprintf(`"%s"`, ModelSmall) || strings.HasPrefix(dataString, `"gpt-3.5`):
-		*m = ModelSmall
+	case dataString == fmt.Sprintf(`"%s"`, ModelBase) || strings.HasPrefix(dataString, `"gpt-3.5`):
+		*m = ModelBase
 		return nil
 	}
 	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
@@ -74,12 +52,10 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 func (m Model) toOpenAI() string {
 	// TODO: Add ability to change which model is used for each abstraction in settings.
 	switch m {
-	case ModelSmall:
+	case ModelBase:
 		return "gpt-3.5-turbo"
-	case ModelMedium:
-		return "gpt-4-turbo"
 	case ModelLarge:
-		return "gpt-4"
+		return "gpt-4-turbo"
 	}
 	panic("unknown model: " + m)
 }

@@ -14,13 +14,8 @@ func TestModelFromString(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			input:    "small",
-			expected: ModelSmall,
-			wantErr:  false,
-		},
-		{
-			input:    "medium",
-			expected: ModelMedium,
+			input:    "base",
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
@@ -44,22 +39,22 @@ func TestModelFromString(t *testing.T) {
 		// backwards-compatibility
 		{
 			input:    "gpt-3.5-turbo",
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    "gpt-3.5-turbo-0125",
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    "gpt-4-turbo",
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
 			input:    "gpt-4-turbo-2024-04-09",
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
@@ -95,13 +90,8 @@ func TestUnmarshalJSON(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			input:    []byte(`"small"`),
-			expected: ModelSmall,
-			wantErr:  false,
-		},
-		{
-			input:    []byte(`"medium"`),
-			expected: ModelMedium,
+			input:    []byte(`"base"`),
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
@@ -130,22 +120,22 @@ func TestUnmarshalJSON(t *testing.T) {
 		// backwards-compatibility
 		{
 			input:    []byte(`"gpt-3.5-turbo"`),
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    []byte(`"gpt-3.5-turbo-0125"`),
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    []byte(`"gpt-4-turbo"`),
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
 			input:    []byte(`"gpt-4-turbo-2024-04-09"`),
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{

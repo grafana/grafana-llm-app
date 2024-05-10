@@ -77,7 +77,7 @@ func TestCheckHealth(t *testing.T) {
 			hcClient: &mockHealthCheckClient{
 				do: func(req *http.Request) (*http.Response, error) {
 					body, _ := io.ReadAll(req.Body)
-					if strings.Contains(string(body), "gpt-4") {
+					if strings.Contains(string(body), "gpt-4-turbo") {
 						body := io.NopCloser(strings.NewReader(`{"error": "model does not exist"}`))
 						return &http.Response{StatusCode: http.StatusNotFound, Body: body}, nil
 					}
@@ -89,8 +89,8 @@ func TestCheckHealth(t *testing.T) {
 					Configured: true,
 					OK:         true,
 					Models: map[Model]openAIModelHealth{
-						ModelSmall:  {OK: true, Error: ""},
-						ModelMedium: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
+						ModelBase:  {OK: true, Error: ""},
+						ModelLarge: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
 					},
 				},
 				Vector:  vectorHealthDetails{},
@@ -158,7 +158,7 @@ func TestCheckHealth(t *testing.T) {
 			hcClient: &mockHealthCheckClient{
 				do: func(req *http.Request) (*http.Response, error) {
 					body, _ := io.ReadAll(req.Body)
-					if strings.Contains(string(body), "gpt-4") {
+					if strings.Contains(string(body), "gpt-4-turbo") {
 						body := io.NopCloser(strings.NewReader(`{"error": "model does not exist"}`))
 						return &http.Response{StatusCode: http.StatusNotFound, Body: body}, nil
 					}
@@ -171,8 +171,8 @@ func TestCheckHealth(t *testing.T) {
 					OK:         true,
 					Error:      "",
 					Models: map[Model]openAIModelHealth{
-						ModelSmall:  {OK: true, Error: ""},
-						ModelMedium: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
+						ModelBase:  {OK: true, Error: ""},
+						ModelLarge: {OK: false, Error: `unexpected status code: 404: {"error": "model does not exist"}`},
 					},
 				},
 				Vector: vectorHealthDetails{
