@@ -238,6 +238,30 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expStatus: http.StatusOK,
 		},
 		{
+			name: "openai - empty model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderOpenAI,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization":       {"Bearer abcd1234"},
+				"OpenAI-Organization": {"myOrg"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
 			name: "openai - streaming",
 
 			settings: Settings{
@@ -251,6 +275,34 @@ func TestCallOpenAIProxy(t *testing.T) {
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
 			body:   []byte(`{"model": "base", "stream": true, "messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization":       {"Bearer abcd1234"},
+				"OpenAI-Organization": {"myOrg"},
+			},
+			expReqPath: "/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "stream": true, "messages": [{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+
+			// We need to use regular strings rather than raw strings here otherwise the double
+			// newlines (required by the SSE spec) are escaped.
+			expBody: []byte("data: {\"id\":\"\",\"object\":\"\",\"created\":0,\"model\":\"\",\"choices\":null,\"system_fingerprint\":\"\"}\n\ndata: [DONE]\n\n"),
+		},
+		{
+			name: "openai - streaming - empty model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderOpenAI,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"stream": true, "messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization":       {"Bearer abcd1234"},
@@ -294,6 +346,62 @@ func TestCallOpenAIProxy(t *testing.T) {
 			expStatus: http.StatusOK,
 		},
 		{
+			name: "azure - abstract model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderAzure,
+					AzureMapping: [][]string{
+						{"gpt-3.5-turbo", "gpt-35-turbo"},
+					},
+				},
+			},
+
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"model": "base", "messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"api-key": {"abcd1234"},
+			},
+			expReqPath: "/openai/deployments/gpt-35-turbo/chat/completions",
+			// the 'model' field should have been removed.
+			expReqBody: []byte(`{"messages":[{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "azure - empty model",
+
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					OrganizationID: "myOrg",
+					Provider:       openAIProviderAzure,
+					AzureMapping: [][]string{
+						{"gpt-3.5-turbo", "gpt-35-turbo"},
+					},
+				},
+			},
+
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"api-key": {"abcd1234"},
+			},
+			expReqPath: "/openai/deployments/gpt-35-turbo/chat/completions",
+			// the 'model' field should have been removed.
+			expReqBody: []byte(`{"messages":[{"content":"some stuff"}]}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
 			name: "azure invalid deployment",
 
 			settings: Settings{
@@ -310,7 +418,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
 			// note no gpt-4 in AzureMapping.
-			body: []byte(`{"model": "gpt-4", "messages": [{"content":"some stuff"}]}`),
+			body: []byte(`{"model": "gpt-4-turbo", "messages": [{"content":"some stuff"}]}`),
 
 			expNilRequest: true,
 
@@ -356,6 +464,31 @@ func TestCallOpenAIProxy(t *testing.T) {
 			method: http.MethodPost,
 			path:   "/openai/v1/chat/completions",
 			body:   []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"}]}`),
+
+			expReqHeaders: http.Header{
+				"Authorization": {"Bearer 123:abcd1234"},
+				"X-Scope-OrgID": {"123"},
+			},
+			expReqPath: "/llm/openai/v1/chat/completions",
+			expReqBody: []byte(`{"model": "gpt-3.5-turbo", "messages": [{"content":"some stuff"]}}`),
+
+			expStatus: http.StatusOK,
+		},
+		{
+			name: "grafana-managed llm gateway - empty model",
+
+			settings: Settings{
+				Tenant:           "123",
+				GrafanaComAPIKey: "abcd1234",
+				OpenAI: OpenAISettings{
+					Provider: openAIProviderGrafana,
+				},
+			},
+			apiKey: "abcd1234",
+
+			method: http.MethodPost,
+			path:   "/openai/v1/chat/completions",
+			body:   []byte(`{"messages": [{"content":"some stuff"}]}`),
 
 			expReqHeaders: http.Header{
 				"Authorization": {"Bearer 123:abcd1234"},
