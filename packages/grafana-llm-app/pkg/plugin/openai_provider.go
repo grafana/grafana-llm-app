@@ -39,8 +39,7 @@ func NewOpenAIProvider(settings OpenAISettings) (LLMProvider, error) {
 func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
 	return ModelResponse{
 		Data: []ModelInfo{
-			{ID: ModelSmall},
-			{ID: ModelMedium},
+			{ID: ModelBase},
 			{ID: ModelLarge},
 		},
 	}, nil
