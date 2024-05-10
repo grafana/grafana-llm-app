@@ -31,14 +31,13 @@ type App struct {
 
 	vectorService vector.Service
 
-	llmProvider       LLMProvider
-	healthCheckClient healthCheckClient
-	healthCheckMutex  sync.Mutex
-	healthOpenAI      *openAIHealthDetails
-	healthVector      *vectorHealthDetails
-	settings          *Settings
-	saToken           string
-	grafanaAppURL     string
+	llmProvider      LLMProvider
+	healthCheckMutex sync.Mutex
+	healthOpenAI     *openAIHealthDetails
+	healthVector     *vectorHealthDetails
+	settings         *Settings
+	saToken          string
+	grafanaAppURL    string
 }
 
 // NewApp creates a new example *App instance.
@@ -108,7 +107,6 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		}
 	}
 
-	app.healthCheckClient = &http.Client{}
 	app.healthCheckMutex = sync.Mutex{}
 
 	return &app, nil
