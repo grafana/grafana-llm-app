@@ -37,7 +37,7 @@ const BasicChatTest = () => {
     if (!useStream) {
       // Make a single request to the LLM.
       const response = await openai.chatCompletions({
-        model: 'base',
+        model: openai.Model.BASE,
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
@@ -50,7 +50,7 @@ const BasicChatTest = () => {
     } else {
       // Stream the completions. Each element is the next stream chunk.
       const stream = openai.streamChatCompletions({
-        model: 'base',
+        model: openai.Model.BASE,
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
@@ -92,8 +92,8 @@ const BasicChatTest = () => {
             placeholder="Enter a message"
           />
           <br />
-          <Button type="submit" onClick={() => {setMessage(input); setUseStream(true);}}>Submit Stream</Button>
-          <Button type="submit" onClick={() => {setMessage(input); setUseStream(false);}}>Submit Request</Button>
+          <Button type="submit" onClick={() => { setMessage(input); setUseStream(true); }}>Submit Stream</Button>
+          <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
           <br />
           <div>{loading ? <Spinner /> : reply}</div>
           <div>{started ? "Response is started" : "Response is not started"}</div>
