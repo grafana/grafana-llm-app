@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.9.1
+
+- Fix handling of streaming requests made via resource endpoints (#326)
+
 ## 0.9.0
 
 - Initial backend support for abstracted models (#315) 
