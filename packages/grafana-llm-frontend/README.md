@@ -40,7 +40,7 @@ const MyComponent = (): JSX.Element => {
     // Stream the completions. Each element is the next stream chunk.
     const stream = llms.openai
       .streamChatCompletions({
-        model: llms.openai.Model.BASE,
+        // model: llms.openai.Model.LARGE, // defaults to BASE, use larger model for longer context and complex tasks
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
