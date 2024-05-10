@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Badge, Button, Divider, Field, FieldSet, Input, Label } from '@grafana/ui';
+import { Badge, Button, Divider, Field, FieldSet, Input, Label, Select } from '@grafana/ui';
 import { openai } from '@grafana/llm';
 
 import { OpenAIProvider } from './OpenAI';
@@ -64,6 +64,19 @@ export function ModelConfig({
         When using the Azure provider users can just customise the deployments
         instead.
       */}
+      {provider === 'azure' && (
+        <Field
+          label="Default Model"
+          description="The default model is used when no model is specified in the chat request."
+        >
+          <Select
+            options={MODEL_MAPPING_CONFIG.map((entry) => ({ label: entry.label, value: entry.id }))}
+            width={60}
+            value={settings.default ?? DEFAULT_MODEL_ID}
+            onChange={(e) => setDefault(e.value ?? DEFAULT_MODEL_ID as openai.Model)}
+          />
+        </Field>
+      )}
       {provider !== 'azure' && (
         <>
           <Label description="Map custom models used for LLM features. The default model is used when no model is specified in the chat request.">
