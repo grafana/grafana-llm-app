@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
 
@@ -65,6 +66,32 @@ func (m Model) toOpenAI(modelSettings *ModelSettings) string {
 type ChatCompletionRequest struct {
 	openai.ChatCompletionRequest
 	Model Model `json:"model"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+// We have a custom implementation here to check whether temperature is being
+// explicitly set to `0` in the incoming request, because the `openai.ChatCompletionRequest`
+// struct has `omitempty` on the Temperature field and would omit it when marshaling.
+// If there is an explicit 0 value in the request, we set it to `math.SmallestNonzeroFloat32`,
+// a workaround mentioned in https://github.com/sashabaranov/go-openai/issues/9#issuecomment-894845206.
+func (c *ChatCompletionRequest) UnmarshalJSON(data []byte) error {
+	// Create a wrapper type alias to avoid recursion, otherwise the
+	// subsequent call to UnmarshalJSON would call this method forever.
+	type Alias ChatCompletionRequest
+	var a Alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	// Also unmarshal to a map to check if temperature is being set explicitly in the request.
+	r := map[string]any{}
+	if err := json.Unmarshal(data, &r); err != nil {
+		return err
+	}
+	if t, ok := r["temperature"].(float64); ok && t == 0 {
+		a.ChatCompletionRequest.Temperature = math.SmallestNonzeroFloat32
+	}
+	*c = ChatCompletionRequest(a)
+	return nil
 }
 
 type ChatCompletionStreamResponse struct {
