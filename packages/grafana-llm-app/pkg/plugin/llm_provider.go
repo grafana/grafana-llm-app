@@ -50,7 +50,7 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 }
 
 func (m Model) toOpenAI(modelSettings *ModelSettings) string {
-	if modelSettings == nil || len(modelSettings.Models) == 0 {
+	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
 		switch m {
 		case ModelBase:
 			return "gpt-3.5-turbo"

@@ -51,16 +51,14 @@ type ModelSettings struct {
 	// Default model to use when no model is defined, or the model is not found.
 	Default Model `json:"default"`
 
-	// Models is a list of user-specified models, mapping our abstract model names to the provider's model names.
-	Models []ModelMapping `json:"models"`
+	// Mapping is mapping from our abstract model names to the provider's model names.
+	Mapping map[Model]string `json:"mapping"`
 }
 
 func (c ModelSettings) getModel(model Model) string {
 	// Helper function to get the name of a model.
-	for _, m := range c.Models {
-		if m.Model == model {
-			return m.Name
-		}
+	if name, ok := c.Mapping[model]; ok {
+		return name
 	}
 	// If the model is not found, return the default model.
 	return c.getModel(c.Default)
@@ -68,15 +66,9 @@ func (c ModelSettings) getModel(model Model) string {
 
 var DEFAULT_MODEL_SETTINGS = &ModelSettings{
 	Default: ModelBase,
-	Models: []ModelMapping{
-		{
-			Model: ModelBase,
-			Name:  "gpt-3.5-turbo",
-		},
-		{
-			Model: ModelLarge,
-			Name:  "gpt-4-turbo",
-		},
+	Mapping: map[Model]string{
+		ModelBase:  "gpt-3.5-turbo",
+		ModelLarge: "gpt-4-turbo",
 	},
 }
 

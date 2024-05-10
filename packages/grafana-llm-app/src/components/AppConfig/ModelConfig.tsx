@@ -5,17 +5,16 @@ import { openai } from '@grafana/llm';
 
 import { OpenAIProvider } from './OpenAI';
 
+export type ModelMapping = Partial<Record<openai.Model, string>>;
+
 export interface ModelSettings {
   default?: openai.Model;
-  models: ModelMapping[];
+  mapping: ModelMapping;
 }
 
-export interface ModelMapping {
+export interface ModelMappingConfig {
   model: openai.Model;
   name: string;
-}
-
-export interface ModelMappingConfig extends ModelMapping {
   label: string;
   description: string;
 }
@@ -40,9 +39,12 @@ const initModelSettings = (settings: ModelSettings): ModelSettings => ({
   default: settings.default ?? DEFAULT_MODEL,
   // If the settings are empty, set the default models
   // If the settings are not empty, filter out any models that are not in the default list
-  models: settings.models
-    ? settings.models.filter((m) => DEFAULT_MODEL_NAMES.find((d) => d.model === m.model))
-    : DEFAULT_MODEL_NAMES.map((entry) => ({ model: entry.model, name: entry.name })),
+  mapping: settings.mapping
+    ? Object.fromEntries(
+      Object.entries(settings.mapping)
+        .filter(([m, _]) => DEFAULT_MODEL_NAMES.find((d) => d.model === m))
+    ) as ModelMapping
+    : Object.fromEntries(DEFAULT_MODEL_NAMES.map((entry) => ([entry.model, entry.name]))) as ModelMapping,
 });
 
 export function ModelConfig({
@@ -79,10 +81,10 @@ export function ModelConfig({
         <>
           <Label description="Set custom models used for LLM features.">Custom overrides</Label>
           {DEFAULT_MODEL_NAMES.map((entry, i) => {
-            const modelSetting = settings.models?.find((m) => m.model === entry.model);
+            const modelSetting = settings.mapping[entry.model];
             // If the model is not in the settings, add it with the default name
             if (!modelSetting) {
-              onChange({ ...settings, models: [...(settings.models ?? []), { model: entry.model, name: entry.name }] });
+              onChange({ ...settings, mapping: { ...settings.mapping, [entry.model]: entry.name } });
             }
 
             return (
@@ -91,13 +93,14 @@ export function ModelConfig({
                   width={60}
                   type="text"
                   name="model"
-                  value={modelSetting?.name ?? entry.name}
+                  value={modelSetting ?? entry.name}
                   onChange={(e) => {
                     const newModelName = e.currentTarget.value;
-                    const newSettings = settings.models.map((m) =>
-                      m.model === entry.model ? { ...m, name: newModelName } : m
-                    );
-                    onChange({ ...settings, models: newSettings });
+                    const newMapping = {
+                      ...settings.mapping,
+                      [entry.model]: newModelName,
+                    };
+                    onChange({ ...settings, mapping: newMapping });
                   }}
                 />
               </Field>
