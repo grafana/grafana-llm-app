@@ -72,13 +72,25 @@ export interface Function {
   parameters: Object;
 }
 
+/**
+ * Enum representing abstracted models used by the backend app.
+ * @enum {string}
+ */
+export enum Model {
+  BASE = 'base',
+  LARGE = 'large',
+}
+
+/**
+ * @deprecated Use {@link Model} instead.
+ */
+type DeprecatedString = string;
+
 export interface ChatCompletionsRequest {
   /**
-   * ID of the model to use.
-   *
-   * See the model endpoint compatibility table for details on which models work with the Chat Completions API.
+   * Model abstraction to use. These abstractions are then translated back into specific models based on the users settings.
    */
-  model: string;
+  model: Model | DeprecatedString;
   /** A list of messages comprising the conversation so far. */
   messages: Message[];
   /** A list of functions the model may generate JSON inputs for. */
@@ -255,7 +267,7 @@ export function isErrorResponse<T>(
  * @returns An observable that emits the content messages. Each emission will be a string containing the
  *         token emitted by the model.
  * @example <caption>Example of reading all tokens in a stream.</caption>
- * const stream = streamChatCompletions({ model: 'gpt-3.5-turbo', messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(extractContent());
@@ -282,7 +294,7 @@ export function extractContent(): UnaryFunction<
  * @returns An observable that emits the accumulated content messages. Each emission will be a string containing the
  *         content of all messages received so far.
  * @example
- * const stream = streamChatCompletions({ model: 'gpt-3.5-turbo', messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(accumulateContent());
@@ -324,7 +336,7 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  * The 'done' message will not be emitted; the stream will simply end when this message is encountered.
  *
  * @example <caption>Example of reading all tokens in a stream.</caption>
- * const stream = streamChatCompletions({ model: 'gpt-3.5-turbo', messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(extractContent());
@@ -333,7 +345,7 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  * // ['Hello', '? ', 'How ', 'are ', 'you', '?']
  *
  * @example <caption>Example of accumulating tokens in a stream.</caption>
- * const stream = streamChatCompletions({ model: 'gpt-3.5-turbo', messages: [
+ * const stream = streamChatCompletions({ model: Model.BASE, messages: [
  *   { role: 'system', content: 'You are a great bot.' },
  *   { role: 'user', content: 'Hello, bot.' },
  * ]}).pipe(accumulateContent());
@@ -487,7 +499,7 @@ export type OpenAIStreamState = {
  * @property {Subscription|undefined} value.stream - The stream subscription object if the stream is active, or undefined if not.
  */
 export function useOpenAIStream(
-  model = 'gpt-4',
+  model = Model.LARGE,
   temperature = 1,
   notifyError: (title: string, text?: string, traceId?: string) => void = () => {}
 ): OpenAIStreamState {
