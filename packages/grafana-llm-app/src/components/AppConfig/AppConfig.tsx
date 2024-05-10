@@ -7,16 +7,17 @@ import { FetchResponse, HealthCheckResult, getBackendSrv } from '@grafana/runtim
 import { Alert, Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
 import { testIds } from '../testIds';
+import { ModelSettings } from './ModelConfig';
 import { ShowHealthCheckResult } from './HealthCheck';
 import { LLMConfig } from './LLMConfig';
 import { OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
-
 ///////////////////////
 
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
+  models?: ModelSettings;
   // The enableGrafanaManagedLLM flag will enable the plugin to use Grafana-managed OpenAI
   // This will only work for Grafana Cloud install plugins
   enableGrafanaManagedLLM?: boolean;
@@ -165,7 +166,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           setUpdated(true);
         }}
       />
-      {settings.displayVectorStoreOptions === true &&
+      {settings.displayVectorStoreOptions === true && (
         <VectorConfig
           settings={settings.vector}
           secrets={newSecrets}
@@ -185,7 +186,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             setUpdated(true);
           }}
         />
-      }
+      )}
 
       {errorState !== undefined && <Alert title={errorState} severity="error" />}
       {isUpdating ? (
