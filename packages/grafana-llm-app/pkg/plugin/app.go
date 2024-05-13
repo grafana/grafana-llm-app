@@ -38,6 +38,10 @@ type App struct {
 	settings         *Settings
 	saToken          string
 	grafanaAppURL    string
+
+	// ignoreResponsePadding is a flag to ignore padding in responses.
+	// It should only ever be set in tests.
+	ignoreResponsePadding bool
 }
 
 // NewApp creates a new example *App instance.
