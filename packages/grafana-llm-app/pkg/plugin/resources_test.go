@@ -188,10 +188,6 @@ func newMockOpenAIServer(t *testing.T) *mockServer {
 }
 
 func TestCallOpenAIProxy(t *testing.T) {
-	unsafeDisablePadding = true
-	t.Cleanup(func() {
-		unsafeDisablePadding = false
-	})
 	// Set up and run test cases
 	for _, tc := range []struct {
 		name string
@@ -536,6 +532,8 @@ func TestCallOpenAIProxy(t *testing.T) {
 			if !ok {
 				t.Fatal("inst must be of type *App")
 			}
+
+			app.ignoreResponsePadding = true
 
 			var r mockCallResourceResponseSender
 			err = app.CallResource(ctx, &backend.CallResourceRequest{

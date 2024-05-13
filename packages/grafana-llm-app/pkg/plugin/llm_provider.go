@@ -101,14 +101,16 @@ type ChatCompletionStreamResponse struct {
 	Padding string `json:"p,omitempty"`
 	// Error indicates that an error occurred mid-stream.
 	Error error `json:"-"`
+
+	// ignorePadding is a flag to ignore padding in responses.
+	// It should only ever be set in tests.
+	ignorePadding bool
 }
 
-var unsafeDisablePadding = false
-
 func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
-	if !unsafeDisablePadding {
+	if !r.ignorePadding {
 		// Define a wrapper type to avoid infinite recursion when calling MarshalJSON below.
-		r.Padding = strings.Repeat("p", rand.Int()%35)
+		r.Padding = strings.Repeat("p", rand.Int()%35+1)
 	}
 	type Wrapper ChatCompletionStreamResponse
 	a := (Wrapper)(r)

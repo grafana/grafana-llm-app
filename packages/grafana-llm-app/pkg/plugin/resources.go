@@ -501,6 +501,9 @@ func (a *App) handleChatCompletionsStream(
 			writeErr = handleStreamError(w, resp.Error, http.StatusInternalServerError)
 			continue
 		}
+		if a.ignoreResponsePadding {
+			resp.ignorePadding = true
+		}
 		chunk, err := json.Marshal(resp)
 		if err != nil {
 			writeErr = handleStreamError(w, errors.New("failed to marshal streaming response"), http.StatusInternalServerError)
