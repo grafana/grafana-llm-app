@@ -68,9 +68,18 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		return *a.healthOpenAI, nil
 	}
 
+	// If OpenAI is disabled it has been configured but cannot be queried.
+	if a.settings.OpenAI.Disabled {
+		return openAIHealthDetails{
+			OK:         false,
+			Configured: true,
+			Error:      "LLM functionality is disabled",
+		}, nil
+	}
+
 	d := openAIHealthDetails{
 		OK:         true,
-		Configured: ((a.settings.OpenAI.Provider == openAIProviderAzure || a.settings.OpenAI.Provider == openAIProviderOpenAI) && a.settings.OpenAI.apiKey != "") || a.settings.OpenAI.Provider == openAIProviderGrafana,
+		Configured: a.settings.OpenAI.Configured(),
 		Models:     map[Model]openAIModelHealth{},
 	}
 

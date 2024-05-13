@@ -79,6 +79,27 @@ func TestCheckHealth(t *testing.T) {
 			},
 		},
 		{
+			name: "explicitly disabled",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{},
+				JSONData: json.RawMessage(`{
+					"openai": {
+						"disabled": true,
+						"url": "%s"
+					}
+				}`),
+			},
+			expDetails: healthCheckDetails{
+				OpenAI: openAIHealthDetails{
+					Configured: true,
+					Error:      "LLM functionality is disabled",
+					Models:     map[Model]openAIModelHealth{},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
+		{
 			name: "openai enabled",
 			settings: backend.AppInstanceSettings{
 				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},

@@ -37,9 +37,35 @@ type OpenAISettings struct {
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
 
+	// Disabled marks if a user has explicitly disabled LLM functionality.
+	Disabled bool `json:"disabled"`
+
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
 	// provider (excluding the LLMGateway). Stored securely.
 	apiKey string
+}
+
+func (s OpenAISettings) Configured() bool {
+	// If disabled has been selected than the plugin has been configured.
+	if s.Disabled {
+		return true
+	}
+
+	switch s.Provider {
+	case openAIProviderGrafana:
+		return true
+	case openAIProviderAzure:
+		// Require some mappings for use with Azure.
+		if len(s.AzureMapping) == 0 {
+			return false
+		}
+		// Still need to check the same conditions as openAIProviderOpenAI.
+		fallthrough
+	case openAIProviderOpenAI:
+		return s.apiKey != ""
+	}
+	// Unknown or empty provider means configuration needs to be updated.
+	return false
 }
 
 type ModelMapping struct {

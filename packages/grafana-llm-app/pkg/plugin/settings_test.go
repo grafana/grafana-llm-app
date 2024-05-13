@@ -145,3 +145,93 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigured(t *testing.T) {
+	for _, tc := range []struct {
+		testName   string
+		settings   OpenAISettings
+		configured bool
+	}{
+		{
+			testName:   "empty",
+			configured: false,
+		},
+		{
+			testName: "disabled",
+			settings: OpenAISettings{
+				Disabled: true,
+			},
+			configured: true,
+		},
+		{
+			testName: "disabled with otherwise valid configuration",
+			settings: OpenAISettings{
+				Provider: openAIProviderGrafana,
+				Disabled: true,
+			},
+			configured: true,
+		},
+		// OpenAI tests
+		{
+			testName: "openai without api key",
+			settings: OpenAISettings{
+				Provider: openAIProviderOpenAI,
+			},
+			configured: false,
+		},
+		{
+			testName: "openai with api key",
+			settings: OpenAISettings{
+				Provider: openAIProviderOpenAI,
+				apiKey:   "hello",
+			},
+			configured: true,
+		},
+		// Azure tests
+		{
+			testName: "azure without mapping",
+			settings: OpenAISettings{
+				Provider: openAIProviderAzure,
+				apiKey:   "hello",
+			},
+			configured: false,
+		},
+		{
+			testName: "azure with mapping without api key",
+			settings: OpenAISettings{
+				Provider: openAIProviderAzure,
+				AzureMapping: [][]string{
+					{ModelBase, "azuredeployment"},
+					{ModelLarge, "largeazuredeployment"},
+				},
+			},
+			configured: false,
+		},
+		{
+			testName: "azure valid",
+			settings: OpenAISettings{
+				Provider: openAIProviderAzure,
+				apiKey:   "hello",
+				AzureMapping: [][]string{
+					{ModelBase, "azuredeployment"},
+					{ModelLarge, "largeazuredeployment"},
+				},
+			},
+			configured: true,
+		},
+		// Grafana tests
+		{
+			testName: "grafana provider",
+			settings: OpenAISettings{
+				Provider: openAIProviderGrafana,
+			},
+			configured: true,
+		},
+	} {
+		t.Run(tc.testName, func(t *testing.T) {
+			if tc.configured != tc.settings.Configured() {
+				t.Errorf("expected configured to be `%t`", tc.configured)
+			}
+		})
+	}
+}
