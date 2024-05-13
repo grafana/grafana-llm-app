@@ -110,7 +110,7 @@ type ChatCompletionStreamResponse struct {
 func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
 	if !r.ignorePadding {
 		// Define a wrapper type to avoid infinite recursion when calling MarshalJSON below.
-		r.Padding = strings.Repeat("p", rand.Int()%35)
+		r.Padding = strings.Repeat("p", rand.Int()%35+1)
 	}
 	type Wrapper ChatCompletionStreamResponse
 	a := (Wrapper)(r)
