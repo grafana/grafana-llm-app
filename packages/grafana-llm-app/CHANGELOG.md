@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.10.0
+
+- Breaking: use `base` and `large` model names instead of `small`/`medium`/`large` (#334)
+- Breaking: remove function calling arguments from `@grafana/llm` package (#343)
+- Allow customisation of mapping between abstract model and provider model, and default model (#337, #338, #340)
+- Make the `model` field optional for chat completions & chat completion stream endpoints (#341)
+- Don't preload the plugin to avoid slowing down Grafana load times (#339)
+
+## 0.9.1
+
+- Fix handling of streaming requests made via resource endpoints (#326)
+
 ## 0.9.0
 
 - Initial backend support for abstracted models (#315) 

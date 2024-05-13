@@ -2,9 +2,14 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"math/rand"
 	"strings"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 var errBadRequest = errors.New("bad request")
@@ -12,37 +17,18 @@ var errBadRequest = errors.New("bad request")
 type Model string
 
 const (
-	ModelSmall  = "small"
-	ModelMedium = "medium"
-	ModelLarge  = "large"
+	ModelBase  = "base"
+	ModelLarge = "large"
 )
-
-var GPT4LargeModels = []string{
-	"gpt-4",
-	"gpt-4-0613",
-	"gpt-4-32k",
-	"gpt-4-32k-0613",
-}
-
-func contains[T comparable](s []T, e T) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
 
 // UnmarshalJSON accepts either OpenAI named models for backwards
 // compatability, or the new abstract model names.
 func ModelFromString(m string) (Model, error) {
 	switch {
-	case m == ModelLarge || contains(GPT4LargeModels, m):
+	case m == ModelLarge || strings.HasPrefix(m, "gpt-4"):
 		return ModelLarge, nil
-	case m == ModelMedium || strings.HasPrefix(m, "gpt-4"):
-		return ModelMedium, nil
-	case m == ModelSmall || strings.HasPrefix(m, "gpt-3.5"):
-		return ModelSmall, nil
+	case m == ModelBase || strings.HasPrefix(m, "gpt-3.5"):
+		return ModelBase, nil
 	}
 	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
 	return "", fmt.Errorf("unrecognized model: %s", m)
@@ -53,89 +39,82 @@ func ModelFromString(m string) (Model, error) {
 func (m *Model) UnmarshalJSON(data []byte) error {
 	dataString := string(data)
 	switch {
-	case dataString == fmt.Sprintf(`"%s"`, ModelLarge) || contains(GPT4LargeModels, dataString[1:len(dataString)-1]):
+	case dataString == fmt.Sprintf(`"%s"`, ModelLarge) || strings.HasPrefix(dataString, `"gpt-4`):
 		*m = ModelLarge
 		return nil
-	case dataString == fmt.Sprintf(`"%s"`, ModelMedium) || strings.HasPrefix(dataString, `"gpt-4`):
-		*m = ModelMedium
-		return nil
-	case dataString == fmt.Sprintf(`"%s"`, ModelSmall) || strings.HasPrefix(dataString, `"gpt-3.5`):
-		*m = ModelSmall
+	case dataString == fmt.Sprintf(`"%s"`, ModelBase) || strings.HasPrefix(dataString, `"gpt-3.5`):
+		*m = ModelBase
 		return nil
 	}
 	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
 	return fmt.Errorf("unrecognized model: %s", dataString)
 }
 
-func (m Model) toOpenAI() string {
-	// TODO: Add ability to change which model is used for each abstraction in settings.
-	switch m {
-	case ModelSmall:
-		return "gpt-3.5-turbo"
-	case ModelMedium:
-		return "gpt-4-turbo"
-	case ModelLarge:
-		return "gpt-4"
+func (m Model) toOpenAI(modelSettings *ModelSettings) string {
+	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
+		switch m {
+		case ModelBase:
+			return "gpt-3.5-turbo"
+		case ModelLarge:
+			return "gpt-4-turbo"
+		}
+		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}
-	panic("unknown model: " + m)
-}
-
-type Role string
-
-const (
-	RoleSystem    = "system"
-	RoleUser      = "user"
-	RoleAssistant = "assistant"
-)
-
-type Message struct {
-	Role    Role   `json:"role"`
-	Content string `json:"content"`
+	return modelSettings.getModel(m)
 }
 
 type ChatCompletionRequest struct {
-	Model       Model     `json:"model"`
-	Messages    []Message `json:"messages"`
-	Temperature *float64  `json:"temperature,omitempty"`
-	TopP        *float64  `json:"top_p,omitempty"`
-	MaxTokens   *int      `json:"max_tokens,omitempty"`
+	openai.ChatCompletionRequest
+	Model Model `json:"model"`
 }
 
-type ChatCompletionsResponse struct {
-	ID      string   `json:"id"`
-	Object  string   `json:"object"`
-	Created int64    `json:"created"`
-	Model   string   `json:"model"`
-	Choices []Choice `json:"choices"`
-	Usage   Usage    `json:"usage"`
+// UnmarshalJSON implements json.Unmarshaler.
+// We have a custom implementation here to check whether temperature is being
+// explicitly set to `0` in the incoming request, because the `openai.ChatCompletionRequest`
+// struct has `omitempty` on the Temperature field and would omit it when marshaling.
+// If there is an explicit 0 value in the request, we set it to `math.SmallestNonzeroFloat32`,
+// a workaround mentioned in https://github.com/sashabaranov/go-openai/issues/9#issuecomment-894845206.
+func (c *ChatCompletionRequest) UnmarshalJSON(data []byte) error {
+	// Create a wrapper type alias to avoid recursion, otherwise the
+	// subsequent call to UnmarshalJSON would call this method forever.
+	type Alias ChatCompletionRequest
+	var a Alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	// Also unmarshal to a map to check if temperature is being set explicitly in the request.
+	r := map[string]any{}
+	if err := json.Unmarshal(data, &r); err != nil {
+		return err
+	}
+	if t, ok := r["temperature"].(float64); ok && t == 0 {
+		a.ChatCompletionRequest.Temperature = math.SmallestNonzeroFloat32
+	}
+	*c = ChatCompletionRequest(a)
+	return nil
 }
 
-type Choice struct {
-	Message Message `json:"message"`
+type ChatCompletionStreamResponse struct {
+	openai.ChatCompletionStreamResponse
+	// Random padding used to mitigate side channel attacks.
+	// See https://blog.cloudflare.com/ai-side-channel-attack-mitigated.
+	Padding string `json:"p,omitempty"`
+	// Error indicates that an error occurred mid-stream.
+	Error error `json:"-"`
+
+	// ignorePadding is a flag to ignore padding in responses.
+	// It should only ever be set in tests.
+	ignorePadding bool
 }
 
-type Usage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
-type StreamChatCompletionResponse struct {
-	ID      string                       `json:"id"`
-	Object  string                       `json:"object"`
-	Created int64                        `json:"created"`
-	Model   string                       `json:"model"`
-	Choices []ChatCompletionStreamChoice `json:"choices"`
-}
-
-type ChatCompletionStreamChoice struct {
-	Delta        ChoiceDelta `json:"delta"`
-	FinishReason *string     `json:"finish_reason"`
-}
-
-type ChoiceDelta struct {
-	Content string `json:"content"`
-	Role    string `json:"role"`
+func (r ChatCompletionStreamResponse) MarshalJSON() ([]byte, error) {
+	if !r.ignorePadding {
+		// Define a wrapper type to avoid infinite recursion when calling MarshalJSON below.
+		r.Padding = strings.Repeat("p", rand.Int()%35+1)
+	}
+	type Wrapper ChatCompletionStreamResponse
+	a := (Wrapper)(r)
+	return json.Marshal(a)
 }
 
 type ModelResponse struct {
@@ -147,10 +126,11 @@ type ModelInfo struct {
 }
 
 type LLMProvider interface {
-	// Models returns a list of models
+	// Models returns a list of models supported by the provider.
 	Models(context.Context) (ModelResponse, error)
-	ChatCompletions(context.Context, ChatCompletionRequest) (ChatCompletionsResponse, error)
-	// TODO: Add StreamChatCompletions to this interface so we have one place
-	// to implement a new provider.
-	// StreamChatCompletions(context.Context, ChatCompletionRequest) (<-chan StreamChatCompletionResponse, error)
+	// ChatCompletion provides text completion in a chat-like interface.
+	ChatCompletion(context.Context, ChatCompletionRequest) (openai.ChatCompletionResponse, error)
+	// ChatCompletionStream provides text completion in a chat-like interface with
+	// tokens being sent as they are ready.
+	ChatCompletionStream(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error)
 }

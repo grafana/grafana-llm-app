@@ -26,7 +26,7 @@ func newMockOpenAIStreamServer(t *testing.T, statusCode int, includeDone bool) *
 
 		if statusCode != http.StatusOK {
 			w.WriteHeader(statusCode)
-			_, _ = w.Write([]byte(fmt.Sprintf("error %d", statusCode)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"error": {"code": %d}}`, statusCode)))
 			flusher := w.(http.Flusher)
 			flusher.Flush()
 			return
@@ -177,8 +177,8 @@ func TestRunStream(t *testing.T) {
 				if err = json.Unmarshal(r.messages[n-1], &got); err != nil {
 					t.Fatalf("got non-JSON error message %s", r.messages[n-1])
 				}
-				if !strings.HasSuffix(got.Error, tc.expErr) {
-					t.Fatalf("expected error to end with %q, got %q", tc.expErr, got.Error)
+				if !strings.Contains(got.Error, tc.expErr) {
+					t.Fatalf("expected error to contain %q, got %q", tc.expErr, got.Error)
 				}
 				if tc.expMessageCount != n-1 {
 					t.Fatalf("expected %d non-error messages, got %d", tc.expMessageCount, n-1)

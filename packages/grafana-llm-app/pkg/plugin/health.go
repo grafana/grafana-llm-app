@@ -4,18 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
+	"github.com/sashabaranov/go-openai"
 )
 
-var openAIModels = []Model{ModelSmall, ModelMedium}
-
-type healthCheckClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
+var openAIModels = []Model{ModelBase, ModelLarge}
 
 type openAIModelHealth struct {
 	OK    bool   `json:"ok"`
@@ -50,31 +45,18 @@ func getVersion() string {
 }
 
 func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
-	body := map[string]interface{}{
-		"model": model.toOpenAI(),
-		"messages": []map[string]interface{}{
-			{
-				"role":    "user",
-				"content": "Hello",
+	req := ChatCompletionRequest{
+		Model: model,
+		ChatCompletionRequest: openai.ChatCompletionRequest{
+			Messages: []openai.ChatCompletionMessage{
+				{Role: openai.ChatMessageRoleUser, Content: "Hello"},
 			},
+			MaxTokens: 1,
 		},
-		"max_tokens": 1,
 	}
-	req, err := a.newOpenAIChatCompletionsRequest(ctx, body)
+	_, err := a.llmProvider.ChatCompletion(ctx, req)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
-	}
-	resp, err := a.healthCheckClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("make request: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
-		return fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, respBody)
+		return err
 	}
 	return nil
 }

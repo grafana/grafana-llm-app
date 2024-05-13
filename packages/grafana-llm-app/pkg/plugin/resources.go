@@ -16,6 +16,7 @@ import (
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/sashabaranov/go-openai"
 )
 
 func handleError(w http.ResponseWriter, err error, status int) {
@@ -476,6 +477,79 @@ func (a *App) handleModels(llmProvider LLMProvider) http.HandlerFunc {
 	}
 }
 
+func (a *App) handleChatCompletionsStream(
+	ctx context.Context,
+	llmProvider LLMProvider,
+	req ChatCompletionRequest,
+	w http.ResponseWriter,
+) {
+	log.DefaultLogger.Info("handling stream request")
+	c, err := llmProvider.ChatCompletionStream(ctx, req)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.WriteHeader(http.StatusOK)
+	var writeErr error
+	for resp := range c {
+		// Clear the queue without doing anything in the event of a failed write or error.
+		if writeErr != nil {
+			continue
+		}
+		if resp.Error != nil {
+			writeErr = handleStreamError(w, resp.Error, http.StatusInternalServerError)
+			continue
+		}
+		if a.ignoreResponsePadding {
+			resp.ignorePadding = true
+		}
+		chunk, err := json.Marshal(resp)
+		if err != nil {
+			writeErr = handleStreamError(w, errors.New("failed to marshal streaming response"), http.StatusInternalServerError)
+			continue
+		}
+
+		// Write the data as a SSE. If writing fails we finish reading the
+		// channel to avoid a memory leak and handle the error outside of the
+		// loop.
+		data := "data: " + string(chunk) + "\n\n"
+		_, writeErr = w.Write([]byte(data))
+	}
+	if writeErr != nil {
+		log.DefaultLogger.Warn("failed to write stream", "err", writeErr)
+		return
+	}
+	// Channel has closed, send a DONE SSE.
+	w.Write([]byte("data: [DONE]\n\n"))
+}
+
+func handleStreamError(w http.ResponseWriter, err error, code int) error {
+	// See if the error we passed in is an openai error, if so pass that back
+	// to the user, otherwise fill in the information as best we can.
+	oaiErr := &openai.APIError{}
+	if !errors.As(err, &oaiErr) {
+		oaiErr = &openai.APIError{
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: code,
+		}
+	}
+
+	errResp := openai.ErrorResponse{
+		Error: oaiErr,
+	}
+	resp, err := json.Marshal(errResp)
+	if err != nil {
+		return fmt.Errorf("marshaling error response: %w", err)
+	}
+	_, err = w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(resp))))
+	if err != nil {
+		return fmt.Errorf("writing error response: %w", err)
+	}
+	return nil
+}
+
 func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if llmProvider == nil {
@@ -498,7 +572,12 @@ func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
 			return
 		}
 
-		resp, err := llmProvider.ChatCompletions(r.Context(), req)
+		if req.Stream {
+			a.handleChatCompletionsStream(r.Context(), llmProvider, req, w)
+			return
+		}
+
+		resp, err := llmProvider.ChatCompletion(r.Context(), req)
 		if errors.Is(err, errBadRequest) {
 			handleError(w, err, http.StatusBadRequest)
 		} else if err != nil {

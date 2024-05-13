@@ -23,11 +23,9 @@ const (
 type Model string
 
 const (
-	// ModelSmall is the small model, which is the fastest and cheapest to use. OpenAI default: gpt-3.5-turbo
-	ModelSmall = "small"
-	// ModelMedium is the medium model, which is a good balance between speed and cost. OpenAI default: gpt-4-turbo
-	ModelMedium = "medium"
-	// ModelLarge is the large model, which is the most powerful and accurate. OpenAI default: gpt-4
+	// ModelBase is the base model, for efficient and high-throughput tasks. OpenAI default: gpt-3.5-turbo
+	ModelBase = "base"
+	// ModelLarge is the large model, for more advanced tasks with longer context windows. OpenAI default: gpt-4-turbo
 	ModelLarge = "large"
 )
 

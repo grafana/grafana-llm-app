@@ -1,7 +1,12 @@
 package plugin
 
 import (
+	"encoding/json"
+	"math"
 	"testing"
+
+	"github.com/sashabaranov/go-openai"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestModelFromString(t *testing.T) {
@@ -11,13 +16,8 @@ func TestModelFromString(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			input:    "small",
-			expected: ModelSmall,
-			wantErr:  false,
-		},
-		{
-			input:    "medium",
-			expected: ModelMedium,
+			input:    "base",
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
@@ -41,22 +41,22 @@ func TestModelFromString(t *testing.T) {
 		// backwards-compatibility
 		{
 			input:    "gpt-3.5-turbo",
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    "gpt-3.5-turbo-0125",
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    "gpt-4-turbo",
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
 			input:    "gpt-4-turbo-2024-04-09",
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
@@ -85,20 +85,15 @@ func TestModelFromString(t *testing.T) {
 	}
 }
 
-func TestUnmarshalJSON(t *testing.T) {
+func TestModelUnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		input    []byte
 		expected Model
 		wantErr  bool
 	}{
 		{
-			input:    []byte(`"small"`),
-			expected: ModelSmall,
-			wantErr:  false,
-		},
-		{
-			input:    []byte(`"medium"`),
-			expected: ModelMedium,
+			input:    []byte(`"base"`),
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
@@ -127,22 +122,22 @@ func TestUnmarshalJSON(t *testing.T) {
 		// backwards-compatibility
 		{
 			input:    []byte(`"gpt-3.5-turbo"`),
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    []byte(`"gpt-3.5-turbo-0125"`),
-			expected: ModelSmall,
+			expected: ModelBase,
 			wantErr:  false,
 		},
 		{
 			input:    []byte(`"gpt-4-turbo"`),
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
 			input:    []byte(`"gpt-4-turbo-2024-04-09"`),
-			expected: ModelMedium,
+			expected: ModelLarge,
 			wantErr:  false,
 		},
 		{
@@ -168,5 +163,71 @@ func TestUnmarshalJSON(t *testing.T) {
 				t.Errorf("UnmarshalJSON() = %v, expected %v", m, tt.expected)
 			}
 		})
+	}
+}
+
+func TestChatCompletionRequestUnmarshalJSON(t *testing.T) {
+	for _, tt := range []struct {
+		input    []byte
+		expected ChatCompletionRequest
+	}{
+		{
+			input: []byte(`{"model":"base"}`),
+			expected: ChatCompletionRequest{
+				Model: ModelBase,
+				ChatCompletionRequest: openai.ChatCompletionRequest{
+					Temperature: 0,
+				},
+			},
+		},
+		{
+			input: []byte(`{"model":"base", "temperature":0.5}`),
+			expected: ChatCompletionRequest{
+				Model: ModelBase,
+				ChatCompletionRequest: openai.ChatCompletionRequest{
+					Temperature: 0.5,
+				},
+			},
+		},
+		{
+			input: []byte(`{"model":"base", "temperature":0}`),
+			expected: ChatCompletionRequest{
+				Model: ModelBase,
+				ChatCompletionRequest: openai.ChatCompletionRequest{
+					Temperature: math.SmallestNonzeroFloat32,
+				},
+			},
+		},
+	} {
+		t.Run(string(tt.input), func(t *testing.T) {
+			var req ChatCompletionRequest
+			err := json.Unmarshal(tt.input, &req)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, req)
+		})
+	}
+}
+
+func TestChatCompletionStreamResponseMarshalJSON(t *testing.T) {
+	resp := ChatCompletionStreamResponse{
+		ChatCompletionStreamResponse: openai.ChatCompletionStreamResponse{
+			ID: "123",
+		},
+	}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		t.Errorf("error marshaling ChatCompletionStreamResponse: %s", err)
+	}
+	var got map[string]any
+	err = json.Unmarshal(b, &got)
+	if err != nil {
+		t.Errorf("error unmarshaling ChatCompletionStreamResponse: %s", err)
+	}
+	_, ok := got["p"]
+	if !ok {
+		t.Errorf("no padding found in ChatCompletionStreamResponse")
+	}
+	if got["id"] != "123" {
+		t.Errorf("id doesn't match")
 	}
 }

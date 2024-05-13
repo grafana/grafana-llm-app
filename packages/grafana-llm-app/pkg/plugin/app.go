@@ -31,14 +31,17 @@ type App struct {
 
 	vectorService vector.Service
 
-	llmProvider       LLMProvider
-	healthCheckClient healthCheckClient
-	healthCheckMutex  sync.Mutex
-	healthOpenAI      *openAIHealthDetails
-	healthVector      *vectorHealthDetails
-	settings          *Settings
-	saToken           string
-	grafanaAppURL     string
+	llmProvider      LLMProvider
+	healthCheckMutex sync.Mutex
+	healthOpenAI     *openAIHealthDetails
+	healthVector     *vectorHealthDetails
+	settings         *Settings
+	saToken          string
+	grafanaAppURL    string
+
+	// ignoreResponsePadding is a flag to ignore padding in responses.
+	// It should only ever be set in tests.
+	ignoreResponsePadding bool
 }
 
 // NewApp creates a new example *App instance.
@@ -54,13 +57,30 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		return nil, err
 	}
 
+	if app.settings.Models == nil {
+		// backwards-compat: if Model settings is nil, use the default one
+		app.settings.Models = DEFAULT_MODEL_SETTINGS
+	}
+
 	switch app.settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
-		app.llmProvider = NewOpenAIProvider(app.settings.OpenAI)
+		p, err := NewOpenAIProvider(app.settings.OpenAI, app.settings.Models)
+		if err != nil {
+			return nil, err
+		}
+		app.llmProvider = p
 	case openAIProviderAzure:
-		app.llmProvider = NewAzureProvider(app.settings.OpenAI)
+		p, err := NewAzureProvider(app.settings.OpenAI, app.settings.Models.Default)
+		if err != nil {
+			return nil, err
+		}
+		app.llmProvider = p
 	case openAIProviderGrafana:
-		app.llmProvider = NewGrafanaProvider(*app.settings)
+		p, err := NewGrafanaProvider(*app.settings)
+		if err != nil {
+			return nil, err
+		}
+		app.llmProvider = p
 	}
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
@@ -71,7 +91,11 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	app.CallResourceHandler = httpadapter.New(mux)
 
 	// Getting the service account token that has been shared with the plugin
-	app.saToken = os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+	cfg := backend.GrafanaConfigFromContext(ctx)
+	app.saToken, err = cfg.PluginAppClientSecret()
+	if err != nil {
+		log.DefaultLogger.Warn("Unable to get service account token", "err", err)
+	}
 
 	// The Grafana URL is required to request Grafana API later
 	app.grafanaAppURL = strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
@@ -92,7 +116,6 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		}
 	}
 
-	app.healthCheckClient = &http.Client{}
 	app.healthCheckMutex = sync.Mutex{}
 
 	return &app, nil

@@ -1,6 +1,6 @@
 {
   "name": "@grafana/llm",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "A grafana library for llm",
   "exports": {
     ".": {
@@ -41,6 +41,6 @@
     "react": "18.2.0",
     "react-use": "17.5.0",
     "rxjs": "7.8.1",
-    "semver": "7.6.0"
+    "semver": "7.6.2"
   }
 }
