@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.10.1
+
+- Settings: differentiate between disabled and not configured (#350)
+
 ## 0.10.0
 
 - Breaking: use `base` and `large` model names instead of `small`/`medium`/`large` (#334)
