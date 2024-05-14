@@ -19,6 +19,8 @@ export interface OpenAISettings {
   provider?: OpenAIProvider;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
+  // If the LLM features have been explicitly disabled.
+  disabled?: boolean;
 }
 
 export function OpenAIConfig({

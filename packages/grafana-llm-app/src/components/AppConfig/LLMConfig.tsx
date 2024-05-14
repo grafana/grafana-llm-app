@@ -11,16 +11,22 @@ import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
-export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled';
+export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled' | 'unconfigured';
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
-  if (settings.openAI?.provider === 'azure' || settings.openAI?.provider === 'openai') {
-    return 'openai';
-  } else if (settings.openAI?.provider === 'grafana') {
-    return 'grafana-provided';
-  } else {
+  if (settings.openAI?.disabled === true) {
     return 'disabled';
+  }
+
+  switch (settings.openAI?.provider) {
+    case 'azure':
+    case 'openai':
+      return 'openai';
+    case 'grafana':
+      return 'grafana-provided';
+    default:
+      return 'unconfigured';
   }
 }
 
@@ -63,7 +69,7 @@ export function LLMConfig({
         setPreviousOpenAIProvider(settings.openAI?.provider);
       }
 
-      onChange({ ...settings, openAI: { provider: undefined } });
+      onChange({ ...settings, openAI: { provider: undefined, disabled: true } });
     }
   };
 
@@ -74,7 +80,7 @@ export function LLMConfig({
         setPreviousOpenAIProvider(settings.openAI?.provider);
       }
 
-      onChange({ ...settings, openAI: { provider: 'grafana' } });
+      onChange({ ...settings, openAI: { provider: 'grafana', disabled: false } });
     }
   };
 
@@ -84,10 +90,10 @@ export function LLMConfig({
       // If the previous provider was not a valid openAI vendor, default to openai
       // Otherwise the state would revert to the incorrect previous provider
       if (previousOpenAIProvider === 'openai' || previousOpenAIProvider === 'azure') {
-        onChange({ ...settings, openAI: { provider: previousOpenAIProvider } });
+        onChange({ ...settings, openAI: { provider: previousOpenAIProvider, disabled: false } });
         setPreviousOpenAIProvider(undefined);
       } else {
-        onChange({ ...settings, openAI: { provider: 'openai' } });
+        onChange({ ...settings, openAI: { provider: 'openai', disabled: false } });
         setPreviousOpenAIProvider(undefined);
       }
     }
