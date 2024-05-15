@@ -40,8 +40,8 @@ func defaultTestProvider() testProvider {
 	return testProvider{
 		ModelsResponse: ModelResponse{
 			Data: []ModelInfo{
-				{ID: "tiny"},
-				{ID: "enormous"},
+				{ID: "base"},
+				{ID: "large"},
 			},
 		},
 

@@ -11,7 +11,7 @@ import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
-export type LLMOptions = 'grafana-provided' | 'openai' | 'disabled' | 'unconfigured';
+export type LLMOptions = 'grafana-provided' | 'openai' | 'test' | 'disabled' | 'unconfigured';
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
@@ -23,6 +23,8 @@ function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
     case 'azure':
     case 'openai':
       return 'openai';
+    case 'test':
+      return 'test';
     case 'grafana':
       return 'grafana-provided';
     default:
@@ -69,9 +71,21 @@ export function LLMConfig({
         setPreviousOpenAIProvider(settings.openAI?.provider);
       }
 
-      onChange({ ...settings, openAI: { provider: undefined, disabled: true } });
+      onChange({ ...settings, openAI: { ...settings.openAI, provider: undefined, disabled: true } });
     }
   };
+
+  const selectLLMTest = () => {
+    if (llmOption !== 'test') {
+      // Cache if OpenAI or Azure provider is used, so can restore
+      if (previousOpenAIProvider === undefined) {
+        setPreviousOpenAIProvider(settings.openAI?.provider);
+      }
+
+      onChange({ ...settings, openAI: { ...settings.openAI, provider: 'test', disabled: false } });
+    }
+  };
+
 
   const selectGrafanaManaged = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
     if (llmOption !== 'grafana-provided') {
@@ -221,6 +235,14 @@ export function LLMConfig({
             </Card.Figure>
           </Card>
         </div>
+        {(llmOption === 'test' || previousOpenAIProvider === 'test') && (
+          <Card isSelected={llmOption === 'test'} className={s.cardWithoutBottomMargin} onClick={selectLLMTest}>
+            <Card.Heading>Test LLM features</Card.Heading>
+            <Card.Figure>
+              <Icon name="bug" size="lg" />
+            </Card.Figure>
+          </Card>
+        )}
         <Card isSelected={llmOption === 'disabled'} onClick={selectLLMDisabled} className={s.cardWithoutBottomMargin}>
           <Card.Heading>Disable all LLM features in Grafana</Card.Heading>
           <Card.Description>&nbsp;</Card.Description>

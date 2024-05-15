@@ -13,13 +13,12 @@ apps:
         testProvider:
           modelsResponse: 
             data:
-            - id: small
-            - id: medium
+            - id: base
             - id: large
 
           chatCompletionResponse:
             id: "1234"
-            model: "small"
+            model: "base"
             choices:
             - message:
                 role: "assistant"
@@ -40,6 +39,7 @@ apps:
               content: "?"
           streamFinishReason: "stop"
           streamError: ""
+
       # vector:
       #   enabled: true
       #   model: BAAI/bge-small-en-v1.5

@@ -59,6 +59,8 @@ func (s OpenAISettings) Configured() bool {
 	switch s.Provider {
 	case openAIProviderGrafana:
 		return true
+	case openAIProviderTest:
+		return true
 	case openAIProviderAzure:
 		// Require some mappings for use with Azure.
 		if len(s.AzureMapping) == 0 {
