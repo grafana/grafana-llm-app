@@ -21,6 +21,7 @@ const (
 	openAIProviderOpenAI  openAIProvider = "openai"
 	openAIProviderAzure   openAIProvider = "azure"
 	openAIProviderGrafana openAIProvider = "grafana" // via llm-gateway
+	openAIProviderTest    openAIProvider = "test"
 )
 
 // OpenAISettings contains the user-specified OpenAI connection details
@@ -43,6 +44,10 @@ type OpenAISettings struct {
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
 	// provider (excluding the LLMGateway). Stored securely.
 	apiKey string
+
+	// TestProvider contains the settings for the test provider.
+	// Only used when Provider is openAIProviderTest.
+	TestProvider testProvider `json:"testProvider,omitempty"`
 }
 
 func (s OpenAISettings) Configured() bool {
@@ -53,6 +58,8 @@ func (s OpenAISettings) Configured() bool {
 
 	switch s.Provider {
 	case openAIProviderGrafana:
+		return true
+	case openAIProviderTest:
 		return true
 	case openAIProviderAzure:
 		// Require some mappings for use with Azure.
@@ -136,7 +143,7 @@ type Settings struct {
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
-	settings := Settings{}
+	settings := Settings{OpenAI: OpenAISettings{TestProvider: defaultTestProvider()}}
 
 	if len(appSettings.JSONData) != 0 {
 		err := json.Unmarshal(appSettings.JSONData, &settings)
@@ -172,6 +179,8 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 			log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
 			settings.OpenAI.Provider = ""
 		}
+	case openAIProviderTest:
+		settings.OpenAI.Provider = openAIProviderTest
 	default:
 		// Default to disabled LLM support if an unknown provider was specified.
 		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)

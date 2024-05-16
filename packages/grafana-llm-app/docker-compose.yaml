@@ -25,6 +25,8 @@ services:
       - ./provisioning/plugins/grafana-vector-api/:/etc/grafana/provisioning/plugins/
       # For openai embedder and qdrant store
       # - ./provisioning/plugins/openai-qdrant/:/etc/grafana/provisioning/plugins/
+      # For test provider, no store
+      # - ./provisioning/plugins/test-provider/:/etc/grafana/provisioning/plugins/
 
   # For openai embedder and qdrant store
   # qdrant:

@@ -81,6 +81,8 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 			return nil, err
 		}
 		app.llmProvider = p
+	case openAIProviderTest:
+		app.llmProvider = &app.settings.OpenAI.TestProvider
 	}
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
