@@ -235,7 +235,7 @@ export function LLMConfig({
             </Card.Figure>
           </Card>
         </div>
-        {(llmOption === 'test' || previousOpenAIProvider === 'test') && (
+        {process.env.NODE_ENV === 'development' && (
           <Card isSelected={llmOption === 'test'} className={s.cardWithoutBottomMargin} onClick={selectLLMTest}>
             <Card.Heading>Test LLM features</Card.Heading>
             <Card.Figure>
