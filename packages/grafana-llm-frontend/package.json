@@ -9,6 +9,11 @@
       "require": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/esm/index.js",
   "source": "./src/index.ts",
