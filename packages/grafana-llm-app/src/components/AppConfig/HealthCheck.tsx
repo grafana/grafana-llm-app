@@ -71,11 +71,7 @@ const getAlertSeverity = (status: string, details: HealthCheckDetails): AlertVar
 export function ShowHealthCheckResult(props: HealthCheckResult) {
   let severity = getAlertVariant(props.status ?? 'error');
   if (!isHealthCheckDetails(props.details)) {
-    return (
-      <div className="gf-form-group p-t-2">
-        <Alert severity={severity} title={props.message} />
-      </div>
-    );
+    return <Alert severity={severity} title={props.message} />;
   }
 
   severity = getAlertSeverity(props.status ?? 'error', props.details);
