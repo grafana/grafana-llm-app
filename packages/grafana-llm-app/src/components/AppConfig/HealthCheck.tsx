@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { HealthCheckResult } from '@grafana/runtime';
+import { HealthCheckResult, config } from '@grafana/runtime';
 import { Alert, AlertVariant, VerticalGroup } from '@grafana/ui';
 
 interface HealthCheckDetails {
@@ -83,10 +83,31 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
     (typeof props.details.vector === 'object' && props.details.vector.enabled);
   return (
     <VerticalGroup>
+      <ShowGrafanaHealth />
       {showOpenAI && <ShowOpenAIHealth openAI={props.details.openAI} />}
       {showVector && <ShowVectorHealth vector={props.details.vector} />}
     </VerticalGroup>
   );
+}
+
+function ShowGrafanaHealth() {
+  if (config.liveEnabled) {
+    return null;
+  }
+  return (
+    <Alert
+      title="Grafana Live is disabled"
+      severity="warning"
+    >
+      <div>
+        Grafana Live is disabled. This plugin requires Grafana Live to be enabled in order to function correctly.
+      </div>
+      <div>
+        Set the <a href="https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#max_connections"><code>max_connections</code></a> setting to a non-zero value
+        in the Grafana configuration file to enable Grafana Live.
+      </div>
+    </Alert>
+  )
 }
 
 function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean }) {
