@@ -24,6 +24,11 @@ func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvi
 		Timeout: 2 * time.Minute,
 	}
 	cfg := openai.DefaultConfig(settings.apiKey)
+	// validate url
+	_, err := url.Parse(settings.URL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid url: %w", err)
+	}
 	base, err := url.JoinPath(settings.URL, "/v1")
 	if err != nil {
 		return nil, fmt.Errorf("join url: %w", err)
