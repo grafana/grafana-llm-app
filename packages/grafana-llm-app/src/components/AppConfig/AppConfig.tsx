@@ -14,6 +14,23 @@ import { OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 ///////////////////////
 
+const validateUrl = (url: string): [boolean, string] => {
+  try {
+    const parsedURL = new URL(url);
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return [false, 'URL must start with "http://" or "https://"'];
+    }
+    // make sure there are no spaces in the hostname or subdomain
+    const hostnameUnescaped = decodeURIComponent(parsedURL.hostname);
+    if (hostnameUnescaped.includes(' ')) {
+      return [false, 'URL cannot contain spaces in the hostname or subdomain'];
+    }
+    return [true, ''];
+  } catch (error) {
+    return [false, 'Invalid URL'];
+  }
+};
+
 export interface AppPluginSettings {
   openAI?: OpenAISettings;
   vector?: VectorSettings;
@@ -65,6 +82,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
     if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
       return 'You must click the "I Accept" checkbox to use OpenAI provided by Grafana';
+    }
+    // Validate custom OpenAI URL
+    if (settings?.openAI?.url) {
+      const [isValid, error] = validateUrl(settings.openAI.url);
+      if (!isValid) {
+        return `Invalid OpenAI API URL: ${error}`;
+      }
     }
     return;
   };
