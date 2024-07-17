@@ -45,6 +45,11 @@ func getVersion() string {
 }
 
 func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
+	llmProvider, err := createProvider(a.settings)
+	if err != nil {
+		return err
+	}
+
 	req := ChatCompletionRequest{
 		Model: model,
 		ChatCompletionRequest: openai.ChatCompletionRequest{
@@ -54,7 +59,7 @@ func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
 			MaxTokens: 1,
 		},
 	}
-	_, err := a.llmProvider.ChatCompletion(ctx, req)
+	_, err = llmProvider.ChatCompletion(ctx, req)
 	if err != nil {
 		return err
 	}

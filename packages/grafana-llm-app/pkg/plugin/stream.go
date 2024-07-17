@@ -32,11 +32,16 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 		return fmt.Errorf("Unable to unmarshal request body: %w", err)
 	}
 
+	llmProvider, err := createProvider(a.settings)
+	if err != nil {
+		return err
+	}
+
 	// Always set stream to true for streaming requests.
 	requestBody.Stream = true
 
 	// Delegate to configured provider for chat completions stream.
-	c, err := a.llmProvider.ChatCompletionStream(ctx, requestBody)
+	c, err := llmProvider.ChatCompletionStream(ctx, requestBody)
 	if err != nil {
 		return fmt.Errorf("establish chat completions stream: %w", err)
 	}

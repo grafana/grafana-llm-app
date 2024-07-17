@@ -31,7 +31,6 @@ type App struct {
 
 	vectorService vector.Service
 
-	llmProvider      LLMProvider
 	healthCheckMutex sync.Mutex
 	healthOpenAI     *openAIHealthDetails
 	healthVector     *vectorHealthDetails
@@ -60,29 +59,6 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	if app.settings.Models == nil {
 		// backwards-compat: if Model settings is nil, use the default one
 		app.settings.Models = DEFAULT_MODEL_SETTINGS
-	}
-
-	switch app.settings.OpenAI.Provider {
-	case openAIProviderOpenAI:
-		p, err := NewOpenAIProvider(app.settings.OpenAI, app.settings.Models)
-		if err != nil {
-			return nil, err
-		}
-		app.llmProvider = p
-	case openAIProviderAzure:
-		p, err := NewAzureProvider(app.settings.OpenAI, app.settings.Models.Default)
-		if err != nil {
-			return nil, err
-		}
-		app.llmProvider = p
-	case openAIProviderGrafana:
-		p, err := NewGrafanaProvider(*app.settings)
-		if err != nil {
-			return nil, err
-		}
-		app.llmProvider = p
-	case openAIProviderTest:
-		app.llmProvider = &app.settings.OpenAI.TestProvider
 	}
 
 	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
