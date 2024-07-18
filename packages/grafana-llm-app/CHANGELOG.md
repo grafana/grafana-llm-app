@@ -4,8 +4,7 @@
 
 ## 0.10.6
 
-- Fix bug where it was impossible to fix a saved invalid OpenAI url, by adding
-  frontend validation and backend tweaks. (#404, #405)
+- Fix bug where it was impossible to fix a saved invalid OpenAI url (#405)
 
 ## 0.10.1
 
