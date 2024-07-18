@@ -39,25 +39,6 @@ func handleError(w http.ResponseWriter, err error, status int) {
 	}
 }
 
-// modifyURL modifies the request URL to point to the configured OpenAI API.
-func modifyURL(openAIUrl string, req *http.Request) error {
-	u, err := url.Parse(openAIUrl)
-	if err != nil {
-		log.DefaultLogger.Error("Unable to parse OpenAI URL", "err", err)
-		return fmt.Errorf("parse OpenAI URL: %w", err)
-	}
-	req.URL.Scheme = u.Scheme
-	req.URL.Host = u.Host
-	// At this point:
-	// - u.Path is something like '' or '/llm', depending on the OpenAI provider.
-	// - req.URL.Path is something like '/openai/v1/chat/completions', since we require the
-	//   '/openai' prefix to be present in the request URL.
-	// We want the final URL to be something like '/llm/openai/v1/chat/completions'
-	// or '/openai/v1/chat/completions', depending on the OpenAI provider.
-	req.URL.Path, err = url.JoinPath("/", u.Path, req.URL.Path)
-	return err
-}
-
 type vectorSearchRequest struct {
 	Query      string                 `json:"query"`
 	Collection string                 `json:"collection"`
@@ -449,8 +430,13 @@ func doRequest(req *http.Request) ([]byte, error) {
 	return respBody, nil
 }
 
-func (a *App) handleModels(llmProvider LLMProvider) http.HandlerFunc {
+func (a *App) handleModels() http.HandlerFunc {
+	llmProvider, err := createProvider(a.settings)
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		if err != nil {
+			handleError(w, errors.New("LLM provider has invalid configuration"), http.StatusUnprocessableEntity)
+		}
 		if llmProvider == nil {
 			handleError(w, errors.New("must configure an LLM provider"), http.StatusUnprocessableEntity)
 			return
@@ -550,8 +536,13 @@ func handleStreamError(w http.ResponseWriter, err error, code int) error {
 	return nil
 }
 
-func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
+func (a *App) handleChatCompletions() http.HandlerFunc {
+	llmProvider, err := createProvider(a.settings)
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		if err != nil {
+			handleError(w, errors.New("LLM provider has invalid configuration"), http.StatusUnprocessableEntity)
+		}
 		if llmProvider == nil {
 			handleError(w, errors.New("must configure an LLM provider"), http.StatusUnprocessableEntity)
 			return
@@ -597,8 +588,8 @@ func (a *App) handleChatCompletions(llmProvider LLMProvider) http.HandlerFunc {
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/openai/v1/models", a.handleModels(a.llmProvider))
-	mux.HandleFunc("/openai/v1/chat/completions", a.handleChatCompletions(a.llmProvider))
+	mux.HandleFunc("/openai/v1/models", a.handleModels())
+	mux.HandleFunc("/openai/v1/chat/completions", a.handleChatCompletions())
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 	mux.HandleFunc("/grafana-llm-state", a.handleLLMState)
 	mux.HandleFunc("/save-plugin-settings", a.handleSavePluginSettings)
