@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.10.6
+
+- Fix bug where it was impossible to fix a saved invalid OpenAI url, by adding
+  frontend validation and backend tweaks. (#404, #405)
+
 ## 0.10.1
 
 - Settings: differentiate between disabled and not configured (#350)
@@ -20,7 +25,7 @@
 
 ## 0.9.0
 
-- Initial backend support for abstracted models (#315) 
+- Initial backend support for abstracted models (#315)
 
 ## 0.8.6
 
@@ -36,9 +41,9 @@
 
 ## 0.7.0
 
-* Refactors repo into monorepo together with frontend dependencies
-* Creates developer sandbox for developing frontend dependencies
-* Switches CI/CD to github actions
+- Refactors repo into monorepo together with frontend dependencies
+- Creates developer sandbox for developing frontend dependencies
+- Switches CI/CD to github actions
 
 ## 0.6.4
 
