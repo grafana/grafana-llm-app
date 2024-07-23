@@ -20,6 +20,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { useAsync } from 'react-use';
 import { pipe, Observable, UnaryFunction, Subscription } from 'rxjs';
 import { filter, map, scan, takeWhile, tap } from 'rxjs/operators';
+import { v4 as uuidv4 } from 'uuid';
 
 import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE, setLLMPluginVersion } from './constants';
 import { HealthCheckResponse, OpenAIHealthDetails } from './types';
@@ -349,7 +350,7 @@ export function streamChatCompletions(
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
     namespace: LLM_PLUGIN_ID,
-    path: OPENAI_CHAT_COMPLETIONS_PATH + '/' + self.crypto.randomUUID(),
+    path: OPENAI_CHAT_COMPLETIONS_PATH + '/' + uuidv4(),
     data: request,
   };
   const messages = getGrafanaLiveSrv()
