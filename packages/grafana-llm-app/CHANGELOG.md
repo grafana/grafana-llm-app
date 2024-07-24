@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.10.7
+
+- Use non-crypto UUID generation for stream request #409
+
 ## 0.10.6
 
 - Fix bug where it was impossible to fix a saved invalid OpenAI url (#405)
