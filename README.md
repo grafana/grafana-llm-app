@@ -29,7 +29,7 @@ It is recommended to develop functionality against the "developer sandbox", only
 
 It is recommended to run these using npm commands from root so that the entire project can be developed from the root directory. If you want to dig into the commands themselves, you can read the corresponding scripts in ./packages/grafana-llm-app/package.json
 
-1. Update [Grafana plugin SDK for Go](https://grafana.com/docs/grafana/latest/developers/plugins/backend/grafana-plugin-sdk-for-go/) dependency to the latest minor version:
+1. Update [Grafana plugin SDK for Go](https://grafana.com/developers/plugin-tools/key-concepts/backend-plugins/grafana-plugin-sdk-for-go) dependency to the latest minor version:
 
    ```bash
    npm run backend:update-sdk
