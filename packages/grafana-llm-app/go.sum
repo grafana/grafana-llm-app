@@ -199,8 +199,8 @@ github.com/prometheus/common v0.55.0 h1:KEi6DK7lXW/m7Ig5i47x0vRzuBsHuvJdi5ee6Y3G
 github.com/prometheus/common v0.55.0/go.mod h1:2SECS4xJG1kd8XF9IcM1gMX6510RAEL65zxzNImwdc8=
 github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
-github.com/qdrant/go-client v1.10.0 h1:6GRi78TpZTvVo3yViXK4Re8khvi9GUYyNBPiG5zVpP0=
-github.com/qdrant/go-client v1.10.0/go.mod h1:j+OVRsJIZhOSRK2toPl8tTBOhwr4AxXCz9RACzv0JB4=
+github.com/qdrant/go-client v1.11.0 h1:k+yuIk9n4YULcQ7L7RQeO9w4cr8OOTk7R+MkOm5CV4M=
+github.com/qdrant/go-client v1.11.0/go.mod h1:j+OVRsJIZhOSRK2toPl8tTBOhwr4AxXCz9RACzv0JB4=
 github.com/rogpeppe/go-charset v0.0.0-20180617210344-2471d30d28b4/go.mod h1:qgYeAmZ5ZIpBWTGllZSQnw97Dj+woV0toclVaRGI8pc=
 github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU5NdKM8=
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
