@@ -35,7 +35,7 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@types/uuid": "^10.0.0",
-    "rollup": "^4.13.0",
+    "rollup": "^4.21.2",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-node-externals": "^7.0.1",
