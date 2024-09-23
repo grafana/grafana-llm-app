@@ -4,7 +4,7 @@
 
 ## 0.10.8
 
-- Bump various dependencies to fix secucity issues (e.g. #446)
+- Bump various dependencies to fix security issues (e.g. #446)
 
 ## 0.10.7
 
