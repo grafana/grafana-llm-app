@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.10.8
+
+- Bump various dependencies to fix security issues (e.g. #446)
+
 ## 0.10.7
 
 - Use non-crypto UUID generation for stream request #409
