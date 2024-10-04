@@ -47,12 +47,12 @@ export function OpenAIConfig({
   };
   return (
     <FieldSet>
-      <Field label="OpenAI Provider">
+      <Field label="Provider">
         <Select
           data-testid={testIds.appConfig.openAIProvider}
           options={
             [
-              { label: 'OpenAI', value: 'openai' },
+              { label: 'OpenAI/OpenAI Compatible', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
             ] as Array<SelectableValue<OpenAIProvider>>
           }
@@ -62,7 +62,7 @@ export function OpenAIConfig({
         />
       </Field>
       <Field
-        label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'OpenAI API URL'}
+        label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'API URL'}
         className={s.marginTop}
       >
         <Input
@@ -78,8 +78,7 @@ export function OpenAIConfig({
       </Field>
 
       <Field
-        label={settings.provider === 'azure' ? 'Azure OpenAI Key' : 'OpenAI API Key'}
-        description={settings.provider === 'azure' ? 'Your Azure OpenAI Key' : 'Your OpenAI API Key'}
+        label={settings.provider === 'azure' ? 'Azure OpenAI Key' : 'API Key'}
       >
         <SecretInput
           width={60}
@@ -94,7 +93,7 @@ export function OpenAIConfig({
       </Field>
 
       {settings.provider !== 'azure' && (
-        <Field label="OpenAI API Organization ID" description="Your OpenAI API Organization ID">
+        <Field label="API Organization ID">
           <Input
             width={60}
             name="organizationId"
