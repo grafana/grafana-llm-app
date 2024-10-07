@@ -55,14 +55,32 @@ type OpenAI interface {
 	ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error)
 	// CreateAssistant creates an assistant using the given request.
 	CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error)
+	// RetrieveAssistant retrieves an assistant by ID.
+	RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error)
+	// ListAssistants lists assistants.
+	ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error)
+	// DeleteAssistant deletes an assistant by ID.
+	DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error)
 	// CreateThread creates a new thread.
 	CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error)
+	// RetrieveThread retrieves a thread by ID.
+	RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error)
+	// DeleteThread deletes a thread by ID.
+	DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error)
 	// CreateMessage creates a new message in a thread.
 	CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error)
+	// ListMessages lists messages in a thread.
+	ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string) (openai.MessagesList, error)
+	// RetrieveMessage retrieves a message in a thread.
+	RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error)
+	// DeleteMessage deletes a message in a thread.
+	DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error)
 	// CreateRun creates a new run in a thread.
 	CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error)
 	// RetrieveRun retrieves a run in a thread.
 	RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
+	// CancelRun cancels a run in a thread.
+	CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
 	// SubmitToolOutputs submits tool outputs for a run in a thread.
 	SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error)
 	// ListMessage lists messages in a thread.
@@ -186,12 +204,44 @@ func (o *openAI) CreateAssistant(ctx context.Context, req AssistantRequest) (ope
 	return o.client.CreateAssistant(ctx, r)
 }
 
+func (o *openAI) RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error) {
+	return o.client.RetrieveAssistant(ctx, assistantID)
+}
+
+func (o *openAI) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
+	return o.client.ListAssistants(ctx, limit, order, after, before)
+}
+
+func (o *openAI) DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error) {
+	return o.client.DeleteAssistant(ctx, assistantID)
+}
+
 func (o *openAI) CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error) {
 	return o.client.CreateThread(ctx, req)
 }
 
+func (o *openAI) RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error) {
+	return o.client.RetrieveThread(ctx, threadID)
+}
+
+func (o *openAI) DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error) {
+	return o.client.DeleteThread(ctx, threadID)
+}
+
 func (o *openAI) CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error) {
 	return o.client.CreateMessage(ctx, threadID, request)
+}
+
+func (o *openAI) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string) (msg openai.MessagesList, err error) {
+	return o.client.ListMessage(ctx, threadID, limit, order, after, before)
+}
+
+func (o *openAI) RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error) {
+	return o.client.RetrieveMessage(ctx, threadID, messageID)
+}
+
+func (o *openAI) DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error) {
+	return o.client.DeleteMessage(ctx, threadID, messageID)
 }
 
 func (o *openAI) CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error) {
@@ -200,6 +250,10 @@ func (o *openAI) CreateRun(ctx context.Context, threadID string, request openai.
 
 func (o *openAI) RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
 	return o.client.RetrieveRun(ctx, threadID, runID)
+}
+
+func (o *openAI) CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
+	return o.client.CancelRun(ctx, threadID, runID)
 }
 
 func (o *openAI) SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error) {
