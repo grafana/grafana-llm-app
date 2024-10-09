@@ -3,6 +3,7 @@
 ## Unreleased
 
 ## 0.10.9
+
 - Update wording around OpenAI and open models
 - Update LLM setup instructions
 
