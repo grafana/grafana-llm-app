@@ -1,12 +1,11 @@
 module github.com/grafana/grafana-llm-app
 
 go 1.21
-
-toolchain go1.21.1
+toolchain go1.22.5
 
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.250.0
-	github.com/qdrant/go-client v1.11.0
+	github.com/qdrant/go-client v1.11.1
 	github.com/sashabaranov/go-openai v1.30.3
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.67.0
@@ -95,7 +94,7 @@ require (
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240822170219-fc7c04adadcd // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
