@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.10.9
+
+- Update wording around OpenAI and open models
+- Update LLM setup instructions
+
 ## 0.10.8
 
 - Bump various dependencies to fix security issues (e.g. #446)
