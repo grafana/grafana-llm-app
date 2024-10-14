@@ -120,7 +120,7 @@ func TestCheckHealth(t *testing.T) {
 					OK:         true,
 					Models: map[Model]openAIModelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, message: model does not exist`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
 					},
 				},
 				Vector:  vectorHealthDetails{},
@@ -197,7 +197,7 @@ func TestCheckHealth(t *testing.T) {
 					Error:      "",
 					Models: map[Model]openAIModelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, message: model does not exist`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
 					},
 				},
 				Vector: vectorHealthDetails{
