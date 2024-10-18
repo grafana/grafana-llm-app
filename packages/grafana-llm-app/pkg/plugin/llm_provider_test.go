@@ -50,6 +50,16 @@ func TestModelFromString(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			input:    "gpt-4o-mini",
+			expected: ModelBase,
+			wantErr:  false,
+		},
+		{
+			input:    "gpt-4o-mini-2024-07-18",
+			expected: ModelBase,
+			wantErr:  false,
+		},
+		{
 			input:    "gpt-4-turbo",
 			expected: ModelLarge,
 			wantErr:  false,
@@ -61,6 +71,11 @@ func TestModelFromString(t *testing.T) {
 		},
 		{
 			input:    "gpt-4",
+			expected: ModelLarge,
+			wantErr:  false,
+		},
+		{
+			input:    "gpt-4o",
 			expected: ModelLarge,
 			wantErr:  false,
 		},
