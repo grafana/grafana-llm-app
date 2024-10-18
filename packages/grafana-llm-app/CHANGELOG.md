@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.10.10
+
+- Update model defaults:
+  - Base: `gpt-3.5-turbo` to `gpt-4o-mini`
+  - Large: `gpt-4-turbo` to `gpt-4o`
+
 ## 0.10.9
 
 - Update wording around OpenAI and open models
