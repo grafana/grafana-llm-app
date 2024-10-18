@@ -23,9 +23,9 @@ const (
 type Model string
 
 const (
-	// ModelBase is the base model, for efficient and high-throughput tasks. OpenAI default: gpt-3.5-turbo
+	// ModelBase is the base model, for efficient and high-throughput tasks. OpenAI default: gpt-4o-mini
 	ModelBase = "base"
-	// ModelLarge is the large model, for more advanced tasks with longer context windows. OpenAI default: gpt-4-turbo
+	// ModelLarge is the large model, for more advanced tasks with longer context windows. OpenAI default: gpt-4o
 	ModelLarge = "large"
 )
 

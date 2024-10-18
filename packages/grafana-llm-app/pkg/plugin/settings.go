@@ -100,8 +100,8 @@ func (c ModelSettings) getModel(model Model) string {
 var DEFAULT_MODEL_SETTINGS = &ModelSettings{
 	Default: ModelBase,
 	Mapping: map[Model]string{
-		ModelBase:  "gpt-3.5-turbo",
-		ModelLarge: "gpt-4-turbo",
+		ModelBase:  "gpt-4o-mini",
+		ModelLarge: "gpt-4o",
 	},
 }
 

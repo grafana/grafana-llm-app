@@ -25,9 +25,9 @@ const (
 // compatability, or the new abstract model names.
 func ModelFromString(m string) (Model, error) {
 	switch {
-	case m == ModelLarge || strings.HasPrefix(m, "gpt-4"):
+	case m == ModelLarge || (strings.HasPrefix(m, "gpt-4") && !strings.Contains(m, "-mini")):
 		return ModelLarge, nil
-	case m == ModelBase || strings.HasPrefix(m, "gpt-3.5"):
+	case m == ModelBase || strings.HasPrefix(m, "gpt-3.5") || strings.Contains(m, "-mini"):
 		return ModelBase, nil
 	}
 	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
@@ -54,9 +54,9 @@ func (m Model) toOpenAI(modelSettings *ModelSettings) string {
 	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
 		switch m {
 		case ModelBase:
-			return "gpt-3.5-turbo"
+			return "gpt-4o-mini"
 		case ModelLarge:
-			return "gpt-4-turbo"
+			return "gpt-4o"
 		}
 		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}
