@@ -22,13 +22,13 @@ const DEFAULT_MODEL_ID = openai.Model.BASE;
 const MODEL_MAPPING_CONFIG: ModelMappingConfig[] = [
   {
     id: openai.Model.BASE,
-    name: 'gpt-3.5-turbo',
+    name: 'gpt-4o-mini',
     label: 'Base',
     description: 'A fast and cost-effective model for efficient, high-throughput tasks.',
   },
   {
     id: openai.Model.LARGE,
-    name: 'gpt-4-turbo',
+    name: 'gpt-4o',
     label: 'Large',
     description: 'A larger, higher cost model for more advanced tasks with longer context windows.',
   },
