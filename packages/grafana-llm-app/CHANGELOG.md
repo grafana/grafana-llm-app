@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.10.10
+## 0.11.0
 
 - Update model defaults:
   - Base: `gpt-3.5-turbo` to `gpt-4o-mini`
