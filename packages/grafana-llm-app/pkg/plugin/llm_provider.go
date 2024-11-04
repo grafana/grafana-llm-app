@@ -133,4 +133,6 @@ type LLMProvider interface {
 	// ChatCompletionStream provides text completion in a chat-like interface with
 	// tokens being sent as they are ready.
 	ChatCompletionStream(context.Context, ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error)
+	// ListAssistants lists assistants.
+	ListAssistants(context.Context, *int, *string, *string, *string) (openai.AssistantsList, error)
 }

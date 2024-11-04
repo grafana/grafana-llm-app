@@ -139,3 +139,7 @@ func (p *testProvider) ChatCompletionStream(ctx context.Context, req ChatComplet
 	}
 	return c, nil
 }
+
+func (p *testProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
+	return openai.AssistantsList{}, nil
+}

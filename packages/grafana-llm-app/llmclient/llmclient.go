@@ -128,6 +128,7 @@ type openAIHealthDetails struct {
 	OK         bool                        `json:"ok"`
 	Error      string                      `json:"error,omitempty"`
 	Models     map[Model]openAIModelHealth `json:"models"`
+	Assistant  openAIModelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
