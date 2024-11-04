@@ -7,7 +7,7 @@ First, add the latest version of `@grafana/llm` to your dependencies in package.
 ```json
 {
   "dependencies": {
-    "@grafana/llm": "0.10.7"
+    "@grafana/llm": "0.11.0"
   }
 }
 ```
