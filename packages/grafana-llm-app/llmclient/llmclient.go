@@ -70,7 +70,7 @@ type OpenAI interface {
 	// CreateMessage creates a new message in a thread.
 	CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error)
 	// ListMessages lists messages in a thread.
-	ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string) (openai.MessagesList, error)
+	ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (openai.MessagesList, error)
 	// RetrieveMessage retrieves a message in a thread.
 	RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error)
 	// DeleteMessage deletes a message in a thread.
@@ -83,8 +83,6 @@ type OpenAI interface {
 	CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
 	// SubmitToolOutputs submits tool outputs for a run in a thread.
 	SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error)
-	// ListMessage lists messages in a thread.
-	ListMessage(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string) (openai.MessagesList, error)
 }
 
 type openAI struct {
@@ -233,8 +231,8 @@ func (o *openAI) CreateMessage(ctx context.Context, threadID string, request ope
 	return o.client.CreateMessage(ctx, threadID, request)
 }
 
-func (o *openAI) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string) (msg openai.MessagesList, err error) {
-	return o.client.ListMessage(ctx, threadID, limit, order, after, before)
+func (o *openAI) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (msg openai.MessagesList, err error) {
+	return o.client.ListMessage(ctx, threadID, limit, order, after, before, runID)
 }
 
 func (o *openAI) RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error) {
@@ -259,8 +257,4 @@ func (o *openAI) CancelRun(ctx context.Context, threadID string, runID string) (
 
 func (o *openAI) SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error) {
 	return o.client.SubmitToolOutputs(ctx, threadID, runID, request)
-}
-
-func (o *openAI) ListMessage(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string) (openai.MessagesList, error) {
-	return o.client.ListMessage(ctx, threadID, limit, order, after, before)
 }

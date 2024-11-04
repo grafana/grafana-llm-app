@@ -383,7 +383,7 @@ func TestListMessage(t *testing.T) {
 	server := httptest.NewServer(handler)
 	client := NewOpenAI(server.URL, key)
 	// Test case: Retrieve run request succeeds
-	_, err := client.ListMessage(ctx, "test", nil, nil, nil, nil)
+	_, err := client.ListMessages(ctx, "test", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Errorf("Expected no error, but got: %v", err)
 	}
