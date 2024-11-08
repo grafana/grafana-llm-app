@@ -19,7 +19,7 @@ import React, { useState } from 'react';
 import { useAsync } from 'react-use';
 import { scan } from 'rxjs/operators';
 
-import { llms } from '@grafana/llm';
+import { openai } from '@grafana/llm';
 import { PluginPage } from '@grafana/runtime';
 
 import { Button, Input, Spinner } from '@grafana/ui';
@@ -30,7 +30,7 @@ const MyComponent = (): JSX.Element => {
   const [reply, setReply] = useState('');
 
   const { loading, error } = useAsync(async () => {
-    const enabled = await llms.openai.enabled();
+    const enabled = await openai.enabled();
     if (!enabled) {
       return false;
     }
@@ -38,9 +38,9 @@ const MyComponent = (): JSX.Element => {
       return;
     }
     // Stream the completions. Each element is the next stream chunk.
-    const stream = llms.openai
+    const stream = openai
       .streamChatCompletions({
-        // model: llms.openai.Model.LARGE, // defaults to BASE, use larger model for longer context and complex tasks
+        // model: openai.Model.LARGE, // defaults to BASE, use larger model for longer context and complex tasks
         messages: [
           { role: 'system', content: 'You are a cynical assistant.' },
           { role: 'user', content: message },
