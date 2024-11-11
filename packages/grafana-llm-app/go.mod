@@ -1,7 +1,6 @@
 module github.com/grafana/grafana-llm-app
 
 go 1.22.2
-
 toolchain go1.23.2
 
 require (
@@ -9,7 +8,7 @@ require (
 	github.com/qdrant/go-client v1.12.0
 	github.com/sashabaranov/go-openai v1.32.0
 	github.com/stretchr/testify v1.9.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 )
 
 require (
