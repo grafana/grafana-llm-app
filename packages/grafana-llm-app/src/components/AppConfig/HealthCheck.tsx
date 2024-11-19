@@ -138,7 +138,7 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
         ))}
       </div>
       <b>Assistant: </b>
-      {openAI.assistant.ok ? 'OK' : `Error: ${openAI.assistant.error}`}
+      {openAI.assistant.ok ? 'OK' : `Error: ${openAI.assistant.error}. The configured OpenAI provider may not offer assistants APIs.`}
     </Alert>
   );
 }
