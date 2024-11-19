@@ -98,7 +98,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		OK:         true,
 		Configured: a.settings.OpenAI.Configured(),
 		Models:     map[Model]openAIModelHealth{},
-		Assistant:  openAIModelHealth{OK: false, Error: "Assistant not present"},
+		Assistant:  openAIModelHealth{OK: false, Error: "Assistant not available"},
 	}
 
 	for _, model := range openAIModels {
