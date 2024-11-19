@@ -21,7 +21,7 @@ export interface OpenAIHealthDetails {
   // The health check attempts to call the OpenAI API with each
   // of a few models and records the result of each call here.
   models?: Record<string, OpenAIModelHealthDetails>;
-  // Health details for the OpenAI assistant model.
+  // Health details for the OpenAI assistant APIs.
   assistant?: OpenAIModelHealthDetails;
 }
 
