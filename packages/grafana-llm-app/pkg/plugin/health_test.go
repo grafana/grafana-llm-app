@@ -73,7 +73,7 @@ func TestCheckHealth(t *testing.T) {
 				OpenAI: openAIHealthDetails{
 					Error:     "No functioning models are available",
 					Models:    map[Model]openAIModelHealth{},
-					Assistant: openAIModelHealth{OK: false, Error: "Assistant not present"},
+					Assistant: openAIModelHealth{OK: false, Error: "Assistant not available"},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -145,7 +145,7 @@ func TestCheckHealth(t *testing.T) {
 			responses: []mockOpenAIHealthResponse{
 				{code: http.StatusOK, body: "{}"},
 				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
-				{code: http.StatusNotFound, body: `{"error": {"message": "assistant not found"}}`},
+				{code: http.StatusNotFound, body: `{"error": {"message": "Assistant not available"}}`},
 			},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
@@ -155,7 +155,7 @@ func TestCheckHealth(t *testing.T) {
 						ModelBase:  {OK: true, Error: ""},
 						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
 					},
-					Assistant: openAIModelHealth{OK: false, Error: "Assistant not present"},
+					Assistant: openAIModelHealth{OK: false, Error: `Assistant not available: error, status code: 404, status: 404 Not Found, body: {"error": {"message": "Assistant not available"}}`},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -188,7 +188,7 @@ func TestCheckHealth(t *testing.T) {
 				OpenAI: openAIHealthDetails{
 					Error:     "No functioning models are available",
 					Models:    map[Model]openAIModelHealth{},
-					Assistant: openAIModelHealth{OK: false, Error: "Assistant not present"},
+					Assistant: openAIModelHealth{OK: false, Error: "Assistant not available"},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -234,7 +234,7 @@ func TestCheckHealth(t *testing.T) {
 						ModelBase:  {OK: true, Error: ""},
 						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
 					},
-					Assistant: openAIModelHealth{OK: false, Error: "Assistant not present"},
+					Assistant: openAIModelHealth{OK: false, Error: "Assistant not available: error, status code: 502, status: 502 Bad Gateway, body: "},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,

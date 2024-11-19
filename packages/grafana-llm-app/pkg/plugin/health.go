@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
@@ -131,6 +132,9 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		if err == nil {
 			d.Assistant.OK = true
 			d.Assistant.Error = ""
+		} else {
+			d.Assistant.OK = false
+			d.Assistant.Error = strings.Join([]string{d.Assistant.Error, err.Error()}, ": ")
 		}
 	}
 
