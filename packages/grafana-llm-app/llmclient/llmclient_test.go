@@ -167,7 +167,8 @@ func TestCreateAssistant(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Create assistant request succeeds
 	req := AssistantRequest{
 		AssistantRequest: openai.AssistantRequest{},
@@ -207,7 +208,8 @@ func TestCreateThread(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Create thread request succeeds
 	req := openai.ThreadRequest{}
 	_, err := client.CreateThread(ctx, req)
@@ -244,7 +246,8 @@ func TestCreateMessage(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Create message request succeeds
 	req := openai.MessageRequest{}
 	_, err := client.CreateMessage(ctx, "test", req)
@@ -281,7 +284,8 @@ func TestCreateRun(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Create run request succeeds
 	req := openai.RunRequest{}
 	_, err := client.CreateRun(ctx, "test", req)
@@ -313,7 +317,8 @@ func TestRetrieveRun(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Retrieve run request succeeds
 	_, err := client.RetrieveRun(ctx, "test", "test")
 	if err != nil {
@@ -349,7 +354,8 @@ func TestSubmitToolOutputs(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Submit tool outputs request succeeds
 	req := openai.SubmitToolOutputsRequest{}
 	_, err := client.SubmitToolOutputs(ctx, "test", "test", req)
@@ -381,7 +387,8 @@ func TestListMessage(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAI(server.URL, key)
+	client := NewOpenAIAssistant(server.URL, key)
+
 	// Test case: Retrieve run request succeeds
 	_, err := client.ListMessages(ctx, "test", nil, nil, nil, nil, nil)
 	if err != nil {

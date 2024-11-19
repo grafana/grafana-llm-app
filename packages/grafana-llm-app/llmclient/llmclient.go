@@ -53,6 +53,15 @@ type OpenAI interface {
 	ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error)
 	// ChatCompletionsStream makes a streaming request to the OpenAI Chat Completion API.
 	ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error)
+}
+
+// OpenAIAssistant is an interface for exposing the OpenAI Assistant features to the Grafana LLM app.
+// Requests made using this interface will be routed to the OpenAI backend
+// configured in the Grafana LLM app's settings, with authentication handled
+// by the LLM app.
+type OpenAIAssistant interface {
+	// OpenAI embeds some core features in the client.
+	OpenAI
 	// CreateAssistant creates an assistant using the given request.
 	CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error)
 	// RetrieveAssistant retrieves an assistant by ID.
@@ -99,9 +108,14 @@ func NewOpenAI(grafanaURL, grafanaAPIKey string) OpenAI {
 	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
+func NewOpenAIAssistant(grafanaURL, grafanaAPIKey string) OpenAIAssistant {
+	httpClient := &http.Client{}
+	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient)
+}
+
 // NewOpenAIWithClient creates a new OpenAI client talking to the Grafana LLM app installed
 // on the given Grafana instance, using the given HTTP client.
-func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAI {
+func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) *openAI {
 	grafanaURL = strings.TrimRight(grafanaURL, "/")
 	url := grafanaURL + appResourcesPrefix + "/openai/v1"
 	cfg := openai.DefaultConfig(grafanaAPIKey)
