@@ -73,3 +73,7 @@ func (p *grafanaProvider) ChatCompletionStream(ctx context.Context, req ChatComp
 	r.Model = req.Model.toOpenAI(DEFAULT_MODEL_SETTINGS)
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
+
+func (p *grafanaProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
+	return p.oc.ListAssistants(ctx, limit, order, after, before)
+}
