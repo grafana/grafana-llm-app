@@ -108,14 +108,16 @@ func NewOpenAI(grafanaURL, grafanaAPIKey string) OpenAI {
 	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
+// NewOpenAIAssistant creates a new OpenAI client talking to the Grafana LLM app installed
+// on the given Grafana instance, with the OpenAIAssistant interface.
 func NewOpenAIAssistant(grafanaURL, grafanaAPIKey string) OpenAIAssistant {
 	httpClient := &http.Client{}
-	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient)
+	return NewOpenAIAssistantWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
 // NewOpenAIWithClient creates a new OpenAI client talking to the Grafana LLM app installed
 // on the given Grafana instance, using the given HTTP client.
-func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) *openAI {
+func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAI {
 	grafanaURL = strings.TrimRight(grafanaURL, "/")
 	url := grafanaURL + appResourcesPrefix + "/openai/v1"
 	cfg := openai.DefaultConfig(grafanaAPIKey)
@@ -128,6 +130,12 @@ func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Clie
 		grafanaURL:    grafanaURL,
 		grafanaAPIKey: grafanaAPIKey,
 	}
+}
+
+// NewOpenAIAssistantWithClient creates a new OpenAI client talking to the Grafana LLM app installed
+// on the given Grafana instance, using the given HTTP client.
+func NewOpenAIAssistantWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAIAssistant {
+	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient).(OpenAIAssistant)
 }
 
 type openAIModelHealth struct {
