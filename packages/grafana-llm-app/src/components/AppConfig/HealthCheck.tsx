@@ -21,12 +21,21 @@ interface OpenAIHealthDetails {
   // The health check attempts to call the OpenAI API with each
   // of a few models and records the result of each call here.
   models: Record<string, OpenAIModelHealthDetails>;
+  assistant: OpenAIAssistantHealthDetails;
 }
 
 interface OpenAIModelHealthDetails {
   // Whether we can use this model in calls to OpenAI.
   ok: boolean;
   // If set, the error returned when trying to call the OpenAI API.
+  // Will be undefined if ok is true.
+  error?: string;
+}
+
+interface OpenAIAssistantHealthDetails {
+  // Whether we can use the assistant API with the provided settings.
+  ok: boolean;
+  // If set, the error returned when trying to call the assistant API.
   // Will be undefined if ok is true.
   error?: string;
 }
@@ -128,6 +137,8 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
           </li>
         ))}
       </div>
+      <b>Assistant: </b>
+      {openAI.assistant.ok ? 'OK' : `Error: ${openAI.assistant.error}. The configured OpenAI provider may not offer assistants APIs.`}
     </Alert>
   );
 }

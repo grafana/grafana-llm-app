@@ -71,8 +71,9 @@ func TestCheckHealth(t *testing.T) {
 			},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
-					Error:  "No functioning models are available",
-					Models: map[Model]openAIModelHealth{},
+					Error:     "No functioning models are available",
+					Models:    map[Model]openAIModelHealth{},
+					Assistant: openAIModelHealth{OK: false, Error: "Assistant not available"},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -94,13 +95,14 @@ func TestCheckHealth(t *testing.T) {
 					Configured: true,
 					Error:      "LLM functionality is disabled",
 					Models:     map[Model]openAIModelHealth{},
+					Assistant:  openAIModelHealth{OK: false, Error: ""},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
 			},
 		},
 		{
-			name: "openai enabled",
+			name: "openai enabled, has assistant support",
 			settings: backend.AppInstanceSettings{
 				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
 				JSONData: json.RawMessage(`{
@@ -113,6 +115,7 @@ func TestCheckHealth(t *testing.T) {
 			responses: []mockOpenAIHealthResponse{
 				{code: http.StatusOK, body: "{}"},
 				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
+				{code: http.StatusOK, body: `{}`},
 			},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
@@ -122,6 +125,37 @@ func TestCheckHealth(t *testing.T) {
 						ModelBase:  {OK: true, Error: ""},
 						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
 					},
+					Assistant: openAIModelHealth{OK: true, Error: ""},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
+		{
+			name: "openai enabled, no assistant support",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				JSONData: json.RawMessage(`{
+					"openai": {
+						"provider": "openai",
+						"url": "%s"
+					}
+				}`),
+			},
+			responses: []mockOpenAIHealthResponse{
+				{code: http.StatusOK, body: "{}"},
+				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
+				{code: http.StatusNotFound, body: `{"error": {"message": "Assistant not available"}}`},
+			},
+			expDetails: healthCheckDetails{
+				OpenAI: openAIHealthDetails{
+					Configured: true,
+					OK:         true,
+					Models: map[Model]openAIModelHealth{
+						ModelBase:  {OK: true, Error: ""},
+						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
+					},
+					Assistant: openAIModelHealth{OK: false, Error: `Assistant not available: error, status code: 404, status: 404 Not Found, body: {"error": {"message": "Assistant not available"}}`},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -152,8 +186,9 @@ func TestCheckHealth(t *testing.T) {
 			vService: &mockVectorService{},
 			expDetails: healthCheckDetails{
 				OpenAI: openAIHealthDetails{
-					Error:  "No functioning models are available",
-					Models: map[Model]openAIModelHealth{},
+					Error:     "No functioning models are available",
+					Models:    map[Model]openAIModelHealth{},
+					Assistant: openAIModelHealth{OK: false, Error: "Assistant not available"},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -199,6 +234,7 @@ func TestCheckHealth(t *testing.T) {
 						ModelBase:  {OK: true, Error: ""},
 						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
 					},
+					Assistant: openAIModelHealth{OK: false, Error: "Assistant not available: error, status code: 502, status: 502 Bad Gateway, body: "},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -243,6 +279,8 @@ func TestCheckHealth(t *testing.T) {
 				t.Errorf("non-JSON response details (%s): %s", resp.JSONDetails, err)
 			}
 			if details.OpenAI.OK != tc.expDetails.OpenAI.OK ||
+				details.OpenAI.Assistant.OK != tc.expDetails.OpenAI.Assistant.OK ||
+				details.OpenAI.Assistant.Error != tc.expDetails.OpenAI.Assistant.Error ||
 				details.OpenAI.Configured != tc.expDetails.OpenAI.Configured ||
 				details.OpenAI.Error != tc.expDetails.OpenAI.Error {
 				t.Errorf("OpenAI details should be %+v, got %+v", tc.expDetails.OpenAI, details.OpenAI)

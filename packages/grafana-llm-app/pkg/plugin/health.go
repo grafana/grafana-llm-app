@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
@@ -22,6 +23,7 @@ type openAIHealthDetails struct {
 	OK         bool                        `json:"ok"`
 	Error      string                      `json:"error,omitempty"`
 	Models     map[Model]openAIModelHealth `json:"models"`
+	Assistant  openAIModelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
@@ -66,6 +68,17 @@ func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
 	return nil
 }
 
+func (a *App) testOpenAIAssistant(ctx context.Context) error {
+	llmProvider, err := createProvider(a.settings)
+	if err != nil {
+		return err
+	}
+
+	limit := 1
+	_, err = llmProvider.ListAssistants(ctx, &limit, nil, nil, nil)
+	return err
+}
+
 // openAIHealth checks the health of the OpenAI configuration and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
 func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest) (openAIHealthDetails, error) {
@@ -86,6 +99,7 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 		OK:         true,
 		Configured: a.settings.OpenAI.Configured(),
 		Models:     map[Model]openAIModelHealth{},
+		Assistant:  openAIModelHealth{OK: false, Error: "Assistant not available"},
 	}
 
 	for _, model := range openAIModels {
@@ -111,6 +125,17 @@ func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest)
 	if !anyOK {
 		d.OK = false
 		d.Error = "No functioning models are available"
+	}
+
+	if d.Configured {
+		err := a.testOpenAIAssistant(ctx)
+		if err == nil {
+			d.Assistant.OK = true
+			d.Assistant.Error = ""
+		} else {
+			d.Assistant.OK = false
+			d.Assistant.Error = strings.Join([]string{d.Assistant.Error, err.Error()}, ": ")
+		}
 	}
 
 	// Only cache result if openAI is ok to use.

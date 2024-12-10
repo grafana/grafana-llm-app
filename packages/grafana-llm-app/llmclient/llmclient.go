@@ -35,6 +35,12 @@ type ChatCompletionRequest struct {
 	Model Model `json:"model"`
 }
 
+// AssistantRequest is a request for creating an assistant using an abstract model.
+type AssistantRequest struct {
+	openai.AssistantRequest
+	Model Model `json:"model"`
+}
+
 // OpenAI is an interface for talking to OpenAI via the Grafana LLM app.
 // Requests made using this interface will be routed to the OpenAI backend
 // configured in the Grafana LLM app's settings, with authentication handled
@@ -49,6 +55,45 @@ type OpenAI interface {
 	ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error)
 }
 
+// OpenAIAssistant is an interface for exposing the OpenAI Assistant features to the Grafana LLM app.
+// Requests made using this interface will be routed to the OpenAI backend
+// configured in the Grafana LLM app's settings, with authentication handled
+// by the LLM app.
+type OpenAIAssistant interface {
+	// OpenAI embeds some core features in the client.
+	OpenAI
+	// CreateAssistant creates an assistant using the given request.
+	CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error)
+	// RetrieveAssistant retrieves an assistant by ID.
+	RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error)
+	// ListAssistants lists assistants.
+	ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error)
+	// DeleteAssistant deletes an assistant by ID.
+	DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error)
+	// CreateThread creates a new thread.
+	CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error)
+	// RetrieveThread retrieves a thread by ID.
+	RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error)
+	// DeleteThread deletes a thread by ID.
+	DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error)
+	// CreateMessage creates a new message in a thread.
+	CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error)
+	// ListMessages lists messages in a thread.
+	ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (openai.MessagesList, error)
+	// RetrieveMessage retrieves a message in a thread.
+	RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error)
+	// DeleteMessage deletes a message in a thread.
+	DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error)
+	// CreateRun creates a new run in a thread.
+	CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error)
+	// RetrieveRun retrieves a run in a thread.
+	RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
+	// CancelRun cancels a run in a thread.
+	CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
+	// SubmitToolOutputs submits tool outputs for a run in a thread.
+	SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error)
+}
+
 type openAI struct {
 	httpClient *http.Client
 	client     *openai.Client
@@ -61,6 +106,13 @@ type openAI struct {
 func NewOpenAI(grafanaURL, grafanaAPIKey string) OpenAI {
 	httpClient := &http.Client{}
 	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient)
+}
+
+// NewOpenAIAssistant creates a new OpenAI client talking to the Grafana LLM app installed
+// on the given Grafana instance, with the OpenAIAssistant interface.
+func NewOpenAIAssistant(grafanaURL, grafanaAPIKey string) OpenAIAssistant {
+	httpClient := &http.Client{}
+	return NewOpenAIAssistantWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
 // NewOpenAIWithClient creates a new OpenAI client talking to the Grafana LLM app installed
@@ -80,6 +132,12 @@ func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Clie
 	}
 }
 
+// NewOpenAIAssistantWithClient creates a new OpenAI client talking to the Grafana LLM app installed
+// on the given Grafana instance, using the given HTTP client.
+func NewOpenAIAssistantWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAIAssistant {
+	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient).(OpenAIAssistant)
+}
+
 type openAIModelHealth struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error,omitempty"`
@@ -90,6 +148,7 @@ type openAIHealthDetails struct {
 	OK         bool                        `json:"ok"`
 	Error      string                      `json:"error,omitempty"`
 	Models     map[Model]openAIModelHealth `json:"models"`
+	Assistant  openAIModelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
@@ -158,4 +217,66 @@ func (o *openAI) ChatCompletionsStream(ctx context.Context, req ChatCompletionRe
 	r := req.ChatCompletionRequest
 	r.Model = string(req.Model)
 	return o.client.CreateChatCompletionStream(ctx, r)
+}
+
+func (o *openAI) CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error) {
+	r := req.AssistantRequest
+	r.Model = string(req.Model)
+	return o.client.CreateAssistant(ctx, r)
+}
+
+func (o *openAI) RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error) {
+	return o.client.RetrieveAssistant(ctx, assistantID)
+}
+
+func (o *openAI) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
+	return o.client.ListAssistants(ctx, limit, order, after, before)
+}
+
+func (o *openAI) DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error) {
+	return o.client.DeleteAssistant(ctx, assistantID)
+}
+
+func (o *openAI) CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error) {
+	return o.client.CreateThread(ctx, req)
+}
+
+func (o *openAI) RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error) {
+	return o.client.RetrieveThread(ctx, threadID)
+}
+
+func (o *openAI) DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error) {
+	return o.client.DeleteThread(ctx, threadID)
+}
+
+func (o *openAI) CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error) {
+	return o.client.CreateMessage(ctx, threadID, request)
+}
+
+func (o *openAI) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (msg openai.MessagesList, err error) {
+	return o.client.ListMessage(ctx, threadID, limit, order, after, before, runID)
+}
+
+func (o *openAI) RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error) {
+	return o.client.RetrieveMessage(ctx, threadID, messageID)
+}
+
+func (o *openAI) DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error) {
+	return o.client.DeleteMessage(ctx, threadID, messageID)
+}
+
+func (o *openAI) CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error) {
+	return o.client.CreateRun(ctx, threadID, request)
+}
+
+func (o *openAI) RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
+	return o.client.RetrieveRun(ctx, threadID, runID)
+}
+
+func (o *openAI) CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
+	return o.client.CancelRun(ctx, threadID, runID)
+}
+
+func (o *openAI) SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error) {
+	return o.client.SubmitToolOutputs(ctx, threadID, runID, request)
 }
