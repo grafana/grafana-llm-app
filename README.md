@@ -89,14 +89,7 @@ It is recommended to run these using npm commands from root so that the entire p
    npm run server
    ```
 
-6. Run the E2E tests (using Cypress)
-
-   ```bash
-   # Spins up a Grafana instance first that we tests against
-   npm run e2e:ci
-   ```
-
-7. Run the linter
+6. Run the linter
 
    ```bash
    npm run lint
