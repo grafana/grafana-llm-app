@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.12.0
+
+- Add support for OpenAI assistant functionality
+- Upgrade various dependencies
+
 ## 0.11.0
 
 - Update model defaults:
