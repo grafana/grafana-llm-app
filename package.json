@@ -23,7 +23,7 @@
     "packages/grafana-llm-app"
   ],
   "devDependencies": {
-    "@grafana/eslint-config": "^7.0.0",
+    "@grafana/eslint-config": "^8.0.0",
     "@grafana/plugin-e2e": "^1.13.0",
     "@swc/core": "1.6.13",
     "@swc/helpers": "^0.5.13",
