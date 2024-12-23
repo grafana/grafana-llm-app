@@ -7,7 +7,7 @@ toolchain go1.23.3
 require (
 	github.com/grafana/grafana-plugin-sdk-go v0.260.3
 	github.com/qdrant/go-client v1.12.0
-	github.com/sashabaranov/go-openai v1.32.0
+	github.com/sashabaranov/go-openai v1.36.0
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.69.2
 )
