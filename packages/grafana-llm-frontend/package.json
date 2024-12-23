@@ -33,7 +33,7 @@
   "author": "Grafana",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
     "@types/uuid": "^10.0.0",
     "rollup": "^4.22.4",
     "rollup-plugin-dts": "^6.1.1",
