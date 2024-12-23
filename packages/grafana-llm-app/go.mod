@@ -9,7 +9,7 @@ require (
 	github.com/qdrant/go-client v1.12.0
 	github.com/sashabaranov/go-openai v1.32.0
 	github.com/stretchr/testify v1.10.0
-	google.golang.org/grpc v1.68.1
+	google.golang.org/grpc v1.69.2
 )
 
 require (
