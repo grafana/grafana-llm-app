@@ -27,7 +27,7 @@
     "@grafana/plugin-e2e": "^1.14.6",
     "@swc/core": "1.6.13",
     "@swc/helpers": "^0.5.13",
-    "@swc/jest": "^0.2.29",
+    "@swc/jest": "^0.2.37",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^16.1.0",
     "@types/jest": "^29.5.14",
