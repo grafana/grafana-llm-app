@@ -108,7 +108,6 @@ export function ModelConfig({
             );
 
             return (
-              <>
                 <Field key={i} label={FieldLabel} description={entry.description}>
                   <Input
                     width={60}
@@ -125,7 +124,6 @@ export function ModelConfig({
                     }}
                   />
                 </Field>
-              </>
             );
           })}
         </>
