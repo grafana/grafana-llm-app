@@ -10,7 +10,7 @@ Each package has its own package.json with its own npm commands, but the intenti
 
 ### Quickstart
 
-1. Install node >= 20, go >= 1.21, and [Mage](https://magefile.org/).
+1. Install node >= 22, go >= 1.21, and [Mage](https://magefile.org/).
 2. Install docker
 3. Run `npm install`
 4. Run `npm run dev`
