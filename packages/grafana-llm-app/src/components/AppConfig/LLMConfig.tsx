@@ -219,7 +219,7 @@ export function LLMConfig({
           <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
             <Card.Heading>Use OpenAI-compatible API</Card.Heading>
             <Card.Description>
-              <div>Enable LLM features in Grafana using an OpenAI-compatible API</div>
+              Enable LLM features in Grafana using an OpenAI-compatible API
               {llmOption === 'openai' && (
                 <OpenAIConfig
                   settings={settings.openAI ?? {}}
