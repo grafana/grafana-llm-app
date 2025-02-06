@@ -8,7 +8,7 @@ import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 
-export type OpenAIProvider = 'openai' | 'azure' | 'grafana' | 'test';
+export type OpenAIProvider = 'openai' | 'azure' | 'grafana' | 'test' | 'custom';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
@@ -45,22 +45,35 @@ export function OpenAIConfig({
         event.currentTarget.type === 'checkbox' ? event.currentTarget.checked : event.currentTarget.value.trim(),
     });
   };
+
+  // Update settings when provider changes, set default URL for OpenAI
+  const onChangeProvider = (value: OpenAIProvider) => {
+    onChange({
+      ...settings,
+      provider: value,
+      url: value === 'openai' ? 'https://api.openai.com' : '',
+    });
+  };
+
   return (
     <FieldSet>
-      <Field label="Provider">
+      {settings.provider !== 'custom' && 
+        <Field label="Provider">
         <Select
           data-testid={testIds.appConfig.openAIProvider}
           options={
             [
-              { label: 'OpenAI/OpenAI Compatible', value: 'openai' },
+              { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
             ] as Array<SelectableValue<OpenAIProvider>>
           }
           value={settings.provider ?? 'openai'}
-          onChange={(e) => onChange({ ...settings, provider: e.value })}
+          onChange={(e) => onChangeProvider(e.value as OpenAIProvider)}
           width={60}
         />
       </Field>
+    }
+
       <Field
         label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'API URL'}
         className={s.marginTop}
@@ -69,11 +82,16 @@ export function OpenAIConfig({
           width={60}
           name="url"
           data-testid={testIds.appConfig.openAIUrl}
-          value={settings.url}
+          value={settings.provider === 'openai' ? 'https://api.openai.com' : settings.url}
           placeholder={
-            settings.provider === 'azure' ? `https://<resource-name>.openai.azure.com` : `https://api.openai.com`
+            settings.provider === 'azure' 
+              ? `https://<resource-name>.openai.azure.com` 
+              : settings.provider === 'openai'
+                ? `https://api.openai.com`
+                : `https://llm.domain.com`
           }
           onChange={onChangeField}
+          disabled={settings.provider === 'openai'}
         />
       </Field>
 
@@ -92,7 +110,7 @@ export function OpenAIConfig({
         />
       </Field>
 
-      {settings.provider !== 'azure' && (
+      {settings.provider === 'openai' && (
         <Field label="API Organization ID">
           <Input
             width={60}

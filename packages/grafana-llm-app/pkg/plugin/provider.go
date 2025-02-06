@@ -6,6 +6,8 @@ func createProvider(settings *Settings) (LLMProvider, error) {
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 		return NewOpenAIProvider(settings.OpenAI, settings.Models)
+	case openAIProviderCustom:
+		return NewOpenAIProvider(settings.OpenAI, settings.Models)
 	case openAIProviderAzure:
 		return NewAzureProvider(settings.OpenAI, settings.Models.Default)
 	case openAIProviderGrafana:

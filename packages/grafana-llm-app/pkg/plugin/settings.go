@@ -20,6 +20,7 @@ type openAIProvider string
 const (
 	openAIProviderOpenAI  openAIProvider = "openai"
 	openAIProviderAzure   openAIProvider = "azure"
+	openAIProviderCustom  openAIProvider = "custom"
 	openAIProviderGrafana openAIProvider = "grafana" // via llm-gateway
 	openAIProviderTest    openAIProvider = "test"
 )
@@ -70,6 +71,8 @@ func (s OpenAISettings) Configured() bool {
 		fallthrough
 	case openAIProviderOpenAI:
 		return s.apiKey != ""
+	case openAIProviderCustom:
+		return true
 	}
 	// Unknown or empty provider means configuration needs to be updated.
 	return false
@@ -173,6 +176,7 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	switch settings.OpenAI.Provider {
 	case openAIProviderOpenAI:
 	case openAIProviderAzure:
+	case openAIProviderCustom:
 	case openAIProviderGrafana:
 		if settings.LLMGateway.URL == "" {
 			// llm-gateway not available, this provider is invalid so switch to disabled

@@ -11,7 +11,7 @@ import { OpenAIConfig, OpenAIProvider } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
-export type LLMOptions = 'grafana-provided' | 'openai' | 'test' | 'disabled' | 'unconfigured';
+export type LLMOptions = 'grafana-provided' | 'openai' | 'test' | 'disabled' | 'unconfigured' | 'custom';
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
@@ -23,6 +23,8 @@ function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
     case 'azure':
     case 'openai':
       return 'openai';
+    case 'custom':
+      return 'custom';
     case 'test':
       return 'test';
     case 'grafana':
@@ -110,6 +112,12 @@ export function LLMConfig({
         onChange({ ...settings, openAI: { provider: 'openai', disabled: false } });
         setPreviousOpenAIProvider(undefined);
       }
+    }
+  };
+
+  const selectCustom = () => {
+    if (llmOption !== 'custom') {
+      onChange({ ...settings, openAI: { provider: 'custom', disabled: false } });
     }
   };
 
@@ -219,7 +227,7 @@ export function LLMConfig({
           <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
             <Card.Heading>Use OpenAI-compatible API</Card.Heading>
             <Card.Description>
-              Enable LLM features in Grafana using an OpenAI-compatible API
+              Enable LLM features in Grafana using OpenAI API
               {llmOption === 'openai' && (
                 <OpenAIConfig
                   settings={settings.openAI ?? {}}
@@ -232,6 +240,26 @@ export function LLMConfig({
             </Card.Description>
             <Card.Figure>
               <OpenAILogo width={20} height={20} />
+            </Card.Figure>
+          </Card>
+        </div>
+        <div onClick={selectCustom}>
+          <Card isSelected={llmOption === 'custom'} className={s.cardWithoutBottomMargin}>
+            <Card.Heading>Use a Custom API</Card.Heading>
+            <Card.Description>
+              Enable LLM features in Grafana using a custom API (with "OpenAI-like" signature)
+              {llmOption === 'custom' && (
+                <OpenAIConfig
+                  settings={settings.openAI ?? {}}
+                  onChange={(openAI) => onChange({ ...settings, openAI })}
+                  secrets={secrets}
+                  secretsSet={secretsSet}
+                  onChangeSecrets={onChangeSecrets}
+                />
+              )}
+            </Card.Description>
+            <Card.Figure>
+              <Icon name="ai" size="lg" />
             </Card.Figure>
           </Card>
         </div>
@@ -251,7 +279,7 @@ export function LLMConfig({
           </Card.Figure>
         </Card>
       </FieldSet>
-      {llmOption === 'openai' && (
+      {(llmOption === 'openai' || llmOption === 'custom') && (
         <FieldSet label="Models" className={s.sidePadding}>
           <ModelConfig
             provider={settings.openAI?.provider ?? 'openai'}
