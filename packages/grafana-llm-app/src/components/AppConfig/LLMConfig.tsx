@@ -227,7 +227,7 @@ export function LLMConfig({
           <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
             <Card.Heading>Use OpenAI-compatible API</Card.Heading>
             <Card.Description>
-              Enable LLM features in Grafana using OpenAI API
+              Enable LLM features in Grafana using OpenAI-compatible API
               {llmOption === 'openai' && (
                 <OpenAIConfig
                   settings={settings.openAI ?? {}}
@@ -247,7 +247,7 @@ export function LLMConfig({
           <Card isSelected={llmOption === 'custom'} className={s.cardWithoutBottomMargin}>
             <Card.Heading>Use a Custom API</Card.Heading>
             <Card.Description>
-              Enable LLM features in Grafana using a custom API (with "OpenAI-like" signature)
+              {"Enable LLM features in Grafana using a custom API (with \"OpenAI-like\" signature)"}
               {llmOption === 'custom' && (
                 <OpenAIConfig
                   settings={settings.openAI ?? {}}
