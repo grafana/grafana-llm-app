@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -195,7 +195,7 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	user := httpadapter.UserFromContext(req.Context())
+	user := backend.UserFromContext(req.Context())
 
 	devMode := os.Getenv("DEV_MODE") != ""
 	if devMode {
@@ -459,6 +459,8 @@ func (a *App) handleModels() http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+		// Do our best to write.
+		//nolint:errcheck
 		w.Write(resp)
 	}
 }
@@ -507,6 +509,7 @@ func (a *App) handleChatCompletionsStream(
 		return
 	}
 	// Channel has closed, send a DONE SSE.
+	//nolint:errcheck
 	w.Write([]byte("data: [DONE]\n\n"))
 }
 
@@ -582,6 +585,7 @@ func (a *App) handleChatCompletions() http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+		//nolint:errcheck
 		w.Write(respBody)
 	}
 }

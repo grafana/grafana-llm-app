@@ -166,7 +166,7 @@ type mockServer struct {
 	request *http.Request
 }
 
-func newMockOpenAIServer(t *testing.T) *mockServer {
+func newMockOpenAIServer() *mockServer {
 	server := &mockServer{}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.request = r
@@ -174,12 +174,15 @@ func newMockOpenAIServer(t *testing.T) *mockServer {
 		if streaming {
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.WriteHeader(http.StatusOK)
+			//nolint:errcheck
 			w.Write([]byte("data: {}\n\n"))
+			//nolint:errcheck
 			w.Write([]byte("data: [DONE]\n\n"))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
+		//nolint:errcheck
 		w.Write([]byte("{}"))
 
 	})
@@ -499,7 +502,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			// Start up a mock server that just captures the request and sends a 200 OK response.
-			server := newMockOpenAIServer(t)
+			server := newMockOpenAIServer()
 
 			// Update the OpenAI/LLMGateway URL with the mock server's URL.
 			if tc.settings.OpenAI.Provider == openAIProviderGrafana {

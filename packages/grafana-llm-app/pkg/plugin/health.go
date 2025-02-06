@@ -81,7 +81,7 @@ func (a *App) testOpenAIAssistant(ctx context.Context) error {
 
 // openAIHealth checks the health of the OpenAI configuration and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
-func (a *App) openAIHealth(ctx context.Context, req *backend.CheckHealthRequest) (openAIHealthDetails, error) {
+func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 	if a.healthOpenAI != nil {
 		return *a.healthOpenAI, nil
 	}
@@ -190,7 +190,7 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
 
-	openAI, err := a.openAIHealth(ctx, req)
+	openAI, err := a.openAIHealth(ctx)
 	if err != nil {
 		openAI.OK = false
 		openAI.Error = err.Error()
