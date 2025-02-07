@@ -39,9 +39,8 @@ func newMockOpenAIHealthServer(responses []mockOpenAIHealthResponse) *httptest.S
 		}
 		w.WriteHeader(responses[i].code)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(responses[i].body))
+		_, _ = w.Write([]byte(responses[i].body))
 		i += 1
-		return
 	}))
 }
 

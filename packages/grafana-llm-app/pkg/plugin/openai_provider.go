@@ -47,12 +47,6 @@ func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
 	}, nil
 }
 
-type openAIChatCompletionRequest struct {
-	ChatCompletionRequest
-	// Override the model field to just be a string rather than our custom Model type.
-	Model string `json:"model"`
-}
-
 func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
