@@ -8,6 +8,9 @@ import { testIds } from 'components/testIds';
 import { getStyles, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 
+const OPENAI_API_URL = 'https://api.openai.com';
+const AZURE_OPENAI_URL_TEMPLATE = 'https://<resource-name>.openai.azure.com';
+
 export type OpenAIProvider = 'openai' | 'azure' | 'grafana' | 'test' | 'custom';
 
 export interface OpenAISettings {
@@ -51,7 +54,7 @@ export function OpenAIConfig({
     onChange({
       ...settings,
       provider: value,
-      url: value === 'openai' ? 'https://api.openai.com' : '',
+      url: value === 'openai' ? OPENAI_API_URL : '',
     });
   };
 
@@ -82,12 +85,12 @@ export function OpenAIConfig({
           width={60}
           name="url"
           data-testid={testIds.appConfig.openAIUrl}
-          value={settings.provider === 'openai' ? 'https://api.openai.com' : settings.url}
+          value={settings.provider === 'openai' ? OPENAI_API_URL : settings.url}
           placeholder={
             settings.provider === 'azure' 
-              ? `https://<resource-name>.openai.azure.com` 
+              ? AZURE_OPENAI_URL_TEMPLATE
               : settings.provider === 'openai'
-                ? `https://api.openai.com`
+                ? OPENAI_API_URL
                 : `https://llm.domain.com`
           }
           onChange={onChangeField}
