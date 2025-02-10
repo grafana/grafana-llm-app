@@ -58,9 +58,7 @@ func (s OpenAISettings) Configured() bool {
 	}
 
 	switch s.Provider {
-	case openAIProviderGrafana:
-		return true
-	case openAIProviderTest:
+	case openAIProviderGrafana, openAIProviderCustom, openAIProviderTest:
 		return true
 	case openAIProviderAzure:
 		// Require some mappings for use with Azure.
@@ -71,8 +69,6 @@ func (s OpenAISettings) Configured() bool {
 		fallthrough
 	case openAIProviderOpenAI:
 		return s.apiKey != ""
-	case openAIProviderCustom:
-		return true
 	}
 	// Unknown or empty provider means configuration needs to be updated.
 	return false
