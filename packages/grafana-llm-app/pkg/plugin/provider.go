@@ -4,7 +4,7 @@ import "errors"
 
 func createProvider(settings *Settings) (LLMProvider, error) {
 	switch settings.OpenAI.Provider {
-	case openAIProviderOpenAI:
+	case openAIProviderOpenAI, openAIProviderCustom:
 		return NewOpenAIProvider(settings.OpenAI, settings.Models)
 	case openAIProviderAzure:
 		return NewAzureProvider(settings.OpenAI, settings.Models.Default)
