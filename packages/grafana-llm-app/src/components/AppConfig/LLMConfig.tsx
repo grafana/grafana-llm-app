@@ -15,7 +15,8 @@ export type LLMOptions = 'grafana-provided' | 'openai' | 'test' | 'disabled' | '
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
-  if (settings.openAI?.disabled === true) {
+  // Backwards compatibility for disabled field
+  if (settings.disabled || settings.openAI?.disabled) {
     return 'disabled';
   }
 
@@ -75,7 +76,7 @@ export function LLMConfig({
         setPreviousOpenAIProvider(settings.provider);
       }
 
-      onChange({ ...settings, provider: undefined, openAI: { ...settings.openAI, disabled: true } });
+      onChange({ ...settings, provider: undefined, disabled: true, openAI: { ...settings.openAI, disabled: true } });
     }
   };
 
@@ -86,7 +87,7 @@ export function LLMConfig({
         setPreviousOpenAIProvider(settings.provider);
       }
 
-      onChange({ ...settings, provider: 'test', openAI: { ...settings.openAI, disabled: false } });
+      onChange({ ...settings, provider: 'test', disabled: false, openAI: { ...settings.openAI, disabled: false } });
     }
   };
 
@@ -98,7 +99,7 @@ export function LLMConfig({
         setPreviousOpenAIProvider(settings.provider);
       }
 
-      onChange({ ...settings, provider: 'grafana', openAI: { disabled: false } });
+      onChange({ ...settings, provider: 'grafana', disabled: false, openAI: { disabled: false } });
     }
   };
 
@@ -108,10 +109,10 @@ export function LLMConfig({
       // If the previous provider was not a valid openAI vendor, default to openai
       // Otherwise the state would revert to the incorrect previous provider
       if (previousOpenAIProvider === 'openai' || previousOpenAIProvider === 'azure') {
-        onChange({ ...settings, provider: previousOpenAIProvider, openAI: { disabled: false } });
+        onChange({ ...settings, provider: previousOpenAIProvider, disabled: false, openAI: { disabled: false } });
         setPreviousOpenAIProvider(undefined);
       } else {
-        onChange({ ...settings, provider: 'openai', openAI: { disabled: false } });
+        onChange({ ...settings, provider: 'openai', disabled: false, openAI: { disabled: false } });
         setPreviousOpenAIProvider(undefined);
       }
     }
@@ -119,7 +120,7 @@ export function LLMConfig({
 
   const selectCustom = () => {
     if (llmOption !== 'custom') {
-      onChange({ ...settings, provider: 'custom', openAI: { disabled: false } });
+      onChange({ ...settings, provider: 'custom', disabled: false, openAI: { disabled: false } });
     }
   };
 

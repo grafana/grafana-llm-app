@@ -34,12 +34,14 @@ type OpenAISettings struct {
 	OrganizationID string `json:"organizationId"`
 
 	// What OpenAI provider the user selected. Note this can specify using the LLMGateway
+	// Deprecated: Use Settings.Provider instead
 	Provider ProviderType `json:"provider"`
 
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
 
 	// Disabled marks if a user has explicitly disabled LLM functionality.
+	// Deprecated: Use Settings.Disabled instead
 	Disabled bool `json:"disabled"`
 
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
@@ -56,9 +58,6 @@ type AnthropicSettings struct {
 	// The URL to the provider's API
 	URL string `json:"url"`
 
-	// Disabled marks if a user has explicitly disabled LLM functionality.
-	Disabled bool `json:"disabled"`
-
 	// apiKey is the provider-specific API key needed to authenticate requests
 	// Stored securely.
 	apiKey string
@@ -67,7 +66,7 @@ type AnthropicSettings struct {
 // Configured returns whether the provider has been configured
 func (s *Settings) Configured() bool {
 	// If disabled has been selected than the provider has been configured.
-	if s.OpenAI.Disabled {
+	if s.Disabled || s.OpenAI.Disabled { // Check both for backward compatibility
 		return true
 	}
 
@@ -151,6 +150,9 @@ type Settings struct {
 	// Provider type indicates which provider implementation to use
 	Provider ProviderType `json:"provider"`
 
+	// Disabled marks if a user has explicitly disabled LLM functionality.
+	Disabled bool `json:"disabled"`
+
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
@@ -176,6 +178,11 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 			log.DefaultLogger.Error(err.Error())
 			return nil, err
 		}
+	}
+
+	// Handle migration of Disabled field from OpenAI to top level
+	if !settings.Disabled && settings.OpenAI.Disabled {
+		settings.Disabled = settings.OpenAI.Disabled
 	}
 
 	// We need to handle the case where the user has customized the URL,

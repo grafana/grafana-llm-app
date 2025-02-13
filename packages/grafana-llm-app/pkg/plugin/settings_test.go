@@ -160,9 +160,7 @@ func TestConfigured(t *testing.T) {
 		{
 			testName: "disabled",
 			settings: Settings{
-				OpenAI: OpenAISettings{
-					Disabled: true,
-				},
+				Disabled: true,
 			},
 			configured: true,
 		},
@@ -170,9 +168,7 @@ func TestConfigured(t *testing.T) {
 			testName: "disabled with otherwise valid configuration",
 			settings: Settings{
 				Provider: ProviderTypeGrafana,
-				OpenAI: OpenAISettings{
-					Disabled: true,
-				},
+				Disabled: true,
 			},
 			configured: true,
 		},

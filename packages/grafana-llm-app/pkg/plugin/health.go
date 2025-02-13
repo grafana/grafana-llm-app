@@ -87,7 +87,7 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 	}
 
 	// If OpenAI is disabled it has been configured but cannot be queried.
-	if a.settings.OpenAI.Disabled {
+	if a.settings.Disabled {
 		return openAIHealthDetails{
 			OK:         false,
 			Configured: true,

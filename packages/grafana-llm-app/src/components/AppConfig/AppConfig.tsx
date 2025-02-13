@@ -16,7 +16,6 @@ import { VectorConfig, VectorSettings } from './Vector';
 
 interface AnthropicSettings {
   url?: string;
-  disabled?: boolean;
   apiKey?: string;
 }
 
@@ -24,6 +23,7 @@ export type ProviderType = 'openai' | 'azure' | 'grafana' | 'test' | 'custom';
 
 export interface AppPluginSettings {
   provider?: ProviderType;
+  disabled?: boolean;
   anthropic?: AnthropicSettings;
   openAI?: OpenAISettings;
   vector?: VectorSettings;
