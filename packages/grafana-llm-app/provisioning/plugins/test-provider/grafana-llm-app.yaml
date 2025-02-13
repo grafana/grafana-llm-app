@@ -6,10 +6,8 @@ apps:
       base64EncodedAccessTokenSet: True
       # enableGrafanaManagedLLM: True
       # displayVectorStoreOptions: False
+      provider: test
       openAI:
-        provider: test
-        # url: https://api.openai.com
-        # organizationId: $OPENAI_ORGANIZATION_ID
         testProvider:
           modelsResponse: 
             data:

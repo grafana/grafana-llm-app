@@ -97,7 +97,7 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 
 	d := openAIHealthDetails{
 		OK:         true,
-		Configured: a.settings.OpenAI.Configured(),
+		Configured: a.settings.Configured(),
 		Models:     map[Model]openAIModelHealth{},
 		Assistant:  openAIModelHealth{OK: false, Error: "Assistant not available"},
 	}

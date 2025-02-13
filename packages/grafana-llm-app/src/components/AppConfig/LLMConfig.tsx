@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { Button, Card, Checkbox, FieldSet, Icon, useStyles2 } from '@grafana/ui';
 
-import { AppPluginSettings, Secrets, SecretsSet } from './AppConfig';
+import { AppPluginSettings, Secrets, SecretsSet, ProviderType, getEffectiveProvider } from './AppConfig';
 import { ModelConfig } from './ModelConfig';
 import { DevSandbox } from './DevSandbox';
-import { OpenAIConfig, OpenAIProvider } from './OpenAI';
+import { OpenAIConfig } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
 
 // LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
@@ -19,7 +19,9 @@ function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
     return 'disabled';
   }
 
-  switch (settings.openAI?.provider) {
+  const provider = getEffectiveProvider(settings);
+
+  switch (provider) {
     case 'azure':
     case 'openai':
       return 'openai';
@@ -59,7 +61,7 @@ export function LLMConfig({
   const llmOption = getLLMOptionFromSettings(settings);
 
   // previousOpenAIProvider caches the value of the openAI provider, as it is overwritten by the grafana option
-  const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<OpenAIProvider>();
+  const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<ProviderType>();
 
   const optInChange = () => {
     setOptIn(!optIn);
@@ -70,10 +72,10 @@ export function LLMConfig({
     if (llmOption !== 'disabled') {
       // Cache if OpenAI or Azure provider is used, so can restore
       if (previousOpenAIProvider === undefined) {
-        setPreviousOpenAIProvider(settings.openAI?.provider);
+        setPreviousOpenAIProvider(settings.provider);
       }
 
-      onChange({ ...settings, openAI: { ...settings.openAI, provider: undefined, disabled: true } });
+      onChange({ ...settings, provider: undefined, openAI: { ...settings.openAI, disabled: true } });
     }
   };
 
@@ -81,10 +83,10 @@ export function LLMConfig({
     if (llmOption !== 'test') {
       // Cache if OpenAI or Azure provider is used, so can restore
       if (previousOpenAIProvider === undefined) {
-        setPreviousOpenAIProvider(settings.openAI?.provider);
+        setPreviousOpenAIProvider(settings.provider);
       }
 
-      onChange({ ...settings, openAI: { ...settings.openAI, provider: 'test', disabled: false } });
+      onChange({ ...settings, provider: 'test', openAI: { ...settings.openAI, disabled: false } });
     }
   };
 
@@ -93,10 +95,10 @@ export function LLMConfig({
     if (llmOption !== 'grafana-provided') {
       // Cache if OpenAI or Azure provider is used, so can restore
       if (previousOpenAIProvider === undefined) {
-        setPreviousOpenAIProvider(settings.openAI?.provider);
+        setPreviousOpenAIProvider(settings.provider);
       }
 
-      onChange({ ...settings, openAI: { provider: 'grafana', disabled: false } });
+      onChange({ ...settings, provider: 'grafana', openAI: { disabled: false } });
     }
   };
 
@@ -106,10 +108,10 @@ export function LLMConfig({
       // If the previous provider was not a valid openAI vendor, default to openai
       // Otherwise the state would revert to the incorrect previous provider
       if (previousOpenAIProvider === 'openai' || previousOpenAIProvider === 'azure') {
-        onChange({ ...settings, openAI: { provider: previousOpenAIProvider, disabled: false } });
+        onChange({ ...settings, provider: previousOpenAIProvider, openAI: { disabled: false } });
         setPreviousOpenAIProvider(undefined);
       } else {
-        onChange({ ...settings, openAI: { provider: 'openai', disabled: false } });
+        onChange({ ...settings, provider: 'openai', openAI: { disabled: false } });
         setPreviousOpenAIProvider(undefined);
       }
     }
@@ -117,7 +119,7 @@ export function LLMConfig({
 
   const selectCustom = () => {
     if (llmOption !== 'custom') {
-      onChange({ ...settings, openAI: { provider: 'custom', disabled: false } });
+      onChange({ ...settings, provider: 'custom', openAI: { disabled: false } });
     }
   };
 
@@ -282,7 +284,7 @@ export function LLMConfig({
       {(llmOption === 'openai' || llmOption === 'custom') && (
         <FieldSet label="Models" className={s.sidePadding}>
           <ModelConfig
-            provider={settings.openAI?.provider ?? 'openai'}
+            provider={settings.provider ?? 'openai'}
             settings={settings.models ?? { mapping: {} }}
             onChange={(models) => onChange({ ...settings, models })}
           />

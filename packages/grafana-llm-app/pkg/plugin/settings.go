@@ -15,14 +15,14 @@ import (
 const openAIKey = "openAIKey"
 const encodedTenantAndTokenKey = "base64EncodedAccessToken"
 
-type openAIProvider string
+type ProviderType string
 
 const (
-	openAIProviderOpenAI  openAIProvider = "openai"
-	openAIProviderAzure   openAIProvider = "azure"
-	openAIProviderCustom  openAIProvider = "custom"
-	openAIProviderGrafana openAIProvider = "grafana" // via llm-gateway
-	openAIProviderTest    openAIProvider = "test"
+	ProviderTypeOpenAI  ProviderType = "openai"
+	ProviderTypeAzure   ProviderType = "azure"
+	ProviderTypeCustom  ProviderType = "custom"
+	ProviderTypeGrafana ProviderType = "grafana" // via llm-gateway
+	ProviderTypeTest    ProviderType = "test"
 )
 
 // OpenAISettings contains the user-specified OpenAI connection details
@@ -34,7 +34,7 @@ type OpenAISettings struct {
 	OrganizationID string `json:"organizationId"`
 
 	// What OpenAI provider the user selected. Note this can specify using the LLMGateway
-	Provider openAIProvider `json:"provider"`
+	Provider ProviderType `json:"provider"`
 
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
@@ -47,28 +47,48 @@ type OpenAISettings struct {
 	apiKey string
 
 	// TestProvider contains the settings for the test provider.
-	// Only used when Provider is openAIProviderTest.
+	// Only used when Provider is ProviderTypeTest.
 	TestProvider testProvider `json:"testProvider,omitempty"`
 }
 
-func (s OpenAISettings) Configured() bool {
-	// If disabled has been selected than the plugin has been configured.
-	if s.Disabled {
+// AnthropicSettings contains Anthropic-specific settings
+type AnthropicSettings struct {
+	// The URL to the provider's API
+	URL string `json:"url"`
+
+	// Disabled marks if a user has explicitly disabled LLM functionality.
+	Disabled bool `json:"disabled"`
+
+	// apiKey is the provider-specific API key needed to authenticate requests
+	// Stored securely.
+	apiKey string
+}
+
+// Configured returns whether the provider has been configured
+func (s *Settings) Configured() bool {
+	// If disabled has been selected than the provider has been configured.
+	if s.OpenAI.Disabled {
 		return true
 	}
 
-	switch s.Provider {
-	case openAIProviderGrafana, openAIProviderCustom, openAIProviderTest:
+	// For backwards compatibility, check OpenAI.Provider if Settings.Provider is empty
+	provider := s.Provider
+	if provider == "" {
+		provider = s.OpenAI.Provider
+	}
+
+	switch provider {
+	case ProviderTypeGrafana, ProviderTypeCustom, ProviderTypeTest:
 		return true
-	case openAIProviderAzure:
+	case ProviderTypeAzure:
 		// Require some mappings for use with Azure.
-		if len(s.AzureMapping) == 0 {
+		if len(s.OpenAI.AzureMapping) == 0 {
 			return false
 		}
 		// Still need to check the same conditions as openAIProviderOpenAI.
 		fallthrough
-	case openAIProviderOpenAI:
-		return s.apiKey != ""
+	case ProviderTypeOpenAI:
+		return s.OpenAI.apiKey != ""
 	}
 	// Unknown or empty provider means configuration needs to be updated.
 	return false
@@ -128,8 +148,14 @@ type Settings struct {
 
 	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
 
+	// Provider type indicates which provider implementation to use
+	Provider ProviderType `json:"provider"`
+
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
+
+	// Anthropic related settings
+	Anthropic AnthropicSettings `json:"anthropic"`
 
 	// VectorDB settings. May rely on OpenAI settings.
 	Vector vector.VectorSettings `json:"vector"`
@@ -158,38 +184,50 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	if settings.OpenAI.URL == "" {
 		settings.OpenAI.URL = "https://api.openai.com"
 	}
+	if settings.Anthropic.URL == "" {
+		settings.Anthropic.URL = "https://api.anthropic.com"
+	}
 	if settings.Vector.Embed.Type == embed.EmbedderOpenAI {
 		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
-	const openAIKey = "openAIKey"
-	const encodedTenantAndTokenKey = "base64EncodedAccessToken"
+
 	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
 	if settings.LLMGateway.URL == "" {
 		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, the LLM Gateway support is disabled")
 	}
 
-	switch settings.OpenAI.Provider {
-	case openAIProviderOpenAI:
-	case openAIProviderAzure:
-	case openAIProviderCustom:
-	case openAIProviderGrafana:
+	provider := settings.getEffectiveProvider()
+
+	// Validate and handle the LLM provider setting
+	if provider == ProviderTypeTest {
+		// Test provider is always valid, no additional checks needed
+		settings.Provider = ProviderTypeTest
+	} else {
+		// For non-test providers, check if LLM Gateway URL is configured
 		if settings.LLMGateway.URL == "" {
-			// llm-gateway not available, this provider is invalid so switch to disabled
 			log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
 			settings.OpenAI.Provider = ""
+			settings.Provider = ""
 		}
-	case openAIProviderTest:
-		settings.OpenAI.Provider = openAIProviderTest
-	default:
-		// Default to disabled LLM support if an unknown provider was specified.
-		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)
-		settings.OpenAI.Provider = ""
+
+		// Verify this is a known provider type
+		knownProvider := provider == ProviderTypeOpenAI ||
+			provider == ProviderTypeAzure ||
+			provider == ProviderTypeCustom ||
+			provider == ProviderTypeGrafana
+
+		if !knownProvider {
+			log.DefaultLogger.Warn("Unknown provider", "provider", settings.Provider)
+			settings.OpenAI.Provider = ""
+			settings.Provider = ""
+		}
 	}
 
 	settings.DecryptedSecureJSONData = appSettings.DecryptedSecureJSONData
 
 	settings.OpenAI.apiKey = settings.DecryptedSecureJSONData[openAIKey]
+	settings.Anthropic.apiKey = settings.DecryptedSecureJSONData["anthropicKey"]
 
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
 	encodedTenantAndToken := settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
@@ -214,4 +252,13 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	}
 
 	return &settings, nil
+}
+
+// getEffectiveProvider returns the effective provider type, handling backward compatibility
+// where Provider was previously stored in OpenAI.Provider
+func (s *Settings) getEffectiveProvider() ProviderType {
+	if s.Provider == "" {
+		return s.OpenAI.Provider
+	}
+	return s.Provider
 }

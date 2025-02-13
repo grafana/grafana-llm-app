@@ -85,7 +85,7 @@ func TestRunStream(t *testing.T) {
 	}{
 		{
 			name:       "bad auth",
-			settings:   Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
+			settings:   Settings{OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI}},
 			statusCode: http.StatusUnauthorized,
 
 			expErr:          "401",
@@ -94,7 +94,7 @@ func TestRunStream(t *testing.T) {
 		{
 			name: "grafana managed key",
 			settings: Settings{
-				OpenAI: OpenAISettings{Provider: openAIProviderGrafana},
+				OpenAI: OpenAISettings{Provider: ProviderTypeGrafana},
 			},
 			statusCode: http.StatusUnauthorized,
 
@@ -103,7 +103,7 @@ func TestRunStream(t *testing.T) {
 		},
 		{
 			name:        "happy path",
-			settings:    Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
+			settings:    Settings{OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI}},
 			statusCode:  http.StatusOK,
 			includeDone: true,
 
@@ -112,7 +112,7 @@ func TestRunStream(t *testing.T) {
 		},
 		{
 			name:       "happy path without EOF",
-			settings:   Settings{OpenAI: OpenAISettings{Provider: openAIProviderOpenAI}},
+			settings:   Settings{OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI}},
 			statusCode: http.StatusOK,
 
 			expErr:          "",
@@ -128,7 +128,7 @@ func TestRunStream(t *testing.T) {
 
 			// Initialize app (need to set OpenAISettings:URL in here)
 			settings := tc.settings
-			if settings.OpenAI.Provider == openAIProviderGrafana {
+			if settings.OpenAI.Provider == ProviderTypeGrafana {
 				settings.LLMGateway.URL = server.server.URL
 			} else {
 				settings.OpenAI.URL = server.server.URL

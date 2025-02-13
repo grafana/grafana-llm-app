@@ -5,13 +5,11 @@ import { Field, FieldSet, Input, SecretInput, Select, useStyles2 } from '@grafan
 
 import { SelectableValue } from '@grafana/data';
 import { testIds } from 'components/testIds';
-import { getStyles, Secrets, SecretsSet } from './AppConfig';
+import { getStyles, ProviderType, Secrets, SecretsSet } from './AppConfig';
 import { AzureModelDeploymentConfig, AzureModelDeployments } from './AzureConfig';
 
 const OPENAI_API_URL = 'https://api.openai.com';
 const AZURE_OPENAI_URL_TEMPLATE = 'https://<resource-name>.openai.azure.com';
-
-export type OpenAIProvider = 'openai' | 'azure' | 'grafana' | 'test' | 'custom';
 
 export interface OpenAISettings {
   // The URL to reach OpenAI.
@@ -19,7 +17,7 @@ export interface OpenAISettings {
   // The organization ID for OpenAI.
   organizationId?: string;
   // Whether to use Azure OpenAI.
-  provider?: OpenAIProvider;
+  provider?: ProviderType;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
   // If the LLM features have been explicitly disabled.
@@ -50,7 +48,7 @@ export function OpenAIConfig({
   };
 
   // Update settings when provider changes, set default URL for OpenAI
-  const onChangeProvider = (value: OpenAIProvider) => {
+  const onChangeProvider = (value: ProviderType) => {
     onChange({
       ...settings,
       provider: value,
@@ -63,15 +61,15 @@ export function OpenAIConfig({
       {settings.provider !== 'custom' && 
         <Field label="Provider">
         <Select
-          data-testid={testIds.appConfig.openAIProvider}
+          data-testid={testIds.appConfig.provider}
           options={
             [
               { label: 'OpenAI', value: 'openai' },
               { label: 'Azure OpenAI', value: 'azure' },
-            ] as Array<SelectableValue<OpenAIProvider>>
+            ] as Array<SelectableValue<ProviderType>>
           }
           value={settings.provider ?? 'openai'}
-          onChange={(e) => onChangeProvider(e.value as OpenAIProvider)}
+          onChange={(e) => onChangeProvider(e.value as ProviderType)}
           width={60}
         />
       </Field>

@@ -121,15 +121,15 @@ The vector services of the plugin allow some AI-based features (initially, the P
 apps:
   - type: grafana-llm-app
     jsonData:
+      provider: openai
       openAI:
-        provider: openai
         url: https://api.openai.com
         organizationId: $OPENAI_ORGANIZATION_ID
+      # provider: azure
       # openAI:
-        # provider: azure
-        # url: https://<resource>.openai.azure.com
-        # azureModelMapping:
-        #   - ["gpt-3.5-turbo", "gpt-35-turbo"]
+      #   url: https://<resource>.openai.azure.com
+      #   azureModelMapping:
+      #     - ["gpt-3.5-turbo", "gpt-35-turbo"]
       vector:
         enabled: true
         model: BAAI/bge-small-en-v1.5

@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge, Button, Divider, Field, FieldSet, Input, Label, Select } from '@grafana/ui';
 import { openai } from '@grafana/llm';
 
-import { OpenAIProvider } from './OpenAI';
+import { ProviderType } from './AppConfig';
 
 export type ModelMapping = Partial<Record<openai.Model, string>>;
 
@@ -50,7 +50,7 @@ export function ModelConfig({
   settings,
   onChange,
 }: {
-  provider: OpenAIProvider;
+  provider: ProviderType;
   settings: ModelSettings;
   onChange: (settings: ModelSettings) => void;
 }) {

@@ -218,7 +218,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderOpenAI,
+					Provider:       ProviderTypeOpenAI,
 				},
 			},
 			apiKey: "abcd1234",
@@ -242,7 +242,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderOpenAI,
+					Provider:       ProviderTypeOpenAI,
 				},
 			},
 			apiKey: "abcd1234",
@@ -266,7 +266,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderOpenAI,
+					Provider:       ProviderTypeOpenAI,
 				},
 			},
 			apiKey: "abcd1234",
@@ -294,7 +294,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderOpenAI,
+					Provider:       ProviderTypeOpenAI,
 				},
 			},
 			apiKey: "abcd1234",
@@ -322,7 +322,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderAzure,
+					Provider:       ProviderTypeAzure,
 					AzureMapping: [][]string{
 						{"gpt-3.5-turbo", "gpt-35-turbo"},
 					},
@@ -350,7 +350,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderAzure,
+					Provider:       ProviderTypeAzure,
 					AzureMapping: [][]string{
 						{"gpt-3.5-turbo", "gpt-35-turbo"},
 					},
@@ -378,7 +378,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderAzure,
+					Provider:       ProviderTypeAzure,
 					AzureMapping: [][]string{
 						{"gpt-3.5-turbo", "gpt-35-turbo"},
 					},
@@ -406,7 +406,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			settings: Settings{
 				OpenAI: OpenAISettings{
 					OrganizationID: "myOrg",
-					Provider:       openAIProviderAzure,
+					Provider:       ProviderTypeAzure,
 					AzureMapping: [][]string{
 						{"gpt-3.5-turbo", "gpt-35-turbo"},
 					},
@@ -430,7 +430,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 				Tenant:           "123",
 				GrafanaComAPIKey: "abcd1234",
 				OpenAI: OpenAISettings{
-					Provider: openAIProviderGrafana,
+					Provider: ProviderTypeGrafana,
 				},
 			},
 			apiKey: "abcd1234",
@@ -455,7 +455,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 				Tenant:           "123",
 				GrafanaComAPIKey: "abcd1234",
 				OpenAI: OpenAISettings{
-					Provider: openAIProviderGrafana,
+					Provider: ProviderTypeGrafana,
 				},
 			},
 			apiKey: "abcd1234",
@@ -480,7 +480,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 				Tenant:           "123",
 				GrafanaComAPIKey: "abcd1234",
 				OpenAI: OpenAISettings{
-					Provider: openAIProviderGrafana,
+					Provider: ProviderTypeGrafana,
 				},
 			},
 			apiKey: "abcd1234",
@@ -505,7 +505,7 @@ func TestCallOpenAIProxy(t *testing.T) {
 			server := newMockOpenAIServer()
 
 			// Update the OpenAI/LLMGateway URL with the mock server's URL.
-			if tc.settings.OpenAI.Provider == openAIProviderGrafana {
+			if tc.settings.OpenAI.Provider == ProviderTypeGrafana {
 				// Make sure our tests work when the LLM gateway is at a subpath.
 				tc.settings.LLMGateway.URL = server.server.URL + "/llm"
 			} else {
