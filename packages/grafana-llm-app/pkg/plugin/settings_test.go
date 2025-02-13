@@ -313,6 +313,69 @@ func TestConfigured(t *testing.T) {
 	}
 }
 
+func TestDisabledBackwardCompatibility(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		settings        backend.AppInstanceSettings
+		expectedResult  bool
+		expectedMessage string
+	}{
+		{
+			name: "neither disabled flag set",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{}`),
+			},
+			expectedResult: false,
+		},
+		{
+			name: "root disabled flag set to true",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": true}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "openai disabled flag set to true (legacy)",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"openAI": {"disabled": true}}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "both flags set to true",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": true, "openAI": {"disabled": true}}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "root disabled true, openai disabled false",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": true, "openAI": {"disabled": false}}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "root disabled false, openai disabled true",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": false, "openAI": {"disabled": true}}`),
+			},
+			expectedResult: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings, err := loadSettings(tc.settings)
+			if err != nil {
+				t.Errorf("loadSettings failed: %s", err)
+			}
+
+			if settings.Disabled != tc.expectedResult {
+				t.Errorf("expected Disabled to be %v, got %v", tc.expectedResult, settings.Disabled)
+			}
+		})
+	}
+}
+
 func TestGetEffectiveProvider(t *testing.T) {
 	for _, tc := range []struct {
 		name             string
