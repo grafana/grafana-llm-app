@@ -199,36 +199,25 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
 
-	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
-	if settings.LLMGateway.URL == "" {
-		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, the LLM Gateway support is disabled")
-	}
-
 	provider := settings.getEffectiveProvider()
 
-	// Validate and handle the LLM provider setting
-	if provider == ProviderTypeTest {
-		// Test provider is always valid, no additional checks needed
-		settings.Provider = ProviderTypeTest
-	} else {
-		// For non-test providers, check if LLM Gateway URL is configured
-		if settings.LLMGateway.URL == "" {
-			log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
-			settings.OpenAI.Provider = ""
-			settings.Provider = ""
-		}
+	// Verify this is a known provider type
+	knownProvider := provider == ProviderTypeOpenAI ||
+		provider == ProviderTypeAzure ||
+		provider == ProviderTypeCustom ||
+		provider == ProviderTypeGrafana ||
+		provider == ProviderTypeTest
 
-		// Verify this is a known provider type
-		knownProvider := provider == ProviderTypeOpenAI ||
-			provider == ProviderTypeAzure ||
-			provider == ProviderTypeCustom ||
-			provider == ProviderTypeGrafana
+	if !knownProvider {
+		log.DefaultLogger.Warn("Unknown provider", "provider", settings.Provider)
+		settings.OpenAI.Provider = ""
+		settings.Provider = ""
+	}
 
-		if !knownProvider {
-			log.DefaultLogger.Warn("Unknown provider", "provider", settings.Provider)
-			settings.OpenAI.Provider = ""
-			settings.Provider = ""
-		}
+	if provider == ProviderTypeGrafana && settings.LLMGateway.URL == "" {
+		log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
+		settings.OpenAI.Provider = ""
+		settings.Provider = ""
 	}
 
 	settings.DecryptedSecureJSONData = appSettings.DecryptedSecureJSONData
