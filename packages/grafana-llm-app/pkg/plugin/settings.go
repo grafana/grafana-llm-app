@@ -53,16 +53,6 @@ type OpenAISettings struct {
 	TestProvider testProvider `json:"testProvider,omitempty"`
 }
 
-// AnthropicSettings contains Anthropic-specific settings
-type AnthropicSettings struct {
-	// The URL to the provider's API
-	URL string `json:"url"`
-
-	// apiKey is the provider-specific API key needed to authenticate requests
-	// Stored securely.
-	apiKey string
-}
-
 // Configured returns whether the provider has been configured
 func (s *Settings) Configured() bool {
 	// If disabled has been selected than the provider has been configured.
@@ -156,9 +146,6 @@ type Settings struct {
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
-	// Anthropic related settings
-	Anthropic AnthropicSettings `json:"anthropic"`
-
 	// VectorDB settings. May rely on OpenAI settings.
 	Vector vector.VectorSettings `json:"vector"`
 
@@ -191,9 +178,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	if settings.OpenAI.URL == "" {
 		settings.OpenAI.URL = "https://api.openai.com"
 	}
-	if settings.Anthropic.URL == "" {
-		settings.Anthropic.URL = "https://api.anthropic.com"
-	}
 	if settings.Vector.Embed.Type == embed.EmbedderOpenAI {
 		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
@@ -223,7 +207,6 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	settings.DecryptedSecureJSONData = appSettings.DecryptedSecureJSONData
 
 	settings.OpenAI.apiKey = settings.DecryptedSecureJSONData[openAIKey]
-	settings.Anthropic.apiKey = settings.DecryptedSecureJSONData["anthropicKey"]
 
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
 	encodedTenantAndToken := settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
