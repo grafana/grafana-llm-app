@@ -83,8 +83,8 @@ func TestCheckHealth(t *testing.T) {
 			settings: backend.AppInstanceSettings{
 				DecryptedSecureJSONData: map[string]string{},
 				JSONData: json.RawMessage(`{
+					"disabled": true,
 					"openai": {
-						"disabled": true,
 						"url": "%s"
 					}
 				}`),

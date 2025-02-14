@@ -1,7 +1,7 @@
 export const testIds = {
   appConfig: {
     container: 'data-testid ac-container',
-    openAIProvider: 'data-testid ac-openai-provider',
+    provider: 'data-testid ac-provider',
     openAIKey: 'data-testid ac-openai-api-key',
     openAIOrganizationID: 'data-testid ac-openai-api-organization-id',
     openAIUrl: 'data-testid ac-openai-api-url',

@@ -149,81 +149,158 @@ func TestManagedLLMSettingsLogic(t *testing.T) {
 func TestConfigured(t *testing.T) {
 	for _, tc := range []struct {
 		testName   string
-		settings   OpenAISettings
+		settings   Settings
 		configured bool
 	}{
 		{
 			testName:   "empty",
+			settings:   Settings{},
 			configured: false,
 		},
 		{
 			testName: "disabled",
-			settings: OpenAISettings{
+			settings: Settings{
 				Disabled: true,
 			},
 			configured: true,
 		},
 		{
 			testName: "disabled with otherwise valid configuration",
-			settings: OpenAISettings{
-				Provider: openAIProviderGrafana,
+			settings: Settings{
+				Provider: ProviderTypeGrafana,
 				Disabled: true,
 			},
 			configured: true,
 		},
-		// OpenAI tests
+		// OpenAI tests with root provider
 		{
-			testName: "openai without api key",
-			settings: OpenAISettings{
-				Provider: openAIProviderOpenAI,
+			testName: "openai without api key (root provider)",
+			settings: Settings{
+				Provider: ProviderTypeOpenAI,
 			},
 			configured: false,
 		},
 		{
-			testName: "openai with api key",
-			settings: OpenAISettings{
-				Provider: openAIProviderOpenAI,
-				apiKey:   "hello",
+			testName: "openai with api key (root provider)",
+			settings: Settings{
+				Provider: ProviderTypeOpenAI,
+				OpenAI: OpenAISettings{
+					apiKey: "hello",
+				},
 			},
 			configured: true,
 		},
-		// Azure tests
+		// OpenAI tests with legacy provider
 		{
-			testName: "azure without mapping",
-			settings: OpenAISettings{
-				Provider: openAIProviderAzure,
-				apiKey:   "hello",
-			},
-			configured: false,
-		},
-		{
-			testName: "azure with mapping without api key",
-			settings: OpenAISettings{
-				Provider: openAIProviderAzure,
-				AzureMapping: [][]string{
-					{ModelBase, "azuredeployment"},
-					{ModelLarge, "largeazuredeployment"},
+			testName: "openai without api key (legacy provider)",
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeOpenAI,
 				},
 			},
 			configured: false,
 		},
 		{
-			testName: "azure valid",
-			settings: OpenAISettings{
-				Provider: openAIProviderAzure,
-				apiKey:   "hello",
-				AzureMapping: [][]string{
-					{ModelBase, "azuredeployment"},
-					{ModelLarge, "largeazuredeployment"},
+			testName: "openai with api key (legacy provider)",
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeOpenAI,
+					apiKey:   "hello",
 				},
 			},
 			configured: true,
 		},
-		// Grafana tests
+		// Azure tests with root provider
 		{
-			testName: "grafana provider",
-			settings: OpenAISettings{
-				Provider: openAIProviderGrafana,
+			testName: "azure without mapping (root provider)",
+			settings: Settings{
+				Provider: ProviderTypeAzure,
+				OpenAI: OpenAISettings{
+					apiKey: "hello",
+				},
+			},
+			configured: false,
+		},
+		{
+			testName: "azure with mapping without api key (root provider)",
+			settings: Settings{
+				Provider: ProviderTypeAzure,
+				OpenAI: OpenAISettings{
+					AzureMapping: [][]string{
+						{ModelBase, "azuredeployment"},
+						{ModelLarge, "largeazuredeployment"},
+					},
+				},
+			},
+			configured: false,
+		},
+		{
+			testName: "azure valid (root provider)",
+			settings: Settings{
+				Provider: ProviderTypeAzure,
+				OpenAI: OpenAISettings{
+					apiKey: "hello",
+					AzureMapping: [][]string{
+						{ModelBase, "azuredeployment"},
+						{ModelLarge, "largeazuredeployment"},
+					},
+				},
+			},
+			configured: true,
+		},
+		// Azure tests with legacy provider
+		{
+			testName: "azure without mapping (legacy provider)",
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeAzure,
+					apiKey:   "hello",
+				},
+			},
+			configured: false,
+		},
+		{
+			testName: "azure with mapping without api key (legacy provider)",
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeAzure,
+					AzureMapping: [][]string{
+						{ModelBase, "azuredeployment"},
+						{ModelLarge, "largeazuredeployment"},
+					},
+				},
+			},
+			configured: false,
+		},
+		{
+			testName: "azure valid (legacy provider)",
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeAzure,
+					apiKey:   "hello",
+					AzureMapping: [][]string{
+						{ModelBase, "azuredeployment"},
+						{ModelLarge, "largeazuredeployment"},
+					},
+				},
+			},
+			configured: true,
+		},
+		// Grafana tests with root provider
+		{
+			testName: "grafana provider (root)",
+			settings: Settings{
+				Provider: ProviderTypeGrafana,
+			},
+			configured: true,
+		},
+		// Grafana tests with legacy provider
+		{
+			testName: "grafana provider (legacy)",
+			settings: Settings{
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeGrafana,
+				},
 			},
 			configured: true,
 		},
@@ -231,6 +308,125 @@ func TestConfigured(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			if tc.configured != tc.settings.Configured() {
 				t.Errorf("expected configured to be `%t`", tc.configured)
+			}
+		})
+	}
+}
+
+func TestDisabledBackwardCompatibility(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		settings        backend.AppInstanceSettings
+		expectedResult  bool
+		expectedMessage string
+	}{
+		{
+			name: "neither disabled flag set",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{}`),
+			},
+			expectedResult: false,
+		},
+		{
+			name: "root disabled flag set to true",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": true}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "openai disabled flag set to true (legacy)",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"openAI": {"disabled": true}}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "both flags set to true",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": true, "openAI": {"disabled": true}}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "root disabled true, openai disabled false",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": true, "openAI": {"disabled": false}}`),
+			},
+			expectedResult: true,
+		},
+		{
+			name: "root disabled false, openai disabled true",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"disabled": false, "openAI": {"disabled": true}}`),
+			},
+			expectedResult: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings, err := loadSettings(tc.settings)
+			if err != nil {
+				t.Errorf("loadSettings failed: %s", err)
+			}
+
+			if settings.Disabled != tc.expectedResult {
+				t.Errorf("expected Disabled to be %v, got %v", tc.expectedResult, settings.Disabled)
+			}
+		})
+	}
+}
+
+func TestGetEffectiveProvider(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		settings         Settings
+		expectedProvider ProviderType
+	}{
+		{
+			name: "both providers empty",
+			settings: Settings{
+				Provider: "",
+				OpenAI: OpenAISettings{
+					Provider: "",
+				},
+			},
+			expectedProvider: "",
+		},
+		{
+			name: "only root provider set",
+			settings: Settings{
+				Provider: ProviderTypeGrafana,
+				OpenAI: OpenAISettings{
+					Provider: "",
+				},
+			},
+			expectedProvider: ProviderTypeGrafana,
+		},
+		{
+			name: "only openai provider set (backward compatibility)",
+			settings: Settings{
+				Provider: "",
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeOpenAI,
+				},
+			},
+			expectedProvider: ProviderTypeOpenAI,
+		},
+		{
+			name: "both providers set (root provider takes precedence)",
+			settings: Settings{
+				Provider: ProviderTypeGrafana,
+				OpenAI: OpenAISettings{
+					Provider: ProviderTypeOpenAI,
+				},
+			},
+			expectedProvider: ProviderTypeGrafana,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			provider := tc.settings.getEffectiveProvider()
+			if provider != tc.expectedProvider {
+				t.Errorf("expected provider to be %s, got %s", tc.expectedProvider, provider)
 			}
 		})
 	}

@@ -15,14 +15,14 @@ import (
 const openAIKey = "openAIKey"
 const encodedTenantAndTokenKey = "base64EncodedAccessToken"
 
-type openAIProvider string
+type ProviderType string
 
 const (
-	openAIProviderOpenAI  openAIProvider = "openai"
-	openAIProviderAzure   openAIProvider = "azure"
-	openAIProviderCustom  openAIProvider = "custom"
-	openAIProviderGrafana openAIProvider = "grafana" // via llm-gateway
-	openAIProviderTest    openAIProvider = "test"
+	ProviderTypeOpenAI  ProviderType = "openai"
+	ProviderTypeAzure   ProviderType = "azure"
+	ProviderTypeCustom  ProviderType = "custom"
+	ProviderTypeGrafana ProviderType = "grafana" // via llm-gateway
+	ProviderTypeTest    ProviderType = "test"
 )
 
 // OpenAISettings contains the user-specified OpenAI connection details
@@ -34,12 +34,14 @@ type OpenAISettings struct {
 	OrganizationID string `json:"organizationId"`
 
 	// What OpenAI provider the user selected. Note this can specify using the LLMGateway
-	Provider openAIProvider `json:"provider"`
+	// Deprecated: Use Settings.Provider instead
+	Provider ProviderType `json:"provider"`
 
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
 
 	// Disabled marks if a user has explicitly disabled LLM functionality.
+	// Deprecated: Use Settings.Disabled instead
 	Disabled bool `json:"disabled"`
 
 	// apiKey is the user-specified  api key needed to authenticate requests to the OpenAI
@@ -47,28 +49,35 @@ type OpenAISettings struct {
 	apiKey string
 
 	// TestProvider contains the settings for the test provider.
-	// Only used when Provider is openAIProviderTest.
+	// Only used when Provider is ProviderTypeTest.
 	TestProvider testProvider `json:"testProvider,omitempty"`
 }
 
-func (s OpenAISettings) Configured() bool {
-	// If disabled has been selected than the plugin has been configured.
-	if s.Disabled {
+// Configured returns whether the provider has been configured
+func (s *Settings) Configured() bool {
+	// If disabled has been selected than the provider has been configured.
+	if s.Disabled || s.OpenAI.Disabled { // Check both for backward compatibility
 		return true
 	}
 
-	switch s.Provider {
-	case openAIProviderGrafana, openAIProviderCustom, openAIProviderTest:
+	// For backwards compatibility, check OpenAI.Provider if Settings.Provider is empty
+	provider := s.Provider
+	if provider == "" {
+		provider = s.OpenAI.Provider
+	}
+
+	switch provider {
+	case ProviderTypeGrafana, ProviderTypeCustom, ProviderTypeTest:
 		return true
-	case openAIProviderAzure:
+	case ProviderTypeAzure:
 		// Require some mappings for use with Azure.
-		if len(s.AzureMapping) == 0 {
+		if len(s.OpenAI.AzureMapping) == 0 {
 			return false
 		}
 		// Still need to check the same conditions as openAIProviderOpenAI.
 		fallthrough
-	case openAIProviderOpenAI:
-		return s.apiKey != ""
+	case ProviderTypeOpenAI:
+		return s.OpenAI.apiKey != ""
 	}
 	// Unknown or empty provider means configuration needs to be updated.
 	return false
@@ -128,6 +137,12 @@ type Settings struct {
 
 	EnableGrafanaManagedLLM bool `json:"enableGrafanaManagedLLM"`
 
+	// Provider type indicates which provider implementation to use
+	Provider ProviderType `json:"provider"`
+
+	// Disabled marks if a user has explicitly disabled LLM functionality.
+	Disabled bool `json:"disabled"`
+
 	// OpenAI related settings
 	OpenAI OpenAISettings `json:"openAI"`
 
@@ -152,6 +167,11 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		}
 	}
 
+	// Handle migration of Disabled field from OpenAI to top level
+	if !settings.Disabled && settings.OpenAI.Disabled {
+		settings.Disabled = settings.OpenAI.Disabled
+	}
+
 	// We need to handle the case where the user has customized the URL,
 	// then reverted that customization so that the JSON data includes
 	// an empty string.
@@ -162,29 +182,26 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
 	}
-	const openAIKey = "openAIKey"
-	const encodedTenantAndTokenKey = "base64EncodedAccessToken"
-	// Fallback logic if no LLMGateway URL provided by the provisioning/GCom.
-	if settings.LLMGateway.URL == "" {
-		log.DefaultLogger.Warn("Could not get LLM Gateway URL from config, the LLM Gateway support is disabled")
+
+	provider := settings.getEffectiveProvider()
+
+	// Verify this is a known provider type
+	knownProvider := provider == ProviderTypeOpenAI ||
+		provider == ProviderTypeAzure ||
+		provider == ProviderTypeCustom ||
+		provider == ProviderTypeGrafana ||
+		provider == ProviderTypeTest
+
+	if !knownProvider {
+		log.DefaultLogger.Warn("Unknown provider", "provider", settings.Provider)
+		settings.OpenAI.Provider = ""
+		settings.Provider = ""
 	}
 
-	switch settings.OpenAI.Provider {
-	case openAIProviderOpenAI:
-	case openAIProviderAzure:
-	case openAIProviderCustom:
-	case openAIProviderGrafana:
-		if settings.LLMGateway.URL == "" {
-			// llm-gateway not available, this provider is invalid so switch to disabled
-			log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
-			settings.OpenAI.Provider = ""
-		}
-	case openAIProviderTest:
-		settings.OpenAI.Provider = openAIProviderTest
-	default:
-		// Default to disabled LLM support if an unknown provider was specified.
-		log.DefaultLogger.Warn("Unknown OpenAI provider", "provider", settings.OpenAI.Provider)
+	if provider == ProviderTypeGrafana && settings.LLMGateway.URL == "" {
+		log.DefaultLogger.Warn("Cannot use LLM Gateway as no URL specified, disabling it")
 		settings.OpenAI.Provider = ""
+		settings.Provider = ""
 	}
 
 	settings.DecryptedSecureJSONData = appSettings.DecryptedSecureJSONData
@@ -214,4 +231,13 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	}
 
 	return &settings, nil
+}
+
+// getEffectiveProvider returns the effective provider type, handling backward compatibility
+// where Provider was previously stored in OpenAI.Provider
+func (s *Settings) getEffectiveProvider() ProviderType {
+	if s.Provider == "" {
+		return s.OpenAI.Provider
+	}
+	return s.Provider
 }

@@ -14,7 +14,11 @@ import { OpenAISettings } from './OpenAI';
 import { VectorConfig, VectorSettings } from './Vector';
 ///////////////////////
 
+export type ProviderType = 'openai' | 'azure' | 'grafana' | 'test' | 'custom';
+
 export interface AppPluginSettings {
+  provider?: ProviderType;
+  disabled?: boolean;
   openAI?: OpenAISettings;
   vector?: VectorSettings;
   models?: ModelSettings;
@@ -46,6 +50,16 @@ function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
 
 export interface AppConfigProps extends PluginConfigPageProps<AppPluginMeta<AppPluginSettings>> {}
 
+// Helper function to get the effective provider, handling both legacy and new provider fields
+export function getEffectiveProvider(settings: AppPluginSettings): ProviderType | undefined {
+  // If the root provider is set, use it (new format)
+  if (settings.provider) {
+    return settings.provider;
+  }
+  // Otherwise fall back to the legacy openAI.provider field
+  return settings.openAI?.provider;
+}
+
 export const AppConfig = ({ plugin }: AppConfigProps) => {
   const s = useStyles2(getStyles);
   const { enabled, pinned, jsonData, secureJsonFields } = plugin.meta;
@@ -63,7 +77,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
   const validateInputs = (): string | undefined => {
     // Check if Grafana-provided OpenAI enabled, that it has been opted-in
-    if (settings?.openAI?.provider === 'grafana' && !managedLLMOptIn) {
+    if (settings?.provider === 'grafana' && !managedLLMOptIn) {
       return 'You must click the "I Accept" checkbox to use OpenAI provided by Grafana';
     }
     return;
@@ -103,11 +117,18 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         secureJsonData[key] = newSecrets[key];
       }
     }
+
+    // Migrate the provider to the new format before saving
+    const settingsToSave = {
+      ...settings,
+      provider: getEffectiveProvider(settings),
+    };
+
     try {
       await updateAndSavePluginSettings(plugin.meta.id, settings.enableGrafanaManagedLLM, {
         enabled,
         pinned,
-        jsonData: settings,
+        jsonData: settingsToSave,
         secureJsonData,
       });
     } catch (e) {
@@ -117,7 +138,8 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
 
     // Note: health-check uses the state saved in the plugin settings.
     let healthCheckResult: HealthCheckResult | undefined = undefined;
-    if (settings.openAI?.provider !== undefined) {
+    const effectiveProvider = getEffectiveProvider(settings);
+    if (effectiveProvider !== undefined) {
       const result = await checkPluginHealth(plugin.meta.id);
       healthCheckResult = result.data;
     }
@@ -126,7 +148,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     // If moving away from Grafana-managed LLM, opt-out of the feature automatically
     // This logic should only be triggered if the Grafana-managed LLM feature is enabled (Grafana Cloud Only)
     if (settings.enableGrafanaManagedLLM === true) {
-      if (managedLLMOptIn && settings.openAI?.provider !== 'grafana') {
+      if (managedLLMOptIn && effectiveProvider !== 'grafana') {
         await saveLLMOptInState(false);
       } else {
         await saveLLMOptInState(managedLLMOptIn);
@@ -134,7 +156,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     }
 
     // Update the frontend settings explicitly, it is otherwise not updated until page reload
-    plugin.meta.jsonData = settings;
+    plugin.meta.jsonData = settingsToSave;
 
     setIsUpdating(false);
     setUpdated(false);

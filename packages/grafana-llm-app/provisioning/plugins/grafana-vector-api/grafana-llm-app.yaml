@@ -6,16 +6,16 @@ apps:
       base64EncodedAccessTokenSet: True
       # enableGrafanaManagedLLM: True
       # displayVectorStoreOptions: False
+      provider: openai
       openAI:
-        provider: openai
         url: https://api.openai.com
         organizationId: $OPENAI_ORGANIZATION_ID
+      # provider: azure
       # openAI:
-        # provider: azure
-        # url: https://<resource>.openai.azure.com
-        # azureModelMapping:
-        #   - ["base", "gpt-35-turbo"]
-        #   - ["large", "gpt-4-turbo"]
+      #   url: https://<resource>.openai.azure.com
+      #   azureModelMapping:
+      #     - ["base", "gpt-35-turbo"]
+      #     - ["large", "gpt-4-turbo"]
       vector:
         enabled: true
         model: BAAI/bge-small-en-v1.5

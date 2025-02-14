@@ -3,16 +3,18 @@ package plugin
 import "errors"
 
 func createProvider(settings *Settings) (LLMProvider, error) {
-	switch settings.OpenAI.Provider {
-	case openAIProviderOpenAI, openAIProviderCustom:
+	provider := settings.getEffectiveProvider()
+
+	switch provider {
+	case ProviderTypeOpenAI, ProviderTypeCustom:
 		return NewOpenAIProvider(settings.OpenAI, settings.Models)
-	case openAIProviderAzure:
+	case ProviderTypeAzure:
 		return NewAzureProvider(settings.OpenAI, settings.Models.Default)
-	case openAIProviderGrafana:
+	case ProviderTypeGrafana:
 		return NewGrafanaProvider(*settings)
-	case openAIProviderTest:
+	case ProviderTypeTest:
 		return &settings.OpenAI.TestProvider, nil
 	default:
-		return nil, errors.New("Invalid OpenAI Provider supplied")
+		return nil, errors.New("Invalid Provider configuration")
 	}
 }

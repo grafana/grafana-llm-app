@@ -87,7 +87,7 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 	}
 
 	// If OpenAI is disabled it has been configured but cannot be queried.
-	if a.settings.OpenAI.Disabled {
+	if a.settings.Disabled {
 		return openAIHealthDetails{
 			OK:         false,
 			Configured: true,
@@ -97,7 +97,7 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 
 	d := openAIHealthDetails{
 		OK:         true,
-		Configured: a.settings.OpenAI.Configured(),
+		Configured: a.settings.Configured(),
 		Models:     map[Model]openAIModelHealth{},
 		Assistant:  openAIModelHealth{OK: false, Error: "Assistant not available"},
 	}

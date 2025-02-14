@@ -15,7 +15,7 @@ Each package has its own package.json with its own npm commands, but the intenti
 3. Run `npm install`
 4. Run `npm run dev`
 5. In a separate terminal from dev, run `npm run server`
-If you want to bring up the vector services, you can run `COMPOSE_PROFILES=vector yarn run server` instead
+If you want to bring up the vector services, you can run `COMPOSE_PROFILES=vector npm run server` instead
 
 6. Go to (http://localhost:3000/plugins/grafana-llm-app) to see configuration page and the developer sandbox
 
