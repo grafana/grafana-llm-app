@@ -17,15 +17,16 @@ import (
 const (
 	appPrefix          = "/api/plugins/grafana-llm-app"
 	appResourcesPrefix = appPrefix + "/resources"
+	llmAPIPrefix       = appResourcesPrefix + "/llm/v1"
 )
 
 // Model is an abstraction over the different models available in different providers
 type Model string
 
 const (
-	// ModelBase is the base model, for efficient and high-throughput tasks. OpenAI default: gpt-4o-mini
+	// ModelBase is the base model, for efficient and high-throughput tasks
 	ModelBase = "base"
-	// ModelLarge is the large model, for more advanced tasks with longer context windows. OpenAI default: gpt-4o
+	// ModelLarge is the large model, for more advanced tasks with longer context windows
 	ModelLarge = "large"
 )
 
@@ -41,27 +42,25 @@ type AssistantRequest struct {
 	Model Model `json:"model"`
 }
 
-// OpenAI is an interface for talking to OpenAI via the Grafana LLM app.
-// Requests made using this interface will be routed to the OpenAI backend
-// configured in the Grafana LLM app's settings, with authentication handled
-// by the LLM app.
-type OpenAI interface {
+// LLMProvider is an interface for talking to LLM providers via the Grafana LLM app.
+// Requests made using this interface will be routed to the configured LLM provider backend
+// with authentication handled by the LLM app.
+type LLMProvider interface {
 	// Enabled returns true if the Grafana LLM app has been configured for use
-	// with OpenAI.
+	// with an LLM provider.
 	Enabled(ctx context.Context) (bool, error)
-	// ChatCompletions makes a request to the OpenAI Chat Completion API.
+	// ChatCompletions makes a request to the LLM provider Chat Completion API.
 	ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error)
-	// ChatCompletionsStream makes a streaming request to the OpenAI Chat Completion API.
+	// ChatCompletionsStream makes a streaming request to the LLM provider Chat Completion API.
 	ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error)
 }
 
-// OpenAIAssistant is an interface for exposing the OpenAI Assistant features to the Grafana LLM app.
-// Requests made using this interface will be routed to the OpenAI backend
-// configured in the Grafana LLM app's settings, with authentication handled
-// by the LLM app.
-type OpenAIAssistant interface {
-	// OpenAI embeds some core features in the client.
-	OpenAI
+// LLMAssistant is an interface for exposing the LLM provider Assistant features to the Grafana LLM app.
+// Requests made using this interface will be routed to the configured LLM provider backend
+// with authentication handled by the LLM app.
+type LLMAssistant interface {
+	// LLMProvider embeds some core features in the client.
+	LLMProvider
 	// CreateAssistant creates an assistant using the given request.
 	CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error)
 	// RetrieveAssistant retrieves an assistant by ID.
@@ -94,37 +93,37 @@ type OpenAIAssistant interface {
 	SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error)
 }
 
-type openAI struct {
+type llmProvider struct {
 	httpClient *http.Client
 	client     *openai.Client
 
 	grafanaURL, grafanaAPIKey string
 }
 
-// NewOpenAI creates a new OpenAI client talking to the Grafana LLM app installed
+// NewLLMProvider creates a new LLM provider client talking to the Grafana LLM app installed
 // on the given Grafana instance.
-func NewOpenAI(grafanaURL, grafanaAPIKey string) OpenAI {
+func NewLLMProvider(grafanaURL, grafanaAPIKey string) LLMProvider {
 	httpClient := &http.Client{}
-	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient)
+	return NewLLMProviderWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
-// NewOpenAIAssistant creates a new OpenAI client talking to the Grafana LLM app installed
-// on the given Grafana instance, with the OpenAIAssistant interface.
-func NewOpenAIAssistant(grafanaURL, grafanaAPIKey string) OpenAIAssistant {
+// NewLLMAssistant creates a new LLM provider client talking to the Grafana LLM app installed
+// on the given Grafana instance, with the LLMAssistant interface.
+func NewLLMAssistant(grafanaURL, grafanaAPIKey string) LLMAssistant {
 	httpClient := &http.Client{}
-	return NewOpenAIAssistantWithClient(grafanaURL, grafanaAPIKey, httpClient)
+	return NewLLMAssistantWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
-// NewOpenAIWithClient creates a new OpenAI client talking to the Grafana LLM app installed
+// NewLLMProviderWithClient creates a new LLM provider client talking to the Grafana LLM app installed
 // on the given Grafana instance, using the given HTTP client.
-func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAI {
+func NewLLMProviderWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) LLMProvider {
 	grafanaURL = strings.TrimRight(grafanaURL, "/")
-	url := grafanaURL + appResourcesPrefix + "/openai/v1"
+	url := grafanaURL + llmAPIPrefix
 	cfg := openai.DefaultConfig(grafanaAPIKey)
 	cfg.BaseURL = url
 	cfg.HTTPClient = httpClient
 	client := openai.NewClientWithConfig(cfg)
-	return &openAI{
+	return &llmProvider{
 		httpClient:    httpClient,
 		client:        client,
 		grafanaURL:    grafanaURL,
@@ -132,23 +131,23 @@ func NewOpenAIWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Clie
 	}
 }
 
-// NewOpenAIAssistantWithClient creates a new OpenAI client talking to the Grafana LLM app installed
+// NewLLMAssistantWithClient creates a new LLM provider client talking to the Grafana LLM app installed
 // on the given Grafana instance, using the given HTTP client.
-func NewOpenAIAssistantWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) OpenAIAssistant {
-	return NewOpenAIWithClient(grafanaURL, grafanaAPIKey, httpClient).(OpenAIAssistant)
+func NewLLMAssistantWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) LLMAssistant {
+	return NewLLMProviderWithClient(grafanaURL, grafanaAPIKey, httpClient).(LLMAssistant)
 }
 
-type openAIModelHealth struct {
+type modelHealth struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error,omitempty"`
 }
 
-type openAIHealthDetails struct {
-	Configured bool                        `json:"configured"`
-	OK         bool                        `json:"ok"`
-	Error      string                      `json:"error,omitempty"`
-	Models     map[Model]openAIModelHealth `json:"models"`
-	Assistant  openAIModelHealth           `json:"assistant"`
+type llmProviderHealthDetails struct {
+	Configured bool                  `json:"configured"`
+	OK         bool                  `json:"ok"`
+	Error      string                `json:"error,omitempty"`
+	Models     map[Model]modelHealth `json:"models"`
+	Assistant  modelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
@@ -158,9 +157,9 @@ type vectorHealthDetails struct {
 }
 
 type healthCheckDetails struct {
-	OpenAI  openAIHealthDetails `json:"openAI"`
-	Vector  vectorHealthDetails `json:"vector"`
-	Version string              `json:"version"`
+	LLMProvider llmProviderHealthDetails `json:"llmProvider"`
+	Vector      vectorHealthDetails      `json:"vector"`
+	Version     string                   `json:"version"`
 }
 
 type healthCheckResponse struct {
@@ -169,12 +168,12 @@ type healthCheckResponse struct {
 
 type oldHealthCheckResponse struct {
 	Details struct {
-		OpenAIEnabled bool `json:"openAI"`
-		VectorEnabled bool `json:"vector"`
+		LLMProviderEnabled bool `json:"llmProvider"`
+		VectorEnabled      bool `json:"vector"`
 	} `json:"details"`
 }
 
-func (o *openAI) Enabled(ctx context.Context) (bool, error) {
+func (o *llmProvider) Enabled(ctx context.Context) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", o.grafanaURL+appPrefix+"/health", nil)
 	if err != nil {
 		return false, fmt.Errorf("create request: %w", err)
@@ -199,84 +198,84 @@ func (o *openAI) Enabled(ctx context.Context) (bool, error) {
 		if err := json.Unmarshal(body, &oldResponse); err != nil {
 			return false, fmt.Errorf("unmarshal response: %w", err)
 		}
-		return oldResponse.Details.OpenAIEnabled, nil
+		return oldResponse.Details.LLMProviderEnabled, nil
 	}
-	if response.Details.OpenAI.Error != "" {
-		err = fmt.Errorf("OpenAI error: %s", response.Details.OpenAI.Error)
+	if response.Details.LLMProvider.Error != "" {
+		err = fmt.Errorf("LLM provider error: %s", response.Details.LLMProvider.Error)
 	}
-	return response.Details.OpenAI.OK, err
+	return response.Details.LLMProvider.OK, err
 }
 
-func (o *openAI) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
+func (o *llmProvider) ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = string(req.Model)
 	return o.client.CreateChatCompletion(ctx, r)
 }
 
-func (o *openAI) ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error) {
+func (o *llmProvider) ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error) {
 	r := req.ChatCompletionRequest
 	r.Model = string(req.Model)
 	return o.client.CreateChatCompletionStream(ctx, r)
 }
 
-func (o *openAI) CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error) {
+func (o *llmProvider) CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error) {
 	r := req.AssistantRequest
 	r.Model = string(req.Model)
 	return o.client.CreateAssistant(ctx, r)
 }
 
-func (o *openAI) RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error) {
+func (o *llmProvider) RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error) {
 	return o.client.RetrieveAssistant(ctx, assistantID)
 }
 
-func (o *openAI) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
+func (o *llmProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
 	return o.client.ListAssistants(ctx, limit, order, after, before)
 }
 
-func (o *openAI) DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error) {
+func (o *llmProvider) DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error) {
 	return o.client.DeleteAssistant(ctx, assistantID)
 }
 
-func (o *openAI) CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error) {
+func (o *llmProvider) CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error) {
 	return o.client.CreateThread(ctx, req)
 }
 
-func (o *openAI) RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error) {
+func (o *llmProvider) RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error) {
 	return o.client.RetrieveThread(ctx, threadID)
 }
 
-func (o *openAI) DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error) {
+func (o *llmProvider) DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error) {
 	return o.client.DeleteThread(ctx, threadID)
 }
 
-func (o *openAI) CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error) {
+func (o *llmProvider) CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error) {
 	return o.client.CreateMessage(ctx, threadID, request)
 }
 
-func (o *openAI) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (msg openai.MessagesList, err error) {
+func (o *llmProvider) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (msg openai.MessagesList, err error) {
 	return o.client.ListMessage(ctx, threadID, limit, order, after, before, runID)
 }
 
-func (o *openAI) RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error) {
+func (o *llmProvider) RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error) {
 	return o.client.RetrieveMessage(ctx, threadID, messageID)
 }
 
-func (o *openAI) DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error) {
+func (o *llmProvider) DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error) {
 	return o.client.DeleteMessage(ctx, threadID, messageID)
 }
 
-func (o *openAI) CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error) {
+func (o *llmProvider) CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error) {
 	return o.client.CreateRun(ctx, threadID, request)
 }
 
-func (o *openAI) RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
+func (o *llmProvider) RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
 	return o.client.RetrieveRun(ctx, threadID, runID)
 }
 
-func (o *openAI) CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
+func (o *llmProvider) CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
 	return o.client.CancelRun(ctx, threadID, runID)
 }
 
-func (o *openAI) SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error) {
+func (o *llmProvider) SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error) {
 	return o.client.SubmitToolOutputs(ctx, threadID, runID, request)
 }
