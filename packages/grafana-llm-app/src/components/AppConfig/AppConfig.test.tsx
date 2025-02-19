@@ -39,6 +39,7 @@ describe('Components/AppConfig', () => {
     render(<AppConfig plugin={plugin} query={props.query} />);
 
     expect(screen.queryByRole('group', { name: /openai settings/i })).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.provider)).toBeInTheDocument();
     // expect(screen.queryByTestId(testIds.appConfig.openAIKey)).toBeInTheDocument();
     // expect(screen.queryByTestId(testIds.appConfig.openAIOrganizationID)).toBeInTheDocument();
     // expect(screen.queryByTestId(testIds.appConfig.openAIUrl)).toBeInTheDocument();

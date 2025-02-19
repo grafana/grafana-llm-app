@@ -9,9 +9,11 @@ import { ModelConfig } from './ModelConfig';
 import { DevSandbox } from './DevSandbox';
 import { OpenAIConfig } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
+import { AnthropicConfig } from './AnthropicConfig';
+import { AnthropicLogo } from './AnthropicLogo';
 
-// LLMOptions are the 3 possible UI options for LLMs (grafana-provided cloud-only).
-export type LLMOptions = 'grafana-provided' | 'openai' | 'test' | 'disabled' | 'unconfigured' | 'custom';
+// LLMOptions are the possible UI options for LLMs (grafana-provided cloud-only).
+export type LLMOptions = 'grafana-provided' | 'openai' | 'test' | 'disabled' | 'unconfigured' | 'custom' | 'anthropic';
 
 // This maps the current settings to decide what UI selection (LLMOptions) to show
 function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
@@ -32,6 +34,8 @@ function getLLMOptionFromSettings(settings: AppPluginSettings): LLMOptions {
       return 'test';
     case 'grafana':
       return 'grafana-provided';
+    case 'anthropic':
+      return 'anthropic';
     default:
       return 'unconfigured';
   }
@@ -115,6 +119,12 @@ export function LLMConfig({
         onChange({ ...settings, provider: 'openai', disabled: false, openAI: { disabled: false } });
         setPreviousOpenAIProvider(undefined);
       }
+    }
+  };
+
+  const selectAnthropicProvider = () => {
+    if (llmOption !== 'anthropic') {
+      onChange({ ...settings, provider: 'anthropic', disabled: false });
     }
   };
 
@@ -242,7 +252,27 @@ export function LLMConfig({
               )}
             </Card.Description>
             <Card.Figure>
-              <OpenAILogo width={20} height={20} />
+              <OpenAILogo width={20} height={20}/>
+            </Card.Figure>
+          </Card>
+        </div>
+        <div onClick={selectAnthropicProvider}>
+          <Card isSelected={llmOption === 'anthropic'} className={s.cardWithoutBottomMargin}>
+            <Card.Heading>Use Anthropic API</Card.Heading>
+            <Card.Description>
+              Enable LLM features in Grafana using Anthropic&apos;s Claude models
+              {llmOption === 'anthropic' && (
+                <AnthropicConfig
+                  settings={settings.anthropic ?? {}}
+                  onChange={(anthropic) => onChange({ ...settings, anthropic })}
+                  secrets={secrets}
+                  secretsSet={secretsSet}
+                  onChangeSecrets={onChangeSecrets}
+                />
+              )}
+            </Card.Description>
+            <Card.Figure>
+              <AnthropicLogo width={20} height={20} />
             </Card.Figure>
           </Card>
         </div>
@@ -282,7 +312,7 @@ export function LLMConfig({
           </Card.Figure>
         </Card>
       </FieldSet>
-      {(llmOption === 'openai' || llmOption === 'custom') && (
+      {(llmOption === 'openai' || llmOption === 'custom' || llmOption === 'anthropic') && (
         <FieldSet label="Models" className={s.sidePadding}>
           <ModelConfig
             provider={settings.provider ?? 'openai'}

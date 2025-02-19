@@ -60,6 +60,7 @@ apps:
 
     secureJsonData:
       # openAIKey: $OPENAI_API_KEY
+      # anthropicKey: $ANTHROPIC_API_KEY
       # mock EncodedAccessToken "thestack:thetoken"
       # base64EncodedAccessToken: dGhlc3RhY2s6dGhldG9rZW4=
       # openAIKey: $AZURE_OPENAI_API_KEY

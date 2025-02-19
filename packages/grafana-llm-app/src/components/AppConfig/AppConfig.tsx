@@ -11,15 +11,17 @@ import { ModelSettings } from './ModelConfig';
 import { ShowHealthCheckResult } from './HealthCheck';
 import { LLMConfig } from './LLMConfig';
 import { OpenAISettings } from './OpenAI';
+import { AnthropicSettings } from './AnthropicConfig';
 import { VectorConfig, VectorSettings } from './Vector';
 ///////////////////////
 
-export type ProviderType = 'openai' | 'azure' | 'grafana' | 'test' | 'custom';
+export type ProviderType = 'openai' | 'azure' | 'grafana' | 'test' | 'custom' | 'anthropic';
 
 export interface AppPluginSettings {
   provider?: ProviderType;
   disabled?: boolean;
   openAI?: OpenAISettings;
+  anthropic?: AnthropicSettings;
   vector?: VectorSettings;
   models?: ModelSettings;
   // The enableGrafanaManagedLLM flag will enable the plugin to use Grafana-managed OpenAI
@@ -30,6 +32,7 @@ export interface AppPluginSettings {
 
 export type Secrets = {
   openAIKey?: string;
+  anthropicKey?: string;
   qdrantApiKey?: string;
   vectorStoreBasicAuthPassword?: string;
   vectorEmbedderBasicAuthPassword?: string;
@@ -42,6 +45,7 @@ export type SecretsSet = {
 function initialSecrets(secureJsonFields: KeyValue<boolean>): SecretsSet {
   return {
     openAIKey: secureJsonFields.openAIKey ?? false,
+    anthropicKey: secureJsonFields.anthropicKey ?? false,
     vectorEmbedderBasicAuthPassword: secureJsonFields.vectorEmbedderBasicAuthPassword ?? false,
     vectorStoreBasicAuthPassword: secureJsonFields.vectorStoreBasicAuthPassword ?? false,
     qdrantApiKey: secureJsonFields.qdrantApiKey ?? false,

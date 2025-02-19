@@ -8,6 +8,7 @@ services:
       args:
         grafana_version: ${GRAFANA_VERSION:-main}
     environment:
+      ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
       AZURE_OPENAI_API_KEY: $AZURE_OPENAI_API_KEY
       GF_LOG_LEVEL: debug
       GF_SERVER_ROUTER_LOGGING: true

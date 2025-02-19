@@ -69,8 +69,8 @@ apps:
   - type: 'grafana-llm-app'
     disabled: false
     jsonData:
+      provider: azure
       openAI:
-        provider: azure
         url: https://<resource>.openai.azure.com
         azureModelMapping:
           - ["base", "gpt-35-turbo"]
@@ -85,6 +85,21 @@ where:
 - the `azureModelMapping` field contains `[model, deployment]` pairs so that features know
   which Azure deployment to use in place of each model you wish to be used.
 
+### Using Anthropic
+
+To provision the plugin to use Anthropic, use settings similar to this:
+
+```yaml
+apiVersion: 1
+
+apps:
+  - type: 'grafana-llm-app'
+    disabled: false
+    jsonData:
+      provider: anthropic
+    secureJsonData:
+      anthropicKey: $ANTHROPIC_API_KEY
+```
 
 ### Provisioning vector services
 
