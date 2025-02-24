@@ -3,6 +3,7 @@
   "type": "app",
   "name": "LLM",
   "id": "grafana-llm-app",
+  "autoEnabled": true,
   "backend": true,
   "streaming": true,
   "executable": "gpx_llm",
