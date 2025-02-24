@@ -127,19 +127,31 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
   }
   const message = openAI.ok ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
   const severity = openAI.ok ? 'success' : 'error';
+
+  const assistantMessage = openAI.assistant.ok ? 'Assistant health check passed!' : 'Assistant API not available.';
   return (
-    <Alert severity={severity} title={message}>
-      <b>Models</b>
-      <div>
-        {Object.entries(openAI.models).map(([model, details], i) => (
-          <li key={i}>
-            {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
-          </li>
-        ))}
-      </div>
-      <b>Assistant: </b>
-      {openAI.assistant.ok ? 'OK' : `Error: ${openAI.assistant.error}. The configured OpenAI provider may not offer assistants APIs.`}
-    </Alert>
+    <Stack direction="column" width="100%">
+      <Alert severity={severity} title={message}>
+        <b>Models</b>
+        <div>
+          {Object.entries(openAI.models).map(([model, details], i) => (
+            <li key={i}>
+              {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
+            </li>
+          ))}
+        </div>
+      </Alert>
+
+      {(
+        <Alert severity="info" title={assistantMessage}>
+          <div>
+            <li>
+              Assistant: {openAI.assistant.ok ? 'OK' : `The configured provider may not offer assistants APIs. ${openAI.assistant.error}`}
+            </li>
+          </div>
+        </Alert>
+      )}
+    </Stack>
   );
 }
 
