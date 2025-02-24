@@ -13,6 +13,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
+// Test constants
+const testOpenAIChatCompletionsPath = "openai/v1/chat/completions"
+const testLLMChatCompletionsPath = "llm/v1/chat/completions"
+
 type mockStreamServer struct {
 	server  *httptest.Server
 	request *http.Request
@@ -118,6 +122,14 @@ func TestRunStream(t *testing.T) {
 			expErr:          "",
 			expMessageCount: 11, // 9 messages + 1 finish reason + 1 done
 		},
+		{
+			name:       "deprecated openai path compatibility",
+			settings:   Settings{OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI}},
+			statusCode: http.StatusOK,
+
+			expErr:          "",
+			expMessageCount: 11, // 9 messages + 1 finish reason + 1 done
+		},
 	}
 
 	for _, tc := range testCases {
@@ -163,7 +175,12 @@ func TestRunStream(t *testing.T) {
 				PluginContext: backend.PluginContext{
 					AppInstanceSettings: &appSettings,
 				},
-				Path: openAIChatCompletionsPath + "/abcd1234",
+				Path: func() string {
+					if tc.name == "deprecated openai path compatibility" {
+						return testOpenAIChatCompletionsPath + "/abcd1234"
+					}
+					return testLLMChatCompletionsPath + "/abcd1234"
+				}(),
 				Data: body,
 			}, sender)
 			log.DefaultLogger.Info("RunStream finished")

@@ -31,12 +31,12 @@ type App struct {
 
 	vectorService vector.Service
 
-	healthCheckMutex sync.Mutex
-	healthOpenAI     *openAIHealthDetails
-	healthVector     *vectorHealthDetails
-	settings         *Settings
-	saToken          string
-	grafanaAppURL    string
+	healthCheckMutex  sync.Mutex
+	healthLLMProvider *llmProviderHealthDetails
+	healthVector      *vectorHealthDetails
+	settings          *Settings
+	saToken           string
+	grafanaAppURL     string
 
 	// ignoreResponsePadding is a flag to ignore padding in responses.
 	// It should only ever be set in tests.
