@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { HealthCheckResult, config } from '@grafana/runtime';
-import { Alert, AlertVariant, VerticalGroup } from '@grafana/ui';
+import { Alert, AlertVariant, Stack } from '@grafana/ui';
 
 interface HealthCheckDetails {
   openAI: OpenAIHealthDetails | boolean;
@@ -91,11 +91,11 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
     typeof props.details.vector === 'boolean' ||
     (typeof props.details.vector === 'object' && props.details.vector.enabled);
   return (
-    <VerticalGroup>
+    <Stack direction="column">
       <ShowGrafanaHealth />
       {showOpenAI && <ShowOpenAIHealth openAI={props.details.openAI} />}
       {showVector && <ShowVectorHealth vector={props.details.vector} />}
-    </VerticalGroup>
+    </Stack>
   );
 }
 
