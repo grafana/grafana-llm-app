@@ -11,19 +11,19 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-var openAIModels = []Model{ModelBase, ModelLarge}
+var supportedModels = []Model{ModelBase, ModelLarge}
 
-type openAIModelHealth struct {
+type modelHealth struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error,omitempty"`
 }
 
-type openAIHealthDetails struct {
-	Configured bool                        `json:"configured"`
-	OK         bool                        `json:"ok"`
-	Error      string                      `json:"error,omitempty"`
-	Models     map[Model]openAIModelHealth `json:"models"`
-	Assistant  openAIModelHealth           `json:"assistant"`
+type llmProviderHealthDetails struct {
+	Configured bool                  `json:"configured"`
+	OK         bool                  `json:"ok"`
+	Error      string                `json:"error,omitempty"`
+	Models     map[Model]modelHealth `json:"models"`
+	Assistant  modelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
@@ -33,9 +33,9 @@ type vectorHealthDetails struct {
 }
 
 type healthCheckDetails struct {
-	OpenAI  openAIHealthDetails `json:"openAI"`
-	Vector  vectorHealthDetails `json:"vector"`
-	Version string              `json:"version"`
+	LLMProvider llmProviderHealthDetails `json:"llmProvider"`
+	Vector      vectorHealthDetails      `json:"vector"`
+	Version     string                   `json:"version"`
 }
 
 func getVersion() string {
@@ -46,7 +46,7 @@ func getVersion() string {
 	return buildInfo.Version
 }
 
-func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
+func (a *App) testProviderModel(ctx context.Context, model Model) error {
 	llmProvider, err := createProvider(a.settings)
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func (a *App) testOpenAIModel(ctx context.Context, model Model) error {
 	return nil
 }
 
-func (a *App) testOpenAIAssistant(ctx context.Context) error {
+func (a *App) testProviderAssistant(ctx context.Context) error {
 	llmProvider, err := createProvider(a.settings)
 	if err != nil {
 		return err
@@ -79,35 +79,35 @@ func (a *App) testOpenAIAssistant(ctx context.Context) error {
 	return err
 }
 
-// openAIHealth checks the health of the OpenAI configuration and caches the
+// llmProviderHealth checks the health of the LLM provider configuration and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
-func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
-	if a.healthOpenAI != nil {
-		return *a.healthOpenAI, nil
+func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, error) {
+	if a.healthLLMProvider != nil {
+		return *a.healthLLMProvider, nil
 	}
 
-	// If OpenAI is disabled it has been configured but cannot be queried.
+	// If LLM provider is disabled it has been configured but cannot be queried.
 	if a.settings.Disabled {
-		return openAIHealthDetails{
+		return llmProviderHealthDetails{
 			OK:         false,
 			Configured: true,
 			Error:      "LLM functionality is disabled",
 		}, nil
 	}
 
-	d := openAIHealthDetails{
+	d := llmProviderHealthDetails{
 		OK:         true,
 		Configured: a.settings.Configured(),
-		Models:     map[Model]openAIModelHealth{},
-		Assistant:  openAIModelHealth{OK: false, Error: "Assistant not available"},
+		Models:     map[Model]modelHealth{},
+		Assistant:  modelHealth{OK: false, Error: "Assistant not available"},
 	}
 
-	for _, model := range openAIModels {
-		health := openAIModelHealth{OK: false, Error: "OpenAI not configured"}
+	for _, model := range supportedModels {
+		health := modelHealth{OK: false, Error: "LLM provider not configured"}
 		if d.Configured {
 			health.OK = true
 			health.Error = ""
-			err := a.testOpenAIModel(ctx, model)
+			err := a.testProviderModel(ctx, model)
 			if err != nil {
 				health.OK = false
 				health.Error = err.Error()
@@ -128,7 +128,7 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 	}
 
 	if d.Configured {
-		err := a.testOpenAIAssistant(ctx)
+		err := a.testProviderAssistant(ctx)
 		if err == nil {
 			d.Assistant.OK = true
 			d.Assistant.Error = ""
@@ -138,9 +138,9 @@ func (a *App) openAIHealth(ctx context.Context) (openAIHealthDetails, error) {
 		}
 	}
 
-	// Only cache result if openAI is ok to use.
+	// Only cache result if provider is ok to use.
 	if d.OK {
-		a.healthOpenAI = &d
+		a.healthLLMProvider = &d
 	}
 	return d, nil
 }
@@ -190,10 +190,10 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	a.healthCheckMutex.Lock()
 	defer a.healthCheckMutex.Unlock()
 
-	openAI, err := a.openAIHealth(ctx)
+	provider, err := a.llmProviderHealth(ctx)
 	if err != nil {
-		openAI.OK = false
-		openAI.Error = err.Error()
+		provider.OK = false
+		provider.Error = err.Error()
 	}
 
 	vector := a.vectorHealth(ctx)
@@ -202,9 +202,9 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	}
 
 	details := healthCheckDetails{
-		OpenAI:  openAI,
-		Vector:  vector,
-		Version: getVersion(),
+		LLMProvider: provider,
+		Vector:      vector,
+		Version:     getVersion(),
 	}
 	body, err := json.Marshal(details)
 	if err != nil {

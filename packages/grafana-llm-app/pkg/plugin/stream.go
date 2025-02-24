@@ -10,7 +10,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-const openAIChatCompletionsPath = "openai/v1/chat/completions"
+const openAIChatCompletionsPath = "openai/v1/chat/completions" // Deprecated
+const llmChatCompletionsPath = "llm/v1/chat/completions"
 
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
@@ -18,13 +19,15 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 	resp := &backend.SubscribeStreamResponse{
 		Status: backend.SubscribeStreamStatusNotFound,
 	}
-	if strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
+
+	// Backwards compatibility for old paths
+	if strings.HasPrefix(req.Path, llmChatCompletionsPath) || strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
 		resp.Status = backend.SubscribeStreamStatusOK
 	}
 	return resp, nil
 }
 
-func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+func (a *App) runChatCompletionsStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	requestBody := ChatCompletionRequest{}
 	var err error
 	err = json.Unmarshal(req.Data, &requestBody)
@@ -70,12 +73,14 @@ func (a *App) runOpenAIChatCompletionsStream(ctx context.Context, req *backend.R
 
 func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	log.DefaultLogger.Debug(fmt.Sprintf("RunStream: %s", req.Path), "data", string(req.Data))
-	if strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
+
+	// Backwards compatibility for old paths
+	if strings.HasPrefix(req.Path, openAIChatCompletionsPath) || strings.HasPrefix(req.Path, llmChatCompletionsPath) {
 		// Run the stream. On error, send an error message over the stream sender, then return.
 		// We want to avoid returning an `error` here as much as possible because Grafana will
 		// blindly rerun the stream without notifying the UI if we do.
-		if err := a.runOpenAIChatCompletionsStream(ctx, req, sender); err != nil {
-			log.DefaultLogger.Error("error running stream", "err", err)
+		if err := a.runChatCompletionsStream(ctx, req, sender); err != nil {
+			log.DefaultLogger.Error("error running stream", "provider", a.settings.Provider, "err", err)
 			sendError(EventError{Error: err.Error()}, sender)
 		}
 		return nil

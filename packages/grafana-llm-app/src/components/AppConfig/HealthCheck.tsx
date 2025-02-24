@@ -4,35 +4,35 @@ import { HealthCheckResult, config } from '@grafana/runtime';
 import { Alert, AlertVariant, Stack } from '@grafana/ui';
 
 interface HealthCheckDetails {
-  openAI: OpenAIHealthDetails | boolean;
+  llmProvider: LLMProviderHealthDetails | boolean;
   vector: VectorHealthDetails | boolean;
   version: string;
 }
 
-interface OpenAIHealthDetails {
-  // Whether the minimum required OpenAI settings have been provided.
+interface LLMProviderHealthDetails {
+  // Whether the minimum required LLM provider settings have been provided.
   configured: boolean;
-  // Whether we can call the OpenAI API with the provided settings.
+  // Whether we can call the LLM provider API with the provided settings.
   ok: boolean;
-  // If set, the error returned when trying to call the OpenAI API.
+  // If set, the error returned when trying to call the LLM provider API.
   // Will be undefined if ok is true.
   error?: string;
   // A map of model names to their health details.
-  // The health check attempts to call the OpenAI API with each
-  // of a few models and records the result of each call here.
-  models: Record<string, OpenAIModelHealthDetails>;
-  assistant: OpenAIAssistantHealthDetails;
+  // The health check attempts to call the provider API with each
+  // of the configured models and records the result of each call here.
+  models: Record<string, ModelHealthDetails>;
+  assistant: AssistantHealthDetails;
 }
 
-interface OpenAIModelHealthDetails {
-  // Whether we can use this model in calls to OpenAI.
+interface ModelHealthDetails {
+  // Whether we can use this model in calls to the provider.
   ok: boolean;
-  // If set, the error returned when trying to call the OpenAI API.
+  // If set, the error returned when trying to call the provider API.
   // Will be undefined if ok is true.
   error?: string;
 }
 
-interface OpenAIAssistantHealthDetails {
+interface AssistantHealthDetails {
   // Whether we can use the assistant API with the provided settings.
   ok: boolean;
   // If set, the error returned when trying to call the assistant API.
@@ -51,7 +51,7 @@ interface VectorHealthDetails {
 }
 
 const isHealthCheckDetails = (obj: unknown): obj is HealthCheckDetails => {
-  return typeof obj === 'object' && obj !== null && 'openAI' in obj && 'vector' in obj && 'version' in obj;
+  return typeof obj === 'object' && obj !== null && 'llmProvider' in obj && 'vector' in obj && 'version' in obj;
 };
 
 const alertVariants = new Set<AlertVariant>(['success', 'info', 'warning', 'error']);
@@ -70,9 +70,9 @@ const getAlertSeverity = (status: string, details: HealthCheckDetails): AlertVar
   if (!isHealthCheckDetails(details)) {
     return 'success';
   }
-  if (typeof details.openAI === 'object' && typeof details.vector === 'object') {
+  if (typeof details.llmProvider === 'object' && typeof details.vector === 'object') {
     const vectorOk = !details.vector.enabled || details.vector.ok;
-    return details.openAI.ok && vectorOk ? 'success' : 'warning';
+    return details.llmProvider.ok && vectorOk ? 'success' : 'warning';
   }
   return severity;
 };
@@ -84,16 +84,16 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
   }
 
   severity = getAlertSeverity(props.status ?? 'error', props.details);
-  const showOpenAI =
-    typeof props.details.openAI === 'boolean' ||
-    (typeof props.details.openAI === 'object' && props.details.openAI.configured);
+  const showLLMProvider =
+    typeof props.details.llmProvider === 'boolean' ||
+    (typeof props.details.llmProvider === 'object' && props.details.llmProvider.configured);
   const showVector =
     typeof props.details.vector === 'boolean' ||
     (typeof props.details.vector === 'object' && props.details.vector.enabled);
   return (
     <Stack direction="column">
       <ShowGrafanaHealth />
-      {showOpenAI && <ShowOpenAIHealth openAI={props.details.openAI} />}
+      {showLLMProvider && <ShowLLMProviderHealth provider={props.details.llmProvider} />}
       {showVector && <ShowVectorHealth vector={props.details.vector} />}
     </Stack>
   );
@@ -119,22 +119,23 @@ function ShowGrafanaHealth() {
   )
 }
 
-function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean }) {
-  if (typeof openAI === 'boolean') {
-    const severity = openAI ? 'success' : 'error';
-    const message = openAI ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
+function ShowLLMProviderHealth({ provider }: { provider: LLMProviderHealthDetails | boolean }) {
+  if (typeof provider === 'boolean') {
+    const severity = provider ? 'success' : 'error';
+    const message = provider ? 'LLM provider health check succeeded!' : 'LLM provider health check failed.';
     return <Alert title={message} severity={severity} />;
   }
-  const message = openAI.ok ? 'OpenAI health check succeeded!' : 'OpenAI health check failed.';
-  const severity = openAI.ok ? 'success' : 'error';
 
-  const assistantMessage = openAI.assistant.ok ? 'Assistant health check passed!' : 'Assistant API not available.';
+  const message = provider.ok ? 'LLM provider health check succeeded!' : 'LLM provider health check failed.';
+  const severity = provider.ok ? 'success' : 'error';
+  const assistantMessage = provider.assistant.ok ? 'Assistant API health check passed!' : 'Assistant API not available.';
+
   return (
     <Stack direction="column" width="100%">
       <Alert severity={severity} title={message}>
         <b>Models</b>
         <div>
-          {Object.entries(openAI.models).map(([model, details], i) => (
+          {Object.entries(provider.models).map(([model, details], i) => (
             <li key={i}>
               {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
             </li>
@@ -146,7 +147,7 @@ function ShowOpenAIHealth({ openAI }: { openAI: OpenAIHealthDetails | boolean })
         <Alert severity="info" title={assistantMessage}>
           <div>
             <li>
-              Assistant: {openAI.assistant.ok ? 'OK' : `The configured provider may not offer assistants APIs. ${openAI.assistant.error}`}
+              Assistant: {provider.assistant.ok ? 'OK' : `The configured provider may not offer assistants APIs. ${provider.assistant.error}`}
             </li>
           </div>
         </Alert>

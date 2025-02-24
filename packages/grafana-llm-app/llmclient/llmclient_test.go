@@ -16,7 +16,7 @@ func TestChatCompletions(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/chat/completions" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/chat/completions" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -46,8 +46,8 @@ func TestChatCompletions(t *testing.T) {
 	})
 	server := httptest.NewServer(handler)
 	defer server.Close()
-	// Create a mock OpenAI client
-	client := NewOpenAI(server.URL, key)
+	// Create a mock LLM provider client
+	client := NewLLMProvider(server.URL, key)
 	// Test case: Chat completions request succeeds
 	req := ChatCompletionRequest{
 		ChatCompletionRequest: openai.ChatCompletionRequest{
@@ -68,7 +68,7 @@ func TestChatCompletionsStream(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/chat/completions" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/chat/completions" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -103,8 +103,8 @@ func TestChatCompletionsStream(t *testing.T) {
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
-	// Create a mock OpenAI client
-	client := NewOpenAI(server.URL, key)
+	// Create a mock LLM provider client
+	client := NewLLMProvider(server.URL, key)
 	// Test case: Chat completions request succeeds
 	req := ChatCompletionRequest{
 		ChatCompletionRequest: openai.ChatCompletionRequest{
@@ -143,7 +143,7 @@ func TestCreateAssistant(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/assistants" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/assistants" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -167,7 +167,7 @@ func TestCreateAssistant(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
 	// Test case: Create assistant request succeeds
 	req := AssistantRequest{
@@ -184,7 +184,7 @@ func TestCreateThread(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/threads" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/threads" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -208,7 +208,7 @@ func TestCreateThread(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
 	// Test case: Create thread request succeeds
 	req := openai.ThreadRequest{}
@@ -222,7 +222,7 @@ func TestCreateMessage(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/threads/test/messages" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/threads/test/messages" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -246,7 +246,7 @@ func TestCreateMessage(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
 	// Test case: Create message request succeeds
 	req := openai.MessageRequest{}
@@ -260,7 +260,7 @@ func TestCreateRun(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/threads/test/runs" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/threads/test/runs" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -284,7 +284,7 @@ func TestCreateRun(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
 	// Test case: Create run request succeeds
 	req := openai.RunRequest{}
@@ -298,7 +298,7 @@ func TestRetrieveRun(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/threads/test/runs/test" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/threads/test/runs/test" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -317,7 +317,7 @@ func TestRetrieveRun(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
 	// Test case: Retrieve run request succeeds
 	_, err := client.RetrieveRun(ctx, "test", "test")
@@ -330,7 +330,7 @@ func TestSubmitToolOutputs(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/threads/test/runs/test/submit_tool_outputs" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/threads/test/runs/test/submit_tool_outputs" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -354,7 +354,7 @@ func TestSubmitToolOutputs(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
 	// Test case: Submit tool outputs request succeeds
 	req := openai.SubmitToolOutputsRequest{}
@@ -368,7 +368,7 @@ func TestListMessage(t *testing.T) {
 	ctx := context.Background()
 	key := "test"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/openai/v1/threads/test/messages" {
+		if r.URL.Path != "/api/plugins/grafana-llm-app/resources/llm/v1/threads/test/messages" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 page not found"))
 		}
@@ -387,9 +387,9 @@ func TestListMessage(t *testing.T) {
 		w.Write(j)
 	})
 	server := httptest.NewServer(handler)
-	client := NewOpenAIAssistant(server.URL, key)
+	client := NewLLMAssistant(server.URL, key)
 
-	// Test case: Retrieve run request succeeds
+	// Test case: List messages request succeeds
 	_, err := client.ListMessages(ctx, "test", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Errorf("Expected no error, but got: %v", err)

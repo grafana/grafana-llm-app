@@ -435,6 +435,7 @@ func (a *App) handleModels() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
+			log.DefaultLogger.Error("LLM provider has invalid configuration", "err", err)
 			handleError(w, errors.New("LLM provider has invalid configuration"), http.StatusUnprocessableEntity)
 		}
 		if llmProvider == nil {
@@ -592,8 +593,10 @@ func (a *App) handleChatCompletions() http.HandlerFunc {
 
 // registerRoutes takes a *http.ServeMux and registers some HTTP handlers.
 func (a *App) registerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/openai/v1/models", a.handleModels())
-	mux.HandleFunc("/openai/v1/chat/completions", a.handleChatCompletions())
+	mux.HandleFunc("/openai/v1/models", a.handleModels())                    // Deprecated
+	mux.HandleFunc("/openai/v1/chat/completions", a.handleChatCompletions()) // Deprecated
+	mux.HandleFunc("/llm/v1/chat/completions", a.handleChatCompletions())
+	mux.HandleFunc("/llm/v1/models", a.handleModels())
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 	mux.HandleFunc("/grafana-llm-state", a.handleLLMState)
 	mux.HandleFunc("/save-plugin-settings", a.handleSavePluginSettings)
