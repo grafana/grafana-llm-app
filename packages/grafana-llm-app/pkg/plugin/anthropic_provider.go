@@ -51,10 +51,6 @@ func NewAnthropicProvider(settings AnthropicSettings, models *ModelSettings) (LL
 	}, nil
 }
 
-func (p *anthropicProvider) String() string {
-	return "Anthropic"
-}
-
 func (p *anthropicProvider) Models(ctx context.Context) (ModelResponse, error) {
 	return ModelResponse{
 		Data: []ModelInfo{
@@ -220,8 +216,4 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 
 func (p *anthropicProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
 	return openai.AssistantsList{}, fmt.Errorf("anthropic does not support assistants")
-}
-
-func (p *anthropicProvider) GetChatCompletionsPath() string {
-	return "anthropic/v1/chat/completions"
 }
