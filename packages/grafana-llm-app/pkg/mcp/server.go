@@ -91,6 +91,8 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 
 type clientKey struct{}
 
+// ExtractClientFromGrafanaLiveRequest is a GrafanaLiveContextFunc which extracts the Grafana config
+// from settings and sets the client in the context.
 var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
 	t := client.DefaultTransportConfig()
 
