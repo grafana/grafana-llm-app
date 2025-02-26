@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/mark3labs/mcp-go/server"
@@ -97,12 +98,21 @@ var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx contex
 	if cfg == nil {
 		return ctx
 	}
-	url, err := cfg.AppURL()
+	urlS, err := cfg.AppURL()
 	if err != nil {
 		return ctx
 	}
-	if host := hostFromURL(url); host != "" {
-		t.Host = host
+	url, err := url.Parse(urlS)
+	if err != nil {
+		return ctx
+	}
+	if url.Host != "" {
+		t.Host = url.Host
+	}
+	// The Grafana client will always prefer HTTPS even if the URL is HTTP,
+	// so we need to limit the schemes to HTTP if the URL is HTTP.
+	if url.Scheme == "http" {
+		t.Schemes = []string{"http"}
 	}
 
 	// Hmm, we have the user here, but no ID token? How do we make requests as the user?
@@ -113,7 +123,8 @@ var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx contex
 		t.APIKey = apiKey
 	}
 
-	return ctx
+	c := client.NewHTTPClientWithConfig(strfmt.Default, t)
+	return context.WithValue(ctx, clientKey{}, c)
 }
 
 func GrafanaClientFromContext(ctx context.Context) *client.GrafanaHTTPAPI {
@@ -122,16 +133,4 @@ func GrafanaClientFromContext(ctx context.Context) *client.GrafanaHTTPAPI {
 		return nil
 	}
 	return c
-}
-
-func hostFromURL(s string) string {
-	u, err := url.Parse(s)
-	if err != nil {
-		return ""
-	}
-	host := u.Host
-	if host == "" {
-		host = u.Path
-	}
-	return host
 }

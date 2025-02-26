@@ -214,8 +214,41 @@ func TestRunStream(t *testing.T) {
 	}
 }
 
+type mockGrafanaServer struct {
+	server    *httptest.Server
+	requests  *[]http.Request
+	responses []string
+}
+
+func newMockGrafanaServer(responses []string) mockGrafanaServer {
+	requests := []http.Request{}
+	i := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, *r)
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if i < len(responses) {
+			_, _ = w.Write([]byte(responses[i]))
+			i++
+		}
+	})
+	return mockGrafanaServer{
+		server:    httptest.NewServer(handler),
+		requests:  &requests,
+		responses: responses,
+	}
+}
+
 func TestRunStreamMCP(t *testing.T) {
+	s := newMockGrafanaServer([]string{`[]`})
+	defer s.server.Close()
+
 	ctx := context.Background()
+	fmt.Println("server URL", s.server.URL)
+	ctx = backend.WithGrafanaConfig(ctx, backend.NewGrafanaCfg(map[string]string{
+		backend.AppURL:          s.server.URL,
+		backend.AppClientSecret: "abcd1234",
+	}))
 
 	// Initialize app (need to set OpenAISettings:URL in here)
 	settings := Settings{OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI}}
@@ -313,8 +346,7 @@ func TestRunStreamMCP(t *testing.T) {
 
 	app.mcpServer.Close()
 	require.Len(t, r.messages, 3)
-	fmt.Println("Sender messages:")
-	for _, msg := range r.messages {
-		fmt.Println(string(msg))
-	}
+	require.Len(t, *s.requests, 1)
+	require.Equal(t, "/api/search", (*s.requests)[0].URL.String())
+	require.Equal(t, `{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"[]"}]}}`, string(r.messages[2]))
 }
