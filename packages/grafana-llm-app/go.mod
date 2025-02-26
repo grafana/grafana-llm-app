@@ -1,12 +1,12 @@
 module github.com/grafana/grafana-llm-app
 
-go 1.23
-
-toolchain go1.24.0
+go 1.24.0
 
 require (
+	github.com/go-openapi/strfmt v0.23.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250108132429-8d7e1f158f65
 	github.com/grafana/grafana-plugin-sdk-go v0.263.0
+	github.com/grafana/mcp-grafana v0.1.3-0.20250226215739-c53e4a3ac9bd
 	github.com/mark3labs/mcp-go v0.8.5
 	github.com/qdrant/go-client v1.13.0
 	github.com/sashabaranov/go-openai v1.32.0
@@ -37,7 +37,6 @@ require (
 	github.com/go-openapi/loads v0.22.0 // indirect
 	github.com/go-openapi/runtime v0.28.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
-	github.com/go-openapi/strfmt v0.23.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/goccy/go-json v0.10.4 // indirect
@@ -115,3 +114,5 @@ require (
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/mark3labs/mcp-go => github.com/grafana/mcp-go v0.8.6-0.20250226194234-5e1fa6f6f8af

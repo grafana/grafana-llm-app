@@ -10,12 +10,12 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/grafana/grafana-llm-app/pkg/mcp"
-	"github.com/grafana/grafana-llm-app/pkg/mcp/tools"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/grafana/mcp-grafana/tools"
 )
 
 // Make sure App implements required interfaces. This is important to do
@@ -117,7 +117,7 @@ func (a *App) Dispose() {
 
 func newMcpServer() *mcp.GrafanaLiveServer {
 	srv := server.NewMCPServer("grafana-llm-app", "0.1.0")
-	srv.AddTool(tools.SearchDashboards, tools.SearchDashboardsHandler)
+	srv.AddTool(tools.SearchDashboardsTool, tools.SearchDashboardsHandler)
 	s := mcp.NewGrafanaLiveServer(srv)
 	s.SetContextFunc(mcp.ExtractClientFromGrafanaLiveRequest)
 	return &s

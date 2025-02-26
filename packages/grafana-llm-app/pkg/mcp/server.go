@@ -10,6 +10,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	mcpgrafana "github.com/grafana/mcp-grafana"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -89,8 +90,6 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 	}
 }
 
-type clientKey struct{}
-
 // ExtractClientFromGrafanaLiveRequest is a GrafanaLiveContextFunc which extracts the Grafana config
 // from settings and sets the client in the context.
 var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
@@ -126,13 +125,5 @@ var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx contex
 	}
 
 	c := client.NewHTTPClientWithConfig(strfmt.Default, t)
-	return context.WithValue(ctx, clientKey{}, c)
-}
-
-func GrafanaClientFromContext(ctx context.Context) *client.GrafanaHTTPAPI {
-	c, ok := ctx.Value(clientKey{}).(*client.GrafanaHTTPAPI)
-	if !ok {
-		return nil
-	}
-	return c
+	return mcpgrafana.WithGrafanaClient(ctx, c)
 }
