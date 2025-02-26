@@ -12,6 +12,8 @@ func createProvider(settings *Settings) (LLMProvider, error) {
 		return NewAzureProvider(settings.OpenAI, settings.Models.Default)
 	case ProviderTypeGrafana:
 		return NewGrafanaProvider(*settings)
+	case ProviderTypeAnthropic:
+		return NewAnthropicProvider(settings.Anthropic, settings.Models)
 	case ProviderTypeTest:
 		return &settings.OpenAI.TestProvider, nil
 	default:
