@@ -107,8 +107,10 @@ func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, send
 	return fmt.Errorf("unknown stream path: %s", req.Path)
 }
 
+// PublishStream handles messages sent to the PublishStream handler.
 func (a *App) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("PublishStream: %s", req.Path), "data", string(req.Data))
+	// Handle messages for the MCP server.
 	if strings.HasPrefix(req.Path, mcpPath) {
 		err := a.mcpServer.HandleMessage(ctx, req)
 		if errors.Is(err, mcp.ErrStreamNotFound) {
