@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { HealthCheckResult, config } from '@grafana/runtime';
-import { Alert, AlertVariant, VerticalGroup } from '@grafana/ui';
+import { Alert, AlertVariant, Stack } from '@grafana/ui';
 
 interface HealthCheckDetails {
   llmProvider: LLMProviderHealthDetails | boolean;
@@ -91,11 +91,11 @@ export function ShowHealthCheckResult(props: HealthCheckResult) {
     typeof props.details.vector === 'boolean' ||
     (typeof props.details.vector === 'object' && props.details.vector.enabled);
   return (
-    <VerticalGroup>
+    <Stack direction="column">
       <ShowGrafanaHealth />
       {showLLMProvider && <ShowLLMProviderHealth provider={props.details.llmProvider} />}
       {showVector && <ShowVectorHealth vector={props.details.vector} />}
-    </VerticalGroup>
+    </Stack>
   );
 }
 
@@ -125,21 +125,34 @@ function ShowLLMProviderHealth({ provider }: { provider: LLMProviderHealthDetail
     const message = provider ? 'LLM provider health check succeeded!' : 'LLM provider health check failed.';
     return <Alert title={message} severity={severity} />;
   }
+
   const message = provider.ok ? 'LLM provider health check succeeded!' : 'LLM provider health check failed.';
   const severity = provider.ok ? 'success' : 'error';
+  const assistantMessage = provider.assistant.ok ? 'Assistant API health check passed!' : 'Assistant API not available.';
+
   return (
-    <Alert severity={severity} title={message}>
-      <b>Models</b>
-      <div>
-        {Object.entries(provider.models).map(([model, details], i) => (
-          <li key={i}>
-            {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
-          </li>
-        ))}
-      </div>
-      <b>Assistant: </b>
-      {provider.assistant.ok ? 'OK' : `Error: ${provider.assistant.error}. The configured provider may not offer assistants APIs.`}
-    </Alert>
+    <Stack direction="column" width="100%">
+      <Alert severity={severity} title={message}>
+        <b>Models</b>
+        <div>
+          {Object.entries(provider.models).map(([model, details], i) => (
+            <li key={i}>
+              {model}: {details.ok ? 'OK' : `Error: ${details.error}`}
+            </li>
+          ))}
+        </div>
+      </Alert>
+
+      {(
+        <Alert severity="info" title={assistantMessage}>
+          <div>
+            <li>
+              Assistant: {provider.assistant.ok ? 'OK' : `The configured provider may not offer assistants APIs. ${provider.assistant.error}`}
+            </li>
+          </div>
+        </Alert>
+      )}
+    </Stack>
   );
 }
 
