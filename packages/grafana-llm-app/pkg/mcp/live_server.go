@@ -14,6 +14,8 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+// ErrStreamNotFound is an error returned when a publish message is sent to a path
+// without a corresponding session (i.e. a stream without any subscribers).
 var ErrStreamNotFound = errors.New("stream not found")
 
 // StdioContextFunc is a function that takes an existing context and returns
@@ -22,14 +24,30 @@ var ErrStreamNotFound = errors.New("stream not found")
 // for example.
 type GrafanaLiveContextFunc func(ctx context.Context, pCtx *backend.PluginContext) context.Context
 
-// GrafanaLive wraps a MCPServer and handles Grafana Live communication.
+// GrafanaLiveServer wraps an MCPServer and coordinates Grafana Live connections
+// to the MCP server.
+//
+// It is effectively a custom MCP transport, similar to SSE, which:
+//
+//   - accepts new long-lived connections using the `RunStream` handler, over which
+//     the MCP server will send messages
+//   - accepts JSON-RPC messages over the `PublishStream` handler, which MCP clients
+//     can use to perform standard MCP operations (list tools, call tool, etc.)
 type GrafanaLiveServer struct {
-	server      *server.MCPServer
-	sessions    sync.Map
+	// server is the MCP server that will handle the MCP messages.
+	server *server.MCPServer
+	// sessions is a map of active Grafana Live connections, keyed by the path
+	// of the connection.
+	sessions sync.Map
+	// contextFunc is a function that will be called to modify the context before
+	// handling each MCP message.
 	contextFunc GrafanaLiveContextFunc
-	done        chan struct{}
+	// done is a channel that will be closed when the Grafana Live server is
+	// shutting down.
+	done chan struct{}
 }
 
+// NewGrafanaLiveServer creates a new GrafanaLiveServer.
 func NewGrafanaLiveServer(server *server.MCPServer) GrafanaLiveServer {
 	return GrafanaLiveServer{
 		server: server,
@@ -37,55 +55,66 @@ func NewGrafanaLiveServer(server *server.MCPServer) GrafanaLiveServer {
 	}
 }
 
+// SetContextFunc sets the context function for the GrafanaLiveServer.
 func (s *GrafanaLiveServer) SetContextFunc(contextFunc GrafanaLiveContextFunc) {
 	s.contextFunc = contextFunc
 }
 
+// Close closes the GrafanaLiveServer.
 func (s *GrafanaLiveServer) Close() {
 	close(s.done)
 }
 
+// liveSession is a Grafana Live session.
 type liveSession struct {
+	// sender is the StreamSender for the Grafana Live session. It is used to send
+	// JSON-RPC responses back to the client.
 	sender *backend.StreamSender
 }
 
+// HandleStream handles a new Grafana Live session.
 func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	// Store the session in the sessions map.
 	s.sessions.Store(req.Path, &liveSession{
 		sender: sender,
 	})
+	defer s.sessions.Delete(req.Path)
+	// Block until the stream is closed or the Grafana Live server is shutting down.
 	for {
 		select {
 		case <-ctx.Done():
-			s.sessions.Delete(req.Path)
 			return ctx.Err()
 		case <-s.done:
-			s.sessions.Delete(req.Path)
 			return nil
 		}
 	}
 }
 
+// HandleMessage handles a Grafana Live message, sent via the PublishStream handler.
 func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.PublishStreamRequest) error {
+	// Get the session from the sessions map.
 	sessionI, ok := s.sessions.Load(req.Path)
 	if !ok {
 		return ErrStreamNotFound
 	}
 	session := sessionI.(*liveSession)
 
+	// Modify the context if a context function is set.
 	if s.contextFunc != nil {
 		ctx = s.contextFunc(ctx, &req.PluginContext)
 	}
 
-	// Process message through MCPServer
+	// Process the message through the MCPServer.
 	response := s.server.HandleMessage(ctx, req.Data)
 
-	// Only send response if there is one (not for notifications)
+	// Only send response if there is one (not for notifications).
 	if response != nil {
+		// Marshal the response to JSON. Errors should be impossible since we've
+		// just unmarshalled from a JSON-RPC message.
 		eventData, _ := json.Marshal(response)
 		return session.sender.SendJSON(eventData)
 	} else {
-		// For notifications, just send nil
-		// TODO: is this the right thing?
+		// For notifications, just send nil.
 		return session.sender.SendBytes(nil)
 	}
 }
