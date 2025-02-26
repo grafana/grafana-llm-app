@@ -7,6 +7,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mark3labs/mcp-go/server"
+
+	"github.com/grafana/grafana-llm-app/pkg/mcp"
+	"github.com/grafana/grafana-llm-app/pkg/mcp/tools"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
@@ -41,6 +45,8 @@ type App struct {
 	// ignoreResponsePadding is a flag to ignore padding in responses.
 	// It should only ever be set in tests.
 	ignoreResponsePadding bool
+
+	mcpServer *mcp.GrafanaLiveServer
 }
 
 // NewApp creates a new example *App instance.
@@ -96,6 +102,8 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	app.healthCheckMutex = sync.Mutex{}
 
+	app.mcpServer = newMcpServer()
+
 	return &app, nil
 }
 
@@ -105,4 +113,12 @@ func (a *App) Dispose() {
 	if a.vectorService != nil {
 		a.vectorService.Cancel()
 	}
+}
+
+func newMcpServer() *mcp.GrafanaLiveServer {
+	srv := server.NewMCPServer("grafana-llm-app", "0.1.0")
+	srv.AddTool(tools.SearchDashboards, tools.SearchDashboardsHandler)
+	s := mcp.NewGrafanaLiveServer(srv)
+	s.SetContextFunc(mcp.ExtractClientFromGrafanaLiveRequest)
+	return &s
 }
