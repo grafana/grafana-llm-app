@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/incident-go"
 	mcpgrafana "github.com/grafana/mcp-grafana"
 	"github.com/mark3labs/mcp-go/server"
 )
@@ -121,7 +124,7 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 
 // ExtractClientFromGrafanaLiveRequest is a GrafanaLiveContextFunc which extracts the Grafana config
 // from settings and sets the client in the context.
-var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+var extractGrafanaClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
 	t := client.DefaultTransportConfig()
 
 	cfg := backend.GrafanaConfigFromContext(ctx)
@@ -156,3 +159,47 @@ var ExtractClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx contex
 	c := client.NewHTTPClientWithConfig(strfmt.Default, t)
 	return mcpgrafana.WithGrafanaClient(ctx, c)
 }
+
+var extractGrafanaInfoFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+	cfg := backend.GrafanaConfigFromContext(ctx)
+	if cfg == nil {
+		return ctx
+	}
+	url, err := cfg.AppURL()
+	if err != nil {
+		return ctx
+	}
+	apiKey, _ := cfg.PluginAppClientSecret()
+	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
+}
+
+var extractIncidentClientFromGrafanaLiveRequest GrafanaLiveContextFunc = func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+	cfg := backend.GrafanaConfigFromContext(ctx)
+	if cfg == nil {
+		return ctx
+	}
+	grafanaURL, err := cfg.AppURL()
+	if err != nil {
+		return ctx
+	}
+	apiKey, _ := cfg.PluginAppClientSecret()
+	incidentUrl := fmt.Sprintf("%s/api/plugins/grafana-incident-app/resources/api/", strings.TrimSuffix(grafanaURL, "/"))
+	client := incident.NewClient(incidentUrl, apiKey)
+	return mcpgrafana.WithIncidentClient(ctx, client)
+}
+
+// ComposeStdioContextFuncs composes multiple GrafanaLiveContextFunc into a single one.
+func composeStdioContextFuncs(funcs ...GrafanaLiveContextFunc) GrafanaLiveContextFunc {
+	return func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+		for _, f := range funcs {
+			ctx = f(ctx, pCtx)
+		}
+		return ctx
+	}
+}
+
+var ContextFunc = composeStdioContextFuncs(
+	extractGrafanaInfoFromGrafanaLiveRequest,
+	extractGrafanaClientFromGrafanaLiveRequest,
+	extractIncidentClientFromGrafanaLiveRequest,
+)

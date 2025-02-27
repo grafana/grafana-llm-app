@@ -28,8 +28,8 @@ export class GrafanaLiveTransport implements Transport {
   _channel: LiveChannelAddress;
 
   /**
-  * The Grafana Live stream over which MCP messages are received.
-  */
+   * The Grafana Live stream over which MCP messages are received.
+   */
   _stream?: Observable<LiveChannelMessageEvent<unknown>>;
 
   // Methods defined as part of the Transport interface.
@@ -255,7 +255,7 @@ function convertToolToOpenAI(tool: MCPTool): OpenAITool {
     function: {
       name: tool.name,
       description: tool.description,
-      parameters: tool.inputSchema,
+      parameters: tool.inputSchema.properties !== undefined ? tool.inputSchema : undefined,
     },
   };
 }
