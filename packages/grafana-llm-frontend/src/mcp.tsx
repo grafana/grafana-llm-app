@@ -4,11 +4,12 @@ import { isLiveChannelMessageEvent, LiveChannelAddress, LiveChannelMessageEvent,
 import { getGrafanaLiveSrv, GrafanaLiveSrv } from '@grafana/runtime';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 import { Client } from '@modelcontextprotocol/sdk/client/index';
-import { JSONRPCMessage, JSONRPCMessageSchema } from '@modelcontextprotocol/sdk/types';
+import { JSONRPCMessage, JSONRPCMessageSchema, Tool as MCPTool } from '@modelcontextprotocol/sdk/types';
 import { Observable, filter } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
 import { LLM_PLUGIN_ID } from './constants';
+import { Tool as OpenAITool } from './openai';
 
 const MCP_GRAFANA_PATH = 'mcp/grafana'
 
@@ -233,4 +234,28 @@ export function useMCPClient(): Client {
     throw new Error('useMCPClient must be used within an MCPClientProvider');
   }
   return client;
+}
+
+// Export the Client class from the SDK to make it easier to import.
+export { Client };
+
+/**
+ * Convert an array of MCP tools to an array of OpenAI tools.
+ *
+ * This is useful when you want to use the MCP client with the LLM plugin's
+ * `chatCompletions` or `streamChatCompletions` functions.
+ */
+export function convertToolsToOpenAI(tools: MCPTool[]): OpenAITool[] {
+  return tools.map(convertToolToOpenAI);
+}
+
+function convertToolToOpenAI(tool: MCPTool): OpenAITool {
+  return {
+    type: 'function',
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.inputSchema,
+    },
+  };
 }
