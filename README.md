@@ -6,6 +6,10 @@ They are placed into a monorepo because they are tighlty coupled, and should be 
 
 Each package has its own package.json with its own npm commands, but the intention is that you should be able to run and test both of them from root.
 
+## Contributing
+
+If you're interested in adding support for new LLM providers or extending the functionality of the Grafana LLM App, please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file for detailed implementation guidance.
+
 ## Developing these packages
 
 ### Quickstart
