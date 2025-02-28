@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"strings"
 
+	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -57,6 +58,19 @@ func (m Model) toOpenAI(modelSettings *ModelSettings) string {
 			return "gpt-4o-mini"
 		case ModelLarge:
 			return "gpt-4o"
+		}
+		panic(fmt.Sprintf("unrecognized model: %s", m))
+	}
+	return modelSettings.getModel(m)
+}
+
+func (m Model) toAnthropic(modelSettings *ModelSettings) string {
+	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
+		switch m {
+		case ModelBase:
+			return anthropic.ModelClaude3_5SonnetLatest
+		case ModelLarge:
+			return anthropic.ModelClaude3_5SonnetLatest
 		}
 		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}

@@ -32,22 +32,26 @@ describe('Components/AppConfig', () => {
     } as unknown as AppConfigProps;
   });
 
-  test('renders the "API Settings" fieldset with API key, API url inputs and button', () => {
-    const plugin = { meta: { ...props.plugin.meta, enabled: false } };
+  test('renders OpenAI configuration when provider is OpenAI', () => {
+    const plugin = { meta: { ...props.plugin.meta, enabled: false, jsonData: { provider: 'openai' } } };
 
     // @ts-ignore - We don't need to provide `addConfigPage()` and `setChannelSupport()` for these tests
     render(<AppConfig plugin={plugin} query={props.query} />);
 
     expect(screen.queryByRole('group', { name: /openai settings/i })).toBeInTheDocument();
-    // expect(screen.queryByTestId(testIds.appConfig.openAIKey)).toBeInTheDocument();
-    // expect(screen.queryByTestId(testIds.appConfig.openAIOrganizationID)).toBeInTheDocument();
-    // expect(screen.queryByTestId(testIds.appConfig.openAIUrl)).toBeInTheDocument();
-    // expect(screen.queryByTestId(testIds.appConfig.model)).toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: /vector settings/i })).toBeInTheDocument();
-    expect(screen.queryByTestId(testIds.appConfig.qdrantSecure)).toBeInTheDocument();
-    expect(screen.queryByTestId(testIds.appConfig.qdrantAddress)).toBeInTheDocument();
-    // Don't expect to see the Grafana vector API field when type is qdrant
-    expect(screen.queryByTestId(testIds.appConfig.grafanaVectorApiUrl)).toBeNull();
+    expect(screen.queryByTestId(testIds.appConfig.provider)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save & test/i })).toBeInTheDocument();
+  });
+
+  test('renders Anthropic configuration when provider is Anthropic', () => {
+    const plugin = { meta: { ...props.plugin.meta, enabled: false, jsonData: { provider: 'anthropic' } } };
+
+    // @ts-ignore - We don't need to provide `addConfigPage()` and `setChannelSupport()` for these tests
+    render(<AppConfig plugin={plugin} query={props.query} />);
+
+    expect(screen.queryByRole('group', { name: /openai settings/i })).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.anthropicUrl)).toBeInTheDocument();
+    expect(screen.queryByTestId(testIds.appConfig.anthropicKey)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save & test/i })).toBeInTheDocument();
   });
 });
