@@ -1,6 +1,6 @@
 {
   "name": "@grafana/llm",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "description": "A grafana library for llm",
   "exports": {
     ".": {
