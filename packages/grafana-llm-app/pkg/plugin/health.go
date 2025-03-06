@@ -34,8 +34,10 @@ type vectorHealthDetails struct {
 
 type healthCheckDetails struct {
 	LLMProvider llmProviderHealthDetails `json:"llmProvider"`
-	Vector      vectorHealthDetails      `json:"vector"`
-	Version     string                   `json:"version"`
+	// clone of LLMProvider health details for backwards compatibility (< 0.13.0)
+	OpenAI  llmProviderHealthDetails `json:"openAI"`
+	Vector  vectorHealthDetails      `json:"vector"`
+	Version string                   `json:"version"`
 }
 
 func getVersion() string {
@@ -203,6 +205,7 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 
 	details := healthCheckDetails{
 		LLMProvider: provider,
+		OpenAI:      provider,
 		Vector:      vector,
 		Version:     getVersion(),
 	}
