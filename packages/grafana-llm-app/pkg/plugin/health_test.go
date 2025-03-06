@@ -11,6 +11,7 @@ import (
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockVectorService struct{}
@@ -277,6 +278,12 @@ func TestCheckHealth(t *testing.T) {
 			if err = json.Unmarshal(resp.JSONDetails, &details); err != nil {
 				t.Errorf("non-JSON response details (%s): %s", resp.JSONDetails, err)
 			}
+
+			// Make sure that OpenAI is populated for backwards compatability.
+			// We can consider removing this in the future after we are
+			// confident frontends have upgraded.
+			assert.Equal(t, details.LLMProvider, details.OpenAI)
+
 			if details.LLMProvider.OK != tc.expDetails.LLMProvider.OK ||
 				details.LLMProvider.Assistant.OK != tc.expDetails.LLMProvider.Assistant.OK ||
 				details.LLMProvider.Assistant.Error != tc.expDetails.LLMProvider.Assistant.Error ||
