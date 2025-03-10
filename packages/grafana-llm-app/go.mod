@@ -1,7 +1,8 @@
 module github.com/grafana/grafana-llm-app
 
-go 1.22.7
-toolchain go1.23.7
+go 1.23.5
+
+toolchain go1.24.0
 
 require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
