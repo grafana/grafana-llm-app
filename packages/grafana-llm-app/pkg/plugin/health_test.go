@@ -123,7 +123,7 @@ func TestCheckHealth(t *testing.T) {
 					OK:         true,
 					Models: map[Model]modelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, message: model does not exist`},
 					},
 					Assistant: modelHealth{OK: true, Error: ""},
 				},
@@ -153,9 +153,9 @@ func TestCheckHealth(t *testing.T) {
 					OK:         true,
 					Models: map[Model]modelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, message: model does not exist`},
 					},
-					Assistant: modelHealth{OK: false, Error: `Assistant not available: error, status code: 404, status: 404 Not Found, body: {"error": {"message": "Assistant not available"}}`},
+					Assistant: modelHealth{OK: false, Error: `Assistant not available: error, status code: 404, status: 404 Not Found, message: Assistant not available`},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -232,9 +232,9 @@ func TestCheckHealth(t *testing.T) {
 					Error:      "",
 					Models: map[Model]modelHealth{
 						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, body: {"error": {"message": "model does not exist"}}`},
+						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, message: model does not exist`},
 					},
-					Assistant: modelHealth{OK: false, Error: "Assistant not available: error, status code: 502, status: 502 Bad Gateway, body: "},
+					Assistant: modelHealth{OK: false, Error: "Assistant not available: error, status code: 502, status: 502 Bad Gateway, message: unexpected end of JSON input, body: "},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
