@@ -1,8 +1,8 @@
 import React, { Suspense, useState } from "react";
 import { Button, FieldSet, Icon, Input, LoadingPlaceholder, Modal, Spinner } from "@grafana/ui";
 import { useAsync } from "react-use";
-import { finalize } from "rxjs";
-import { mcp, openai } from "@grafana/llm";
+import { finalize, lastValueFrom, map, partition, startWith, toArray } from "rxjs";
+import { llm, mcp, openai } from "@grafana/llm";
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types';
 
 interface RenderedToolCall {
@@ -128,32 +128,130 @@ const BasicChatTest = () => {
       return { enabled, response };
     } else {
       // Stream the completions. Each element is the next stream chunk.
-      const stream = openai.streamChatCompletions({
-        model: openai.Model.BASE,
-        messages: [
-          { role: 'system', content: 'You are a cynical assistant.' },
-          { role: 'user', content: message },
-        ],
-      }).pipe(
+      const messages: llm.Message[] = [
+        { role: 'system', content: 'You are a cynical assistant.' },
+        { role: 'user', content: message },
+      ];
+      let stream = llm.streamChatCompletions({
+        model: openai.Model.LARGE,
+        messages,
+        tools: mcp.convertToolsToOpenAI(tools),
+      });
+      let [toolCallsStream, otherMessages] = partition(
+        stream,
+        (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
+      );
+      let contentMessages = otherMessages.pipe(
         // Accumulate the stream content into a stream of strings, where each
         // element contains the accumulated message so far.
-        openai.accumulateContent(),
+        llm.accumulateContent(),
         // The stream is just a regular Observable, so we can use standard rxjs
         // functionality to update state, e.g. recording when the stream
         // has completed.
         // The operator decision tree on the rxjs website is a useful resource:
         // https://rxjs.dev/operator-decision-tree.
         finalize(() => {
+          console.log('stream finalized');
           setStarted(false);
           setFinished(true);
         })
       );
-      // Subscribe to the stream and update the state for each returned value.
-      return {
-        enabled,
-        stream: stream.subscribe(setReply),
-      };
+      // Get all the tool call messages as an array.
+      let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
+        map(
+          (response: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => (response.choices[0].delta as llm.ToolCallsMessage)
+        ),
+        toArray(),
+      ));
+      // Handle any function calls, looping until there are no more.
+      while (toolCallMessages.length > 0) {
+        // The way tool use works for streaming chat completions is pretty nuts. We'll get lots of
+        // chunks; the first will include the tool name, id and index, then some others will
+        // gradually populate the 'arguments' JSON string, so we need to loop over them all and
+        // reconstruct the full tool call for each index.
+        const recoveredToolCallMessage: llm.ToolCallsMessage = {
+          role: 'assistant',
+          tool_calls: [],
+        };
+        for (const msg of toolCallMessages) {
+          for (const tc of msg.tool_calls) {
+            if (tc.index! >= recoveredToolCallMessage.tool_calls.length) {
+              // We have a new tool call, so let's create one with a sensible empty 'arguments' string.
+              recoveredToolCallMessage.tool_calls.push({ ...tc, function: { ...tc.function, arguments: tc.function.arguments ?? '' } });
+            } else {
+              // This refers to an existing tool call, so continue reconstructing the arguments.
+              recoveredToolCallMessage.tool_calls[tc.index!].function.arguments += tc.function.arguments;
+            }
+          }
+        }
+        messages.push(recoveredToolCallMessage)
+        const tcs = recoveredToolCallMessage.tool_calls.filter(tc => tc.type === 'function');
+
+        // Submit all tool requests.
+        await Promise.all(tcs.map(async (fc) => {
+          // Update the tool call state for rendering.
+          const { function: f, id } = fc;
+          setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: true })));
+          try {
+            // OpenAI sends arguments as a JSON string, so we need to parse it.
+            const args = JSON.parse(f.arguments);
+            const response = await client.callTool({ name: f.name, arguments: args });
+            const toolResult = CallToolResultSchema.parse(response);
+            // Just handle text results for now.
+            const textContent = toolResult.content.filter(c => c.type === 'text').map(c => c.text).join('');
+            // Add the result to the message, with the correct role and id.
+            messages.push({ role: 'tool', tool_call_id: id, content: textContent });
+            // Update the tool call state for rendering.
+            setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false })));
+          } catch (e: any) {
+            const error = e.message ?? e.toString();
+            messages.push({ role: 'tool', tool_call_id: id, content: error });
+            // Update the tool call state for rendering.
+            setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false, error })));
+          }
+        }));
+        // Stream the completions. Each element is the next stream chunk.
+        stream = llm.streamChatCompletions({
+          model: 'gpt-4o',
+          messages,
+          tools: mcp.convertToolsToOpenAI(tools),
+        });
+        [toolCallsStream, otherMessages] = partition(
+          stream,
+          (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
+        );
+        // Include a pretend 'first message' in the reply, in case the model chose to send anything before its tool calls.
+        const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
+          choices: [{ delta: { role: 'assistant', content: reply } }],
+        };
+        contentMessages = otherMessages.pipe(
+          //@ts-expect-error
+          startWith(firstMessage),
+          // Accumulate the stream content into a stream of strings, where each
+          // element contains the accumulated message so far.
+          llm.accumulateContent(),
+          // The stream is just a regular Observable, so we can use standard rxjs
+          // functionality to update state, e.g. recording when the stream
+          // has completed.
+          // The operator decision tree on the rxjs website is a useful resource:
+          // https://rxjs.dev/operator-decision-tree.
+          finalize(() => {
+            console.log('stream finalized');
+          })
+        );
+        // Subscribe to the stream and update the state for each returned value.
+        contentMessages.subscribe((val) => {
+          setReply(val);
+        });
+        toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
+          map(
+            (response: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => (response.choices[0].delta as llm.ToolCallsMessage)
+          ),
+          toArray(),
+        ));
+      }
     }
+    return { enabled: true };
   }, [message]);
 
   if (error) {
