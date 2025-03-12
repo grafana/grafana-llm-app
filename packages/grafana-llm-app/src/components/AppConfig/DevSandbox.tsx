@@ -1,9 +1,9 @@
 import React, { Suspense, useState } from "react";
-import { Button, FieldSet, Icon, Input, LoadingPlaceholder, Modal, Spinner } from "@grafana/ui";
+import { Button, FieldSet, Icon, LoadingPlaceholder, Modal, Spinner, Stack, TextArea } from "@grafana/ui";
 import { useAsync } from "react-use";
 import { finalize, lastValueFrom, map, partition, startWith, toArray } from "rxjs";
 import { llm, mcp, openai } from "@grafana/llm";
-import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types';
+import { CallToolResultSchema, Tool } from '@modelcontextprotocol/sdk/types';
 
 interface RenderedToolCall {
   name: string;
@@ -12,10 +12,23 @@ interface RenderedToolCall {
   error?: string;
 }
 
+function AvailableTools({ tools }: { tools: Tool[] }) {
+  return (
+    <Stack direction="column">
+      <h4>Available MCP Tools</h4>
+      <ul>
+        {tools.map((tool, i) => (
+          <li key={i}>{tool.name}</li>
+        ))}
+      </ul>
+    </Stack>
+  );
+}
+
 function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) {
   return (
     <div>
-      <h3>Tool Calls</h3>
+      <h4>Tool Calls</h4>
       {toolCalls.size === 0 && <div>No tool calls yet</div>}
       <ul>
         {Array.from(toolCalls.values()).map((toolCall, i) => (
@@ -60,13 +73,13 @@ const BasicChatTest = () => {
     const enabled = openAIHealthDetails;
     console.log("enabled: ", enabled);
     if (!enabled) {
-      return { enabled };
+      return { enabled, tools: [] };
     }
-    if (message === '') {
-      return { enabled };
-    }
-
     const { tools } = await client.listTools();
+
+    if (message === '') {
+      return { enabled, tools };
+    }
 
     setStarted(true);
     setFinished(false);
@@ -125,7 +138,7 @@ const BasicChatTest = () => {
       setReply(response.choices[0].message.content!);
       setStarted(false);
       setFinished(true);
-      return { enabled, response };
+      return { enabled, tools };
     } else {
       // Stream the completions. Each element is the next stream chunk.
       const messages: llm.Message[] = [
@@ -251,7 +264,7 @@ const BasicChatTest = () => {
         ));
       }
     }
-    return { enabled: true };
+    return { enabled: true, tools };
   }, [message]);
 
   if (error) {
@@ -262,24 +275,31 @@ const BasicChatTest = () => {
   return (
     <div>
       {value?.enabled ? (
-        <>
-          <Input
+        <Stack direction="column">
+          <TextArea
             value={input}
             onChange={(e) => setInput(e.currentTarget.value)}
             placeholder="Enter a message"
           />
           <br />
-          <Button type="submit" onClick={() => { setMessage(input); setUseStream(true); }}>Submit Stream</Button>
-          <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
+          <Stack direction="row" justifyContent="space-evenly">
+            <Button type="submit" onClick={() => { setMessage(input); setUseStream(true); }}>Submit Stream</Button>
+            <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
+          </Stack>
           <br />
           {!useStream && <div>{loading ? <Spinner /> : reply}</div>}
           {useStream && <div>{reply}</div>}
-          <div>{started ? "Response is started" : "Response is not started"}</div>
-          <div>{finished ? "Response is finished" : "Response is not finished"}</div>
+          <Stack direction="row" justifyContent="space-evenly">
+            <div>{started ? "Response is started" : "Response is not started"}</div>
+            <div>{finished ? "Response is finished" : "Response is not finished"}</div>
+          </Stack>
           <br />
           <br />
-          <ToolCalls toolCalls={toolCalls} />
-        </>
+          <Stack direction="row" justifyContent="space-evenly">
+            <AvailableTools tools={value.tools!} />
+            <ToolCalls toolCalls={toolCalls} />
+          </Stack>
+        </Stack>
       ) : (
         <div>LLM plugin not enabled.</div>
       )}
