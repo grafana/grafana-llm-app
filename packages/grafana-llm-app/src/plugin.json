@@ -42,6 +42,14 @@
     "permissions": [
       {
         "action": "orgs:read"
+      },
+      {
+        "action": "datasources:read",
+        "scope": "datasources:uid:*"
+      },
+      {
+        "action": "datasources:query",
+        "scope": "datasources:uid:*"
       }
     ]
   }

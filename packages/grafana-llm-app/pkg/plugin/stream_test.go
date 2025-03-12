@@ -8,9 +8,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/stretchr/testify/require"
 )
 
 // Test constants
@@ -210,4 +212,141 @@ func TestRunStream(t *testing.T) {
 
 		})
 	}
+}
+
+type mockGrafanaServer struct {
+	server    *httptest.Server
+	requests  *[]http.Request
+	responses []string
+}
+
+func newMockGrafanaServer(responses []string) mockGrafanaServer {
+	requests := []http.Request{}
+	i := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, *r)
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if i < len(responses) {
+			_, _ = w.Write([]byte(responses[i]))
+			i++
+		}
+	})
+	return mockGrafanaServer{
+		server:    httptest.NewServer(handler),
+		requests:  &requests,
+		responses: responses,
+	}
+}
+
+func TestRunStreamMCP(t *testing.T) {
+	s := newMockGrafanaServer([]string{`[]`})
+	defer s.server.Close()
+
+	ctx := context.Background()
+	fmt.Println("server URL", s.server.URL)
+	ctx = backend.WithGrafanaConfig(ctx, backend.NewGrafanaCfg(map[string]string{
+		backend.AppURL:          s.server.URL,
+		backend.AppClientSecret: "abcd1234",
+	}))
+
+	// Initialize app (need to set OpenAISettings:URL in here)
+	settings := Settings{OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI}}
+
+	jsonData, err := json.Marshal(settings)
+	if err != nil {
+		t.Fatalf("json marshal: %s", err)
+	}
+	appSettings := backend.AppInstanceSettings{
+		JSONData: jsonData,
+		DecryptedSecureJSONData: map[string]string{
+			"openAIKey": "abcd1234",
+		},
+	}
+	inst, err := NewApp(ctx, appSettings)
+	if err != nil {
+		t.Fatalf("new app: %s", err)
+	}
+	if inst == nil {
+		t.Fatal("inst must not be nil")
+	}
+	app, ok := inst.(*App)
+	if !ok {
+		t.Fatal("inst must be of type *App")
+	}
+
+	r := mockStreamPacketSender{messages: []json.RawMessage{}}
+	sender := backend.NewStreamSender(&r)
+
+	path := "mcp/abcd1234"
+
+	go func() {
+		err = app.RunStream(ctx, &backend.RunStreamRequest{
+			PluginContext: backend.PluginContext{
+				AppInstanceSettings: &appSettings,
+			},
+			Path: path,
+			Data: []byte(""),
+		}, sender)
+		require.NoError(t, err)
+	}()
+	time.Sleep(time.Millisecond)
+
+	resp, err := app.PublishStream(ctx, &backend.PublishStreamRequest{
+		Path: path,
+		Data: []byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"method": "initialize",
+			"params": {
+		    "protocolVersion": "",
+		    "capabilities": {},
+				"clientInfo": {"name": "mcp-golang", "version": "0.1.2"}
+			}
+		}`),
+	})
+	require.NoError(t, err)
+	require.Equal(t, backend.PublishStreamStatusOK, resp.Status)
+
+	resp, err = app.PublishStream(ctx, &backend.PublishStreamRequest{
+		Path: path,
+		Data: []byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"method": "tools/list",
+			"params": {
+				"request": {
+					"method": "search/dashboards",
+					"params": {
+						"query": "test"
+					}
+				}
+			}
+		}`),
+	})
+	require.NoError(t, err)
+	require.Equal(t, backend.PublishStreamStatusOK, resp.Status)
+
+	resp, err = app.PublishStream(ctx, &backend.PublishStreamRequest{
+		Path: path,
+		Data: []byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"method": "tools/call",
+			"params": {
+		    "name": "search_dashboards",
+				"params": {
+					"query": "test"
+				}
+			}
+		}`),
+	})
+	require.NoError(t, err)
+	require.Equal(t, backend.PublishStreamStatusOK, resp.Status)
+
+	app.mcpServer.Close()
+	require.Len(t, r.messages, 3)
+	require.Len(t, *s.requests, 1)
+	require.Equal(t, "/api/search", (*s.requests)[0].URL.String())
+	require.Equal(t, `{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"[]"}]}}`, string(r.messages[2]))
 }

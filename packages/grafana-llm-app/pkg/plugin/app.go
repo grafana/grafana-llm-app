@@ -7,11 +7,15 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mark3labs/mcp-go/server"
+
+	"github.com/grafana/grafana-llm-app/pkg/mcp"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/grafana/mcp-grafana/tools"
 )
 
 // Make sure App implements required interfaces. This is important to do
@@ -41,6 +45,8 @@ type App struct {
 	// ignoreResponsePadding is a flag to ignore padding in responses.
 	// It should only ever be set in tests.
 	ignoreResponsePadding bool
+
+	mcpServer *mcp.GrafanaLiveServer
 }
 
 // NewApp creates a new example *App instance.
@@ -96,6 +102,8 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	app.healthCheckMutex = sync.Mutex{}
 
+	app.mcpServer = newMcpServer()
+
 	return &app, nil
 }
 
@@ -105,4 +113,18 @@ func (a *App) Dispose() {
 	if a.vectorService != nil {
 		a.vectorService.Cancel()
 	}
+	if a.mcpServer != nil {
+		a.mcpServer.Close()
+	}
+}
+
+func newMcpServer() *mcp.GrafanaLiveServer {
+	// TODO: get correct version somehow. Build info?
+	srv := server.NewMCPServer("grafana-llm-app", "0.1.0")
+	tools.AddDatasourceTools(srv)
+	tools.AddSearchTools(srv)
+	tools.AddIncidentTools(srv)
+	tools.AddPrometheusTools(srv)
+	s := mcp.NewGrafanaLiveServer(srv, mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc))
+	return s
 }
