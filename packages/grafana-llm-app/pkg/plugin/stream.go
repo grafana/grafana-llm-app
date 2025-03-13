@@ -18,6 +18,12 @@ const (
 	mcpPath                   = "mcp"
 )
 
+// allowMCPRequest returns true if the request path is for the MCP server
+// and the MCP server is enabled and running.
+func (a *App) allowMCPRequest(path string) bool {
+	return strings.HasPrefix(path, mcpPath) && a.settings.MCP.Enabled && a.mcpServer != nil
+}
+
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
 
@@ -29,7 +35,7 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 	if strings.HasPrefix(req.Path, llmChatCompletionsPath) || strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
 		resp.Status = backend.SubscribeStreamStatusOK
 	}
-	if strings.HasPrefix(req.Path, mcpPath) {
+	if a.allowMCPRequest(req.Path) {
 		resp.Status = backend.SubscribeStreamStatusOK
 	}
 	return resp, nil
@@ -97,7 +103,7 @@ func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, send
 		}
 		return nil
 	}
-	if strings.HasPrefix(req.Path, mcpPath) {
+	if a.allowMCPRequest(req.Path) {
 		if err := a.runMCPStream(ctx, req, sender); err != nil {
 			log.DefaultLogger.Error("error running stream", "err", err)
 			sendError(EventError{Error: err.Error()}, sender)
@@ -111,7 +117,7 @@ func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, send
 func (a *App) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("PublishStream: %s", req.Path), "data", string(req.Data))
 	// Handle messages for the MCP server.
-	if strings.HasPrefix(req.Path, mcpPath) {
+	if a.allowMCPRequest(req.Path) {
 		err := a.mcpServer.HandleMessage(ctx, req)
 		if errors.Is(err, mcp.ErrStreamNotFound) {
 			return &backend.PublishStreamResponse{

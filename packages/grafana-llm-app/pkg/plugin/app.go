@@ -107,7 +107,9 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	app.healthCheckMutex = sync.Mutex{}
 
-	app.mcpServer = newMCPServer()
+	if app.settings.MCP.Enabled {
+		app.mcpServer = newMCPServer()
+	}
 
 	return &app, nil
 }
