@@ -3,6 +3,7 @@ apiVersion: 1
 apps:
   - type: grafana-llm-app
     jsonData:
+      enableDevSandbox: true
       provider: openai
       openAI:
         url: https://api.openai.com
