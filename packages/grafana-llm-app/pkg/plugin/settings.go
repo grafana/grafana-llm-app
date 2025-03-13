@@ -170,6 +170,9 @@ type Settings struct {
 
 	// LLMGateway provides Grafana-managed OpenAI.
 	LLMGateway LLMGatewaySettings `json:"llmGateway"`
+
+	// Allows enabling the dev sandbox on the plugin page.
+	EnableDevSandbox bool `json:"enableDevSandbox"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {

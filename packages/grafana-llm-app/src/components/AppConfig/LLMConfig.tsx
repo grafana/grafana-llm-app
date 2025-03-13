@@ -136,7 +136,7 @@ export function LLMConfig({
 
   return (
     <>
-      {process.env.NODE_ENV === 'development' && <DevSandbox />}
+      {settings.enableDevSandbox && <DevSandbox />}
       <FieldSet label="OpenAI Settings" className={s.sidePadding}>
         {allowGrafanaManagedLLM && (
           <div onClick={selectGrafanaManaged}>

@@ -28,6 +28,7 @@ export interface AppPluginSettings {
   // This will only work for Grafana Cloud install plugins
   enableGrafanaManagedLLM?: boolean;
   displayVectorStoreOptions?: boolean;
+  enableDevSandbox?: boolean;
 }
 
 export type Secrets = {

@@ -4,6 +4,7 @@ apps:
   - type: grafana-llm-app
     jsonData:
       base64EncodedAccessTokenSet: True
+      enableDevSandbox: true
       # enableGrafanaManagedLLM: True
       # displayVectorStoreOptions: False
       provider: openai
