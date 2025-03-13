@@ -18,6 +18,11 @@ import (
 	"github.com/grafana/mcp-grafana/tools"
 )
 
+// PluginVersion is the version of the plugin, as stored in the plugin.json
+// file. The `main` function will set this variable to the current version,
+// which is in turn set by Mage using Go linker flags.
+var PluginVersion = "development"
+
 // Make sure App implements required interfaces. This is important to do
 // since otherwise we will only get a not implemented error response from plugin in
 // runtime. Plugin should not implement all these interfaces - only those which are
@@ -119,8 +124,7 @@ func (a *App) Dispose() {
 }
 
 func newMcpServer() *mcp.GrafanaLiveServer {
-	// TODO: get correct version somehow. Build info?
-	srv := server.NewMCPServer("grafana-llm-app", "0.1.0")
+	srv := server.NewMCPServer("grafana-llm-app", PluginVersion)
 	tools.AddDatasourceTools(srv)
 	tools.AddSearchTools(srv)
 	tools.AddIncidentTools(srv)
