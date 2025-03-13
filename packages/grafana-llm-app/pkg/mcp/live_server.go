@@ -162,12 +162,9 @@ func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backe
 		t.Schemes = []string{"http"}
 	}
 
-	// TODO: fetch ID token / auth token from headers.
-
-	// Hmm, we have the user here, but no ID token? How do we make requests as the user?
-	// req.PluginContext.User
-	// This will authenticate as the plugin not the current user, which isn't what we want,
-	// as the plugin may have more permissions than the user.
+	// TODO: fetch ID token / auth token from headers, as the app client secret
+	// uses the plugin's service account, not the current user.
+	// Tracked in https://github.com/grafana/grafana-llm-app/issues/593.
 	if apiKey, err := cfg.PluginAppClientSecret(); err == nil {
 		t.APIKey = apiKey
 	}
