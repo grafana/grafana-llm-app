@@ -45,11 +45,11 @@
       },
       {
         "action": "datasources:read",
-        "scope": "datasources:uid:*"
+        "scope": "datasources:*"
       },
       {
         "action": "datasources:query",
-        "scope": "datasources:uid:*"
+        "scope": "datasources:*"
       },
       {
         "action": "dashboards:read",
