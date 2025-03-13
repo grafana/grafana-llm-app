@@ -42,6 +42,30 @@
     "permissions": [
       {
         "action": "orgs:read"
+      },
+      {
+        "action": "datasources:read",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "datasources:query",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "dashboards:read",
+        "scope": "dashboards:uid:*"
+      },
+      {
+        "action": "folders:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "plugins.app:access",
+        "scope": "plugins:grafana-incident-app"
+      },
+      {
+        "action": "plugins.app:access",
+        "scope": "plugins:grafana-irm-app"
       }
     ]
   }

@@ -3,15 +3,26 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/grafana/grafana-llm-app/pkg/mcp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-const openAIChatCompletionsPath = "openai/v1/chat/completions" // Deprecated
-const llmChatCompletionsPath = "llm/v1/chat/completions"
+const (
+	openAIChatCompletionsPath = "openai/v1/chat/completions" // Deprecated
+	llmChatCompletionsPath    = "llm/v1/chat/completions"
+	mcpPath                   = "mcp"
+)
+
+// allowMCPRequest returns true if the request path is for the MCP server
+// and the MCP server is enabled and running.
+func (a *App) allowMCPRequest(path string) bool {
+	return strings.HasPrefix(path, mcpPath) && a.settings.MCP.Enabled && a.mcpServer != nil
+}
 
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	log.DefaultLogger.Debug(fmt.Sprintf("SubscribeStream: %s", req.Path))
@@ -22,6 +33,9 @@ func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamR
 
 	// Backwards compatibility for old paths
 	if strings.HasPrefix(req.Path, llmChatCompletionsPath) || strings.HasPrefix(req.Path, openAIChatCompletionsPath) {
+		resp.Status = backend.SubscribeStreamStatusOK
+	}
+	if a.allowMCPRequest(req.Path) {
 		resp.Status = backend.SubscribeStreamStatusOK
 	}
 	return resp, nil
@@ -71,6 +85,10 @@ func (a *App) runChatCompletionsStream(ctx context.Context, req *backend.RunStre
 	return nil
 }
 
+func (a *App) runMCPStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	return a.mcpServer.HandleStream(ctx, req, sender)
+}
+
 func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	log.DefaultLogger.Debug(fmt.Sprintf("RunStream: %s", req.Path), "data", string(req.Data))
 
@@ -85,10 +103,32 @@ func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, send
 		}
 		return nil
 	}
+	if a.allowMCPRequest(req.Path) {
+		if err := a.runMCPStream(ctx, req, sender); err != nil {
+			log.DefaultLogger.Error("error running stream", "err", err)
+			sendError(EventError{Error: err.Error()}, sender)
+		}
+		return nil
+	}
 	return fmt.Errorf("unknown stream path: %s", req.Path)
 }
 
-func (a *App) PublishStream(context.Context, *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+// PublishStream handles messages sent to the PublishStream handler.
+func (a *App) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	log.DefaultLogger.Debug(fmt.Sprintf("PublishStream: %s", req.Path), "data", string(req.Data))
+	// Handle messages for the MCP server.
+	if a.allowMCPRequest(req.Path) {
+		err := a.mcpServer.HandleMessage(ctx, req)
+		if errors.Is(err, mcp.ErrStreamNotFound) {
+			return &backend.PublishStreamResponse{
+				Status: backend.PublishStreamStatusNotFound,
+			}, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &backend.PublishStreamResponse{Status: backend.PublishStreamStatusOK}, nil
+	}
 	return &backend.PublishStreamResponse{
 		Status: backend.PublishStreamStatusPermissionDenied,
 	}, nil

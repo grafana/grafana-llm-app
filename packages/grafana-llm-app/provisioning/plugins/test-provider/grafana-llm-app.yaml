@@ -58,6 +58,8 @@ apps:
       #       # basicAuthUser: <user>
       # llmGateway:
       #   url: http://llm-gateway:4033
+      mcp:
+        enabled: true
 
     secureJsonData:
       # openAIKey: $OPENAI_API_KEY

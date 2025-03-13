@@ -17,6 +17,8 @@ apps:
           type: qdrant
           qdrant:
             address: qdrant:6334
+      mcp:
+        enabled: true
 
     secureJsonData:
       openAIKey: $OPENAI_API_KEY
