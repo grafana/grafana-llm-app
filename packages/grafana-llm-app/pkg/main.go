@@ -13,8 +13,11 @@ import (
 // the version to the Go linker using `-X main.version=x.y.z`.
 var version = "development"
 
-func main() {
+func init() {
 	plugin.PluginVersion = version
+}
+
+func main() {
 	log.DefaultLogger.Info("Starting plugin process", "version", version)
 	// Start listening to requests sent from Grafana. This call is blocking so
 	// it won't finish until Grafana shuts down the process or the plugin choose
