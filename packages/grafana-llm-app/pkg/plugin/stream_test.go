@@ -298,15 +298,15 @@ func TestRunStreamMCP(t *testing.T) {
 	resp, err := app.PublishStream(ctx, &backend.PublishStreamRequest{
 		Path: path,
 		Data: []byte(`{
-			"jsonrpc": "2.0",
-			"id": 1,
-			"method": "initialize",
-			"params": {
-		    "protocolVersion": "",
-		    "capabilities": {},
-				"clientInfo": {"name": "mcp-golang", "version": "0.1.2"}
-			}
-		}`),
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "",
+        "capabilities": {},
+        "clientInfo": {"name": "mcp-golang", "version": "0.1.2"}
+      }
+    }`),
 	})
 	require.NoError(t, err)
 	require.Equal(t, backend.PublishStreamStatusOK, resp.Status)
@@ -314,18 +314,18 @@ func TestRunStreamMCP(t *testing.T) {
 	resp, err = app.PublishStream(ctx, &backend.PublishStreamRequest{
 		Path: path,
 		Data: []byte(`{
-			"jsonrpc": "2.0",
-			"id": 1,
-			"method": "tools/list",
-			"params": {
-				"request": {
-					"method": "search/dashboards",
-					"params": {
-						"query": "test"
-					}
-				}
-			}
-		}`),
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "tools/list",
+      "params": {
+        "request": {
+          "method": "search/dashboards",
+          "params": {
+            "query": "test"
+          }
+        }
+      }
+    }`),
 	})
 	require.NoError(t, err)
 	require.Equal(t, backend.PublishStreamStatusOK, resp.Status)
@@ -333,16 +333,16 @@ func TestRunStreamMCP(t *testing.T) {
 	resp, err = app.PublishStream(ctx, &backend.PublishStreamRequest{
 		Path: path,
 		Data: []byte(`{
-			"jsonrpc": "2.0",
-			"id": 1,
-			"method": "tools/call",
-			"params": {
-		    "name": "search_dashboards",
-				"params": {
-					"query": "test"
-				}
-			}
-		}`),
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "tools/call",
+      "params": {
+        "name": "search_dashboards",
+        "params": {
+          "query": "test"
+        }
+      }
+    }`),
 	})
 	require.NoError(t, err)
 	require.Equal(t, backend.PublishStreamStatusOK, resp.Status)
