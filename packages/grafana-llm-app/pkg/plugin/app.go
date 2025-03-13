@@ -107,7 +107,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	app.healthCheckMutex = sync.Mutex{}
 
-	app.mcpServer = newMcpServer()
+	app.mcpServer = newMCPServer()
 
 	return &app, nil
 }
@@ -123,7 +123,7 @@ func (a *App) Dispose() {
 	}
 }
 
-func newMcpServer() *mcp.GrafanaLiveServer {
+func newMCPServer() *mcp.GrafanaLiveServer {
 	srv := server.NewMCPServer("grafana-llm-app", PluginVersion)
 	tools.AddDatasourceTools(srv)
 	tools.AddSearchTools(srv)
