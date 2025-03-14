@@ -18,6 +18,8 @@ const MCP_GRAFANA_PATH = 'mcp/grafana'
  * over Grafana Live.
  *
  * Use this with a client from `@modelcontextprotocol/sdk`.
+ *
+ * @experimental
  */
 export class GrafanaLiveTransport implements Transport {
   _grafanaLiveSrv: GrafanaLiveSrv = getGrafanaLiveSrv()
@@ -192,6 +194,8 @@ interface MCPClientProviderProps {
  *   </ErrorBoundary>
  * </Suspense>
  * ```
+ *
+ * @experimental
  */
 export function MCPClientProvider({
   appName,
@@ -226,6 +230,8 @@ export function MCPClientProvider({
  * Convenience hook to use an MCP client from a component.
  *
  * This hook should be used within an `MCPClientProvider`.
+ *
+ * @experimental
  */
 export function useMCPClient(): Client {
   const client = React.useContext(MCPClientContext);
@@ -235,7 +241,11 @@ export function useMCPClient(): Client {
   return client;
 }
 
-// Export the Client class from the SDK to make it easier to import.
+/**
+ * Re-export of the Client class from the MCP SDK.
+ *
+ * @experimental
+ */
 export { Client };
 
 /**
@@ -243,6 +253,8 @@ export { Client };
  *
  * This is useful when you want to use the MCP client with the LLM plugin's
  * `chatCompletions` or `streamChatCompletions` functions.
+ *
+ * @experimental
  */
 export function convertToolsToOpenAI(tools: MCPTool[]): OpenAITool[] {
   return tools.map(convertToolToOpenAI);
