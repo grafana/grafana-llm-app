@@ -211,7 +211,6 @@ export function MCPClientProvider({
       if (client) {
         client.close();
       }
-      console.log('deleting client');
       clientMap.delete(clientKey(appName, appVersion));
     };
   }, [client, appName, appVersion]);
