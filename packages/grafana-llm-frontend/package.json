@@ -1,7 +1,7 @@
 {
   "name": "@grafana/llm",
-  "version": "0.13.2",
-  "description": "A grafana library for llm",
+  "version": "0.14.0",
+  "description": "A library for working with LLMs in Grafana plugins",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
