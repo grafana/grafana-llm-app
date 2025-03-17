@@ -2,13 +2,15 @@ module github.com/grafana/grafana-llm-app
 
 go 1.24.0
 
+toolchain go1.24.1
+
 require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250108132429-8d7e1f158f65
-	github.com/grafana/grafana-plugin-sdk-go v0.270.0
+	github.com/grafana/grafana-plugin-sdk-go v0.274.0
 	github.com/grafana/incident-go v0.0.0-20250211094540-dc6a98fdae43
-	github.com/grafana/mcp-grafana v0.2.0
+	github.com/grafana/mcp-grafana v0.2.1
 	github.com/mark3labs/mcp-go v0.13.0
 	github.com/qdrant/go-client v1.13.0
 	github.com/sashabaranov/go-openai v1.38.0
