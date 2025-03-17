@@ -42,7 +42,7 @@ const MyComponent = (): JSX.Element => {
       .streamChatCompletions({
         // model: openai.Model.LARGE, // defaults to BASE, use larger model for longer context and complex tasks
         messages: [
-          { role: 'system', content: 'You are a cynical assistant.' },
+          { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
           { role: 'user', content: message },
         ],
       })
