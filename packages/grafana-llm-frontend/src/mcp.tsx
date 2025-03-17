@@ -27,7 +27,12 @@ export class GrafanaLiveTransport implements Transport {
   /**
    * The Grafana Live channel used by this transport.
    */
-  _channel: LiveChannelAddress;
+  _subscribeChannel: LiveChannelAddress;
+
+  /**
+   * The Grafana Live channel used by this transport.
+   */
+  _publishChannel: LiveChannelAddress;
 
   /**
    * The Grafana Live stream over which MCP messages are received.
@@ -46,10 +51,15 @@ export class GrafanaLiveTransport implements Transport {
       const pathId = uuid();
       path = `${MCP_GRAFANA_PATH}/${pathId}`;
     }
-    this._channel = {
+    this._subscribeChannel = {
       scope: LiveChannelScope.Plugin,
       namespace: LLM_PLUGIN_ID,
-      path,
+      path: `${path}/subscribe`,
+    };
+    this._publishChannel = {
+      scope: LiveChannelScope.Plugin,
+      namespace: LLM_PLUGIN_ID,
+      path: `${path}/publish`,
     };
   }
 
@@ -60,7 +70,7 @@ export class GrafanaLiveTransport implements Transport {
       );
     }
 
-    const stream = this._grafanaLiveSrv.getStream(this._channel)
+    const stream = this._grafanaLiveSrv.getStream(this._subscribeChannel)
       .pipe(filter((event) => isLiveChannelMessageEvent(event)));
     this._stream = stream;
     stream.subscribe((event) => {
@@ -79,11 +89,37 @@ export class GrafanaLiveTransport implements Transport {
     if (this._stream === undefined) {
       throw new Error("not connected");
     }
-    return this._grafanaLiveSrv.publish(this._channel, message)
-      .then(() => undefined)
-      .catch(error => {
-        this.onerror?.(error as Error)
-      });
+
+    // The Grafana Live service API for publishing messages sends a message
+    // to Grafana's HTTP API rather than over the live channel, for reasons
+    // that are unclear (but presumably justified in the default case).
+    // This is fine when there is only one Grafana instance, but when there
+    // are multiple (e.g. in a HA setup), the HTTP request will be routed
+    // to a random Grafana instance, while we need it to be routed to the
+    // same instance that the client is connected to (since there is a
+    // long-lived stream over the live channel).
+    //
+    // To work around this, we can drill down into the implementation details
+    // of the Grafana Live service and use the Centrifuge API directly to
+    // publish the message to the same stream that the client is connected to.
+    //
+    // This works in both single-instance and HA setups, but it's not ideal,
+    // since Grafana's Live implementation is not public and could in theory
+    // change in the future. Note that the implementation has been stable for
+    // several years, so this isn't _too_ heinous. Hopefully it won't
+    // be required for long though.
+    //
+    // TODO: replace this workaround with proper use of the public API,
+    // as in https://github.com/grafana/grafana-llm-app/pull/599,
+    // once https://github.com/grafana/grafana/pull/102325 is merged.
+    const centrifugeSubscription =
+      // @ts-expect-error
+      this._grafanaLiveSrv.deps?.centrifugeSrv?.getChannel?.(
+        this._publishChannel,
+      )?.subscription;
+    if (centrifugeSubscription) {
+      await centrifugeSubscription.publish(message);
+    }
   }
 
   async close(): Promise<void> {

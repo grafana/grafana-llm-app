@@ -17,6 +17,13 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+const (
+	// subscribeSuffix is the suffix for the subscribe channel endpoint.
+	subscribeSuffix = "/subscribe"
+	// publishSuffix is the suffix for the publish channel endpoint.
+	publishSuffix = "/publish"
+)
+
 // ErrStreamNotFound is an error returned when a publish message is sent to a path
 // without a corresponding session (i.e. a stream without any subscribers).
 var ErrStreamNotFound = errors.New("stream not found")
@@ -40,7 +47,7 @@ type GrafanaLiveServer struct {
 	// server is the MCP server that will handle the MCP messages.
 	server *server.MCPServer
 	// sessions is a map of active Grafana Live connections, keyed by the path
-	// of the connection.
+	// of the channel with the suffix "/subscribe" or "/publish" removed.
 	sessions sync.Map
 	// contextFunc is a function that will be called to modify the context before
 	// handling each MCP message.
@@ -92,10 +99,11 @@ type liveSession struct {
 // HandleStream handles a new Grafana Live session.
 func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	// Store the session in the sessions map.
-	s.sessions.Store(req.Path, &liveSession{
+	path := strings.TrimSuffix(req.Path, subscribeSuffix)
+	s.sessions.Store(path, &liveSession{
 		sender: sender,
 	})
-	defer s.sessions.Delete(req.Path)
+	defer s.sessions.Delete(path)
 	// Block until the stream is closed or the Grafana Live server is shutting down.
 	for {
 		select {
@@ -109,8 +117,9 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 
 // HandleMessage handles a Grafana Live message, sent via the PublishStream handler.
 func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.PublishStreamRequest) error {
+	path := strings.TrimSuffix(req.Path, publishSuffix)
 	// Get the session from the sessions map.
-	sessionI, ok := s.sessions.Load(req.Path)
+	sessionI, ok := s.sessions.Load(path)
 	if !ok {
 		return ErrStreamNotFound
 	}
