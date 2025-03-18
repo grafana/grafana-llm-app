@@ -241,7 +241,7 @@ const MyComponent = (): JSX.Element => {
       .streamChatCompletions({
         model: llms.openai.Model.BASE,
         messages: [
-          { role: 'system', content: 'You are a cynical assistant.' },
+          { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
           { role: 'user', content: message },
         ],
       })

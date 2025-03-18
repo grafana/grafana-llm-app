@@ -86,7 +86,7 @@ const BasicChatTest = () => {
     if (!useStream) {
       setToolCalls(new Map());
       const messages: openai.Message[] = [
-        { role: 'system', content: 'You are a cynical assistant.' },
+        { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
         { role: 'user', content: message },
       ];
       // Make a single request to the LLM.
@@ -142,7 +142,7 @@ const BasicChatTest = () => {
     } else {
       // Stream the completions. Each element is the next stream chunk.
       const messages: llm.Message[] = [
-        { role: 'system', content: 'You are a cynical assistant.' },
+        { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
         { role: 'user', content: message },
       ];
       let stream = llm.streamChatCompletions({
