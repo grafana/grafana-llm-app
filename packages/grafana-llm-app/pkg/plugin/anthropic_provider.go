@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -60,6 +61,15 @@ func (p *anthropicProvider) Models(ctx context.Context) (ModelResponse, error) {
 	}, nil
 }
 
+func convertToAnthropicToolUse(toolCall openai.ToolCall) anthropic.ToolUseBlockParam {
+	var args map[string]any
+	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+		log.DefaultLogger.Error("error unmarshalling tool call arguments, using empty map", "err", err)
+		args = make(map[string]any)
+	}
+	return anthropic.NewToolUseBlockParam(toolCall.ID, toolCall.Function.Name, args)
+}
+
 func convertToAnthropicMessages(messages []openai.ChatCompletionMessage) ([]anthropic.MessageParam, string) {
 	anthropicMessages := make([]anthropic.MessageParam, 0, len(messages))
 	var systemPrompt string
@@ -71,18 +81,38 @@ func convertToAnthropicMessages(messages []openai.ChatCompletionMessage) ([]anth
 
 	for _, msg := range messages {
 		switch msg.Role {
-		case "user":
+		case openai.ChatMessageRoleUser:
 			anthropicMessages = append(anthropicMessages, anthropic.NewUserMessage(
 				anthropic.NewTextBlock(msg.Content),
 			))
-		case "assistant":
-			// Skip assistant messages as they'll be included in the response
-			continue
-		case "system":
+		case openai.ChatMessageRoleAssistant:
+			if len(msg.ToolCalls) > 0 {
+				toolCalls := make([]anthropic.ContentBlockParamUnion, 0, len(msg.ToolCalls))
+				for _, toolCall := range msg.ToolCalls {
+					toolCalls = append(toolCalls, convertToAnthropicToolUse(toolCall))
+				}
+				anthropicMessages = append(anthropicMessages, anthropic.NewAssistantMessage(
+					toolCalls...,
+				))
+			}
+			if len(msg.Content) > 0 {
+				anthropicMessages = append(anthropicMessages, anthropic.NewAssistantMessage(
+					anthropic.NewTextBlock(msg.Content),
+				))
+			}
+		case openai.ChatMessageRoleTool:
+			anthropicMessages = append(anthropicMessages, anthropic.NewUserMessage(
+				anthropic.NewToolResultBlock(msg.ToolCallID, msg.Content, false)),
+			)
+
+		case openai.ChatMessageRoleSystem:
 			// System messages are handled separately
 			continue
 		}
 	}
+
+	jdoc, _ := json.Marshal(anthropicMessages)
+	log.DefaultLogger.Info("anthropic messages", "messages", string(jdoc))
 
 	return anthropicMessages, systemPrompt
 }
@@ -117,7 +147,7 @@ func convertToOpenAIResponse(resp *anthropic.Message, model string) openai.ChatC
 						},
 					},
 				},
-				FinishReason: openai.FinishReasonFunctionCall,
+				FinishReason: openai.FinishReasonToolCalls,
 			})
 		}
 	}
@@ -136,10 +166,17 @@ func convertToOpenAIResponse(resp *anthropic.Message, model string) openai.ChatC
 }
 
 func convertToAnthropicTool(tool openai.Tool) anthropic.ToolParam {
+	parameters := tool.Function.Parameters
+	if parameters == nil {
+		parameters = map[string]any{
+			"type":       "object",
+			"properties": nil,
+		}
+	}
 	return anthropic.ToolParam{
 		Name:        anthropic.F(tool.Function.Name),
 		Description: anthropic.F(tool.Function.Description),
-		InputSchema: anthropic.F(tool.Function.Parameters),
+		InputSchema: anthropic.F(parameters),
 	}
 }
 

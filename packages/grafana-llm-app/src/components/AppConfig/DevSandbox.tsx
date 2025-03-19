@@ -85,7 +85,7 @@ const BasicChatTest = () => {
     setFinished(false);
     if (!useStream) {
       setToolCalls(new Map());
-      const messages: openai.Message[] = [
+      let messages: openai.Message[] = [
         { role: 'system', content: 'You are a cynical assistant.' },
         { role: 'user', content: message },
       ];
@@ -96,11 +96,18 @@ const BasicChatTest = () => {
         tools: mcp.convertToolsToOpenAI(tools),
       });
 
+      // We may need to include these messages in future requests.
+      messages = messages.concat(response.choices.map(c => c.message));
+      let replySoFar = messages.filter(m => m.role === 'assistant' && m.content !== undefined)
+        .map(m => m.content)
+        .join('\n\n');
+
       // Handle any function calls, looping until there are no more.
-      let functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
+      // Anthropic/Claude may respond with `choices` that are not tool calls either before or after tool calls,
+      // so we need to look through all choices.
+      let functionCalls = response.choices.flatMap(x => x.message.tool_calls?.filter(tc => tc.type === 'function') ?? []);
       while (functionCalls.length > 0) {
-        // We need to include the 'tool_call' request in future responses.
-        messages.push(response.choices[0].message);
+        setReply(replySoFar);
 
         // Submit all tool requests.
         await Promise.all(functionCalls.map(async (fc) => {
@@ -132,10 +139,14 @@ const BasicChatTest = () => {
           messages,
           tools: mcp.convertToolsToOpenAI(tools),
         });
-        functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
+        functionCalls = response.choices.flatMap(x => x.message.tool_calls?.filter(tc => tc.type === 'function') ?? []);
+        messages = messages.concat(response.choices.map(c => c.message));
+        replySoFar = messages.filter(m => m.role === 'assistant' && m.content !== undefined)
+          .map(m => m.content)
+          .join('\n\n');
       }
       // No more function calls, so we can just use the final response.
-      setReply(response.choices[0].message.content!);
+      setReply(replySoFar);
       setStarted(false);
       setFinished(true);
       return { enabled, tools };
@@ -287,7 +298,12 @@ const BasicChatTest = () => {
             <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
           </Stack>
           <br />
-          {!useStream && <div>{loading ? <Spinner /> : reply}</div>}
+          {!useStream && (
+            <div>
+              {loading && <Spinner />}
+              <p style={{ whiteSpace: 'pre-wrap' }}>{reply}</p>
+            </div>
+          )}
           {useStream && <div>{reply}</div>}
           <Stack direction="row" justifyContent="space-evenly">
             <div>{started ? "Response is started" : "Response is not started"}</div>
