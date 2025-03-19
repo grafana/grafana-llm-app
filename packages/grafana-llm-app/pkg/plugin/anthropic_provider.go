@@ -88,26 +88,58 @@ func convertToAnthropicMessages(messages []openai.ChatCompletionMessage) ([]anth
 }
 
 func convertToOpenAIResponse(resp *anthropic.Message, model string) openai.ChatCompletionResponse {
+	choices := make([]openai.ChatCompletionChoice, 0, len(resp.Content))
+	for _, block := range resp.Content {
+		switch block.Type {
+		case anthropic.ContentBlockTypeText:
+			choices = append(choices, openai.ChatCompletionChoice{
+				Index: 0,
+				Message: openai.ChatCompletionMessage{
+					Role:    "assistant",
+					Content: block.Text,
+				},
+				FinishReason: openai.FinishReasonStop,
+			})
+
+		case anthropic.ContentBlockTypeToolUse:
+			choices = append(choices, openai.ChatCompletionChoice{
+				Index: 0,
+				Message: openai.ChatCompletionMessage{
+					Role: "assistant",
+					ToolCalls: []openai.ToolCall{
+						{
+							Type: openai.ToolTypeFunction,
+							ID:   block.ID,
+							Function: openai.FunctionCall{
+								Name:      block.Name,
+								Arguments: string(block.Input),
+							},
+						},
+					},
+				},
+				FinishReason: openai.FinishReasonFunctionCall,
+			})
+		}
+	}
 	return openai.ChatCompletionResponse{
 		ID:      resp.ID,
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Model:   model,
-		Choices: []openai.ChatCompletionChoice{
-			{
-				Index: 0,
-				Message: openai.ChatCompletionMessage{
-					Role:    "assistant",
-					Content: resp.Content[0].Text,
-				},
-				FinishReason: "stop",
-			},
-		},
+		Choices: choices,
 		Usage: openai.Usage{
 			PromptTokens:     int(resp.Usage.InputTokens),
 			CompletionTokens: int(resp.Usage.OutputTokens),
 			TotalTokens:      int(resp.Usage.InputTokens + resp.Usage.OutputTokens),
 		},
+	}
+}
+
+func convertToAnthropicTool(tool openai.Tool) anthropic.ToolParam {
+	return anthropic.ToolParam{
+		Name:        anthropic.F(tool.Function.Name),
+		Description: anthropic.F(tool.Function.Description),
+		InputSchema: anthropic.F(tool.Function.Parameters),
 	}
 }
 
@@ -121,11 +153,20 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 		req.MaxTokens = 1000
 	}
 
+	// Convert tools to `anthropic.ToolUnionUnionParam`, not `anthropic.ToolParam`
+	// despite what the Anthropic README says.
+	// See https://github.com/anthropics/anthropic-sdk-go/issues/138.
+	tools := make([]anthropic.ToolUnionUnionParam, 0, len(req.Tools))
+	for _, tool := range req.Tools {
+		tools = append(tools, convertToAnthropicTool(tool))
+	}
+
 	// Create Anthropic request
 	params := anthropic.MessageNewParams{
 		Model:     anthropic.F(model),
 		MaxTokens: anthropic.F(int64(req.MaxTokens)),
 		Messages:  anthropic.F(messages),
+		Tools:     anthropic.F(tools),
 	}
 
 	if systemPrompt != "" {
@@ -152,10 +193,19 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 		req.MaxTokens = 1000
 	}
 
+	// Convert tools to `anthropic.ToolUnionUnionParam`, not `anthropic.ToolParam`
+	// despite what the Anthropic README says.
+	// See https://github.com/anthropics/anthropic-sdk-go/issues/138.
+	tools := make([]anthropic.ToolUnionUnionParam, 0, len(req.Tools))
+	for _, tool := range req.Tools {
+		tools = append(tools, convertToAnthropicTool(tool))
+	}
+
 	params := anthropic.MessageNewParams{
 		Model:     anthropic.F(req.Model.toAnthropic(p.models)),
 		MaxTokens: anthropic.F(int64(req.MaxTokens)),
 		Messages:  anthropic.F(messages),
+		Tools:     anthropic.F(tools),
 	}
 
 	if systemPrompt != "" {
@@ -179,9 +229,54 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 				return
 			}
 
-			switch delta := event.Delta.(type) {
-			case anthropic.ContentBlockDeltaEventDelta:
-				if delta.Text != "" {
+			// See https://docs.anthropic.com/en/api/messages-streaming#raw-http-stream-response
+			// for docs on how this flow works.
+			switch event := event.AsUnion().(type) {
+			case anthropic.MessageStartEvent:
+			// We don't need to emit anything here.
+
+			case anthropic.ContentBlockStartEvent:
+				// This could be text or a tool call.
+				switch block := event.ContentBlock.AsUnion().(type) {
+				case anthropic.TextBlock:
+				// For text there's nothing useful in the initial start block.
+
+				case anthropic.ThinkingBlock:
+				case anthropic.RedactedThinkingBlock:
+				// Not sure how to handle these?
+
+				case anthropic.ToolUseBlock:
+					// Emit a delta indicating the start of a tool call.
+					// This will contain the tool call ID and the tool name, but not the arguments;
+					// those will come in later deltas.
+					c <- ChatCompletionStreamResponse{
+						ChatCompletionStreamResponse: openai.ChatCompletionStreamResponse{
+							ID:     message.ID,
+							Object: "chat.completion.chunk",
+							Choices: []openai.ChatCompletionStreamChoice{
+								{
+									Index: 0,
+									Delta: openai.ChatCompletionStreamChoiceDelta{
+										Content: block.Name,
+										ToolCalls: []openai.ToolCall{
+											{
+												Type: openai.ToolTypeFunction,
+												ID:   block.ID,
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+
+				}
+
+			case anthropic.ContentBlockDeltaEvent:
+				// This is the main delta event. For text it contains the text delta. For tool calls
+				// it contains the arguments to the tool call as partial JSON.
+				switch delta := event.Delta.AsUnion().(type) {
+				case anthropic.TextDelta:
 					c <- ChatCompletionStreamResponse{
 						ChatCompletionStreamResponse: openai.ChatCompletionStreamResponse{
 							ID:      message.ID,
@@ -194,12 +289,75 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 									Delta: openai.ChatCompletionStreamChoiceDelta{
 										Content: delta.Text,
 									},
-									FinishReason: openai.FinishReasonNull,
 								},
 							},
 						},
 					}
+				case anthropic.InputJSONDelta:
+					// Emit the partial JSON of the arguments.
+					// This should match the output here:
+					// https://platform.openai.com/docs/guides/function-calling?api-mode=chat&strict-mode=enabled#streaming.
+					c <- ChatCompletionStreamResponse{
+						ChatCompletionStreamResponse: openai.ChatCompletionStreamResponse{
+							ID:     message.ID,
+							Object: "chat.completion.chunk",
+							Choices: []openai.ChatCompletionStreamChoice{
+								{
+									Index: 0,
+									Delta: openai.ChatCompletionStreamChoiceDelta{
+										Content: string(delta.PartialJSON),
+										ToolCalls: []openai.ToolCall{
+											{
+												Function: openai.FunctionCall{
+													Arguments: string(delta.PartialJSON),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+
+				// TODO: do we need to handle these?
+				case anthropic.CitationsDelta:
+				case anthropic.ThinkingDelta:
+				case anthropic.SignatureDelta:
+
 				}
+			case anthropic.ContentBlockStopEvent:
+			// End of the current block. This doesn't contain anything useful.
+
+			case anthropic.MessageDeltaEvent:
+				// This contains the finish reason.
+				var finishReason openai.FinishReason
+				switch event.Delta.StopReason {
+				// https://docs.anthropic.com/en/api/messages#response-stop-reason
+				case anthropic.MessageDeltaEventDeltaStopReasonToolUse:
+					finishReason = openai.FinishReasonToolCalls
+				case anthropic.MessageDeltaEventDeltaStopReasonEndTurn:
+					finishReason = openai.FinishReasonStop
+				case anthropic.MessageDeltaEventDeltaStopReasonMaxTokens:
+					finishReason = openai.FinishReasonLength
+				case anthropic.MessageDeltaEventDeltaStopReasonStopSequence:
+					// I don't think this has a parallel in OpenAI.
+					finishReason = openai.FinishReasonStop
+				}
+				c <- ChatCompletionStreamResponse{
+					ChatCompletionStreamResponse: openai.ChatCompletionStreamResponse{
+						ID:     message.ID,
+						Object: "chat.completion.chunk",
+						Choices: []openai.ChatCompletionStreamChoice{
+							{
+								Index:        0,
+								Delta:        openai.ChatCompletionStreamChoiceDelta{},
+								FinishReason: finishReason,
+							},
+						},
+					},
+				}
+			case anthropic.MessageStopEvent:
+				// This is empty.
 			}
 		}
 
