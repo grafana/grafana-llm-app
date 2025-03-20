@@ -99,36 +99,48 @@ export class GrafanaLiveTransport implements Transport {
     // same instance that the client is connected to (since there is a
     // long-lived stream over the live channel).
     //
-    // To work around this, we can drill down into the implementation details
-    // of the Grafana Live service and use the Centrifuge API directly to
-    // publish the message to the same stream that the client is connected to.
-    //
-    // This works in both single-instance and HA setups, but it's not ideal,
-    // since Grafana's Live implementation is not public and could in theory
-    // change in the future. Note that the implementation has been stable for
-    // several years, so this isn't _too_ heinous. Hopefully it won't
-    // be required for long though.
-    //
-    // TODO: replace this workaround with proper use of the public API,
-    // as in https://github.com/grafana/grafana-llm-app/pull/599,
-    // once https://github.com/grafana/grafana/pull/102325 is merged.
+    // We can use the `useSocket` argument when trying to publish to the
+    // live channel to force the use of the Websocket instead of the HTTP API.
+    // This will work in both single-instance and HA setups. However, it's only
+    // available in Grafana 11.6.0 and later. We can check for this by checking
+    // if the `publish` method has a third argument, which is the `options`
+    // argument.
+    const hasPublishOptions = this._grafanaLiveSrv.publish?.length === 3;
+    if (hasPublishOptions) {
+      // TODO: use `LivePublishOptions` from `@grafana/runtime` once
+      // Grafana 11.6.0 is released. We can remove these `@ts-expect-error`
+      // comments once that happens.
+      //@ts-expect-error
+      const options: LivePublishOptions = { useSocket: true };
+      //@ts-expect-error
+      return this._grafanaLiveSrv.publish(this._publishChannel, message, options);
+    }
+
+    // If that option isn't available, we can first fall back to trying to
+    // drilling down into the implementation details of the Grafana Live
+    // service and using the Centrifuge API directly to publish the message
+    // to the same stream that the client is connected to.
+    // Realistically this should work in all versions of Grafana older than
+    // 9, which is much further back than this plugin even supports, so should
+    // always work.
     const centrifugeSubscription =
       // @ts-expect-error
       this._grafanaLiveSrv.deps?.centrifugeSrv?.getChannel?.(
         this._publishChannel,
       )?.subscription;
     if (centrifugeSubscription) {
-      await centrifugeSubscription.publish(message);
-    } else {
-      // If the centrifuge subscription is not available, fall back to the official
-      // HTTP publish method. This won't work in HA setups but it's better than nothing.
-      console.warn(
-        "Websocket subscription not available, falling back to HTTP publish. " +
-        "This may fail in HA setups. If you see this, please create an issue at " +
-        "https://github.com/grafana/grafana-llm-app/issues/new."
-      );
-      await this._grafanaLiveSrv.publish(this._publishChannel, message);
+      return centrifugeSubscription.publish(message);
     }
+
+    // If the centrifuge subscription is still not available for some reason,
+    // fall back to the official HTTP publish method. This won't work in HA
+    // setups but it's better than nothing.
+    console.warn(
+      "Websocket subscription not available, falling back to HTTP publish. " +
+      "This may fail in HA setups. If you see this, please create an issue at " +
+      "https://github.com/grafana/grafana-llm-app/issues/new."
+    );
+    await this._grafanaLiveSrv.publish(this._publishChannel, message);
   }
 
   async close(): Promise<void> {
