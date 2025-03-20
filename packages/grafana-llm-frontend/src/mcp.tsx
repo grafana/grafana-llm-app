@@ -119,6 +119,15 @@ export class GrafanaLiveTransport implements Transport {
       )?.subscription;
     if (centrifugeSubscription) {
       await centrifugeSubscription.publish(message);
+    } else {
+      // If the centrifuge subscription is not available, fall back to the official
+      // HTTP publish method. This won't work in HA setups but it's better than nothing.
+      console.warn(
+        "Websocket subscription not available, falling back to HTTP publish. " +
+        "This may fail in HA setups. If you see this, please create an issue at " +
+        "https://github.com/grafana/grafana-llm-app/issues/new."
+      );
+      await this._grafanaLiveSrv.publish(this._publishChannel, message);
     }
   }
 
