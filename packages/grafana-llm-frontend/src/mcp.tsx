@@ -105,7 +105,7 @@ export class GrafanaLiveTransport implements Transport {
     // available in Grafana 11.6.0 and later. We can check for this by checking
     // if the `publish` method has a third argument, which is the `options`
     // argument.
-    const hasPublishOptions = this._grafanaLiveSrv.publish?.length === 3;
+    const hasPublishOptions = this._grafanaLiveSrv.publish?.length >= 3;
     if (hasPublishOptions) {
       // TODO: use `LivePublishOptions` from `@grafana/runtime` once
       // Grafana 11.6.0 is released. We can remove these `@ts-expect-error`
