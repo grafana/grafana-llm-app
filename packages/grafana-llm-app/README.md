@@ -1,9 +1,7 @@
-# Grafana LLM App (Public Preview)
+# Grafana LLM App
 
 A Grafana plugin designed to centralize access to LLMs, providing authentication, proxying, streaming, and custom extensions.
 Installing this plugin will enable various pieces of LLM-based functionality throughout Grafana.
-
-Note: The Grafana LLM App plugin is currently in [Public preview](https://grafana.com/docs/release-life-cycle/). Grafana Labs offers support on a best-effort basis, and there might be breaking changes before the feature is generally available.
 
 ## Install the plugin on Grafana Cloud
 
