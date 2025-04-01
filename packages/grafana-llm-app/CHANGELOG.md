@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+## 0.16.0
+
+- chore: bump github.com/grafana/mcp-grafana to 0.2.4 by @sd2k in #618. This adds more tools to retrieve dashboards and OnCall details.
+- Switch to Anthropic's OpenAI-compatible API by @gitdoluquita in #617. This PR also adds helper functions to execute tool calls with streaming endpoints.
+
+## 0.15.0
+
+- removed mentions for public preview from README.md by @Maurice-L-R in #610
+- Bump a full minor version to do a release so we can publish a version out of public preview by @SandersAaronD in #612
+
+## 0.14.1
+
+- fix: improve dev sandbox prompt by @sd2k in #598
+- workaround: send publish messages over Websocket by @sd2k in #601
+- fix: use public API to publish, where possible by @sd2k in #603
+- fix: check for >= 3 args in publish, not === 3 by @sd2k in #604
+- chore: bump github.com/grafana/mcp-grafana to 0.2.2 by @sd2k in #605
+- chore: add CODEOWNERS by @sd2k in #607
+
+## 0.14.0
+
+- Allow enabling of dev sandbox via jsonData by @csmarchbanks in #595
+- feat: run MCP server in backend using Grafana Live by @sd2k in #574
+- feat: add MCP helper functions to the @grafana/llm package by @sd2k in #590
+
+## 0.13.2
+
+- docs: Add guide for implementing new LLM providers by @gitdoluquita in #573
+- Bug: duplicate healthcheck details for backwards compatiblity by @edwardcqian in #585
+
+## 0.13.1
+
+- update action versions in plugin-release by @csmarchbanks in #577
+- fix: update build:all command to also build plugin frontend by @sd2k in #578
+
 ## 0.12.0
 
 - Add support for OpenAI assistant functionality
