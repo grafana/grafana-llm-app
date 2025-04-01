@@ -19,7 +19,7 @@ import { getBackendSrv, getGrafanaLiveSrv, logDebug /* logError */ } from '@graf
 import React, { useEffect, useCallback, useState } from 'react';
 import { useAsync } from 'react-use';
 import { pipe, Observable, UnaryFunction, Subscription } from 'rxjs';
-import { filter, map, scan, takeWhile, tap } from 'rxjs/operators';
+import { filter, map, scan, takeWhile, tap, toArray } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 
 import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE, setLLMPluginVersion } from './constants';
@@ -433,13 +433,44 @@ export function streamChatCompletions(
       LiveChannelMessageEvent<ChatCompletionsResponse<ChatCompletionsChunk>>
     >;
   return messages.pipe(
+    // Filter out messages that don't have the expected structure
+    filter((event) => {
+      // Skip messages with null choices
+      if (!event.message.choices) {
+        return false;
+      }
+      return true;
+    }),
     tap((event) => {
       if (isErrorResponse(event.message)) {
         throw new Error(event.message.error);
       }
     }),
-    takeWhile((event) => isErrorResponse(event.message) || !isDoneMessage(event.message.choices[0].delta)),
-    map((event) => event.message)
+    // Stop the stream when we get a done message or when the finish_reason is "stop"
+    takeWhile((event) => {
+      // If it's an error response, we should continue to let the tap operator handle it
+      if (isErrorResponse(event.message)) {
+        return true;
+      }
+      
+      // Check for the explicit done message
+      if (event.message.choices && 
+          event.message.choices[0].delta && 
+          'done' in event.message.choices[0].delta && 
+          event.message.choices[0].delta.done === true) {
+        return false;
+      }
+      
+      // Check for finish_reason = "stop"
+      if (event.message.choices && 
+          'finish_reason' in event.message.choices[0] &&
+          event.message.choices[0].finish_reason === "stop") {
+        return false;
+      }
+      
+      return true;
+    }),
+    map((event) => event.message),
   );
 }
 
@@ -664,4 +695,68 @@ export function useLLMStream(
     error,
     value,
   };
+}
+
+/**
+ * An rxjs operator that accumulates tool call messages from a stream of chat completion responses into a complete tool call message.
+ * 
+ * @returns An observable that emits the accumulated tool call message when complete.
+ * @example
+ * const stream = streamChatCompletions({...}).pipe(
+ *   accumulateToolCalls()
+ * );
+ * stream.subscribe({
+ *   next: (toolCallMessage) => console.log('Received complete tool call:', toolCallMessage),
+ *   error: console.error
+ * });
+ */
+export function accumulateToolCalls(): UnaryFunction<
+  Observable<ChatCompletionsResponse<ChatCompletionsChunk>>,
+  Observable<ToolCallsMessage>
+> {
+  return pipe(
+    filter((response: ChatCompletionsResponse<ChatCompletionsChunk>) => isToolCallsMessage(response.choices[0].delta)),
+    // Collect all tool call chunks
+    toArray(),
+    // Process the array to reconstruct the complete tool call message
+    map((responses: Array<ChatCompletionsResponse<ChatCompletionsChunk>>) => {
+      const toolCallChunks = responses.map(r => r.choices[0].delta as ToolCallsMessage);
+      return recoverToolCallMessage(toolCallChunks);
+    })
+  );
+}
+
+/**
+ * Recovers a complete tool call message from individual chunks.
+ * 
+ * @param toolCallMessages - Array of tool call message chunks
+ * @returns A complete tool call message with all chunks combined
+ */
+export function recoverToolCallMessage(toolCallMessages: ToolCallsMessage[]): ToolCallsMessage {
+  const recoveredToolCallMessage: ToolCallsMessage = {
+    role: 'assistant',
+    tool_calls: [],
+  };
+
+  for (const msg of toolCallMessages) {
+    for (const tc of msg.tool_calls) {
+      if (tc.index! >= recoveredToolCallMessage.tool_calls.length) {
+        recoveredToolCallMessage.tool_calls.push({ 
+          ...tc, 
+          function: { ...tc.function, arguments: tc.function.arguments ?? '' } 
+        });
+      } else {
+        recoveredToolCallMessage.tool_calls[tc.index!].function.arguments += tc.function.arguments ?? '';
+      }
+    }
+  }
+
+  // Ensure final arguments are never empty
+  for (const tc of recoveredToolCallMessage.tool_calls) {
+    if (!tc.function.arguments) {
+      tc.function.arguments = '{}';
+    }
+  }
+
+  return recoveredToolCallMessage;
 }

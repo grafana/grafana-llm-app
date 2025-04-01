@@ -1,8 +1,8 @@
 import React, { Suspense, useState } from "react";
-import { Button, FieldSet, Icon, LoadingPlaceholder, Modal, Spinner, Stack, TextArea } from "@grafana/ui";
+import { Button, FieldSet, Icon, LoadingPlaceholder, Modal, Spinner, Stack, TextArea, CollapsableSection } from "@grafana/ui";
 import { useAsync } from "react-use";
-import { finalize, lastValueFrom, map, partition, startWith, toArray } from "rxjs";
-import { llm, mcp, openai } from "@grafana/llm";
+import { finalize, lastValueFrom, partition, startWith } from "rxjs";
+import { llm, mcp } from "@grafana/llm";
 import { CallToolResultSchema, Tool } from '@modelcontextprotocol/sdk/types';
 
 interface RenderedToolCall {
@@ -10,6 +10,161 @@ interface RenderedToolCall {
   arguments: string;
   running: boolean;
   error?: string;
+  response?: any;
+}
+
+// Helper function to handle tool calls
+async function handleToolCall(
+  fc: { function: { name: string; arguments: string }; id: string },
+  client: any,
+  toolCalls: Map<string, RenderedToolCall>,
+  setToolCalls: (calls: Map<string, RenderedToolCall>) => void,
+  messages: llm.Message[]
+) {
+  const { function: f, id } = fc;
+  console.log('f', f);
+  
+  setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: true })));
+  
+  const args = JSON.parse(f.arguments);
+
+  try{
+  const response = await client.callTool({ name: f.name, arguments: args });
+  const toolResult = CallToolResultSchema.parse(response);
+    const textContent = toolResult.content.filter(c => c.type === 'text').map(c => c.text).join('');
+    messages.push({ role: 'tool', tool_call_id: id, content: textContent });
+    setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false, response })));
+  } catch (e: any) {
+    const error = e.message ?? e.toString();
+    messages.push({ role: 'tool', tool_call_id: id, content: error });
+    setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false, error })));
+  }
+}
+
+// Helper function to handle non-streaming chat completions
+async function handleNonStreamingChat(
+  message: string,
+  tools: Tool[],
+  client: any,
+  toolCalls: Map<string, RenderedToolCall>,
+  setToolCalls: (calls: Map<string, RenderedToolCall>) => void,
+  setReply: (reply: string) => void,
+  setStarted: (started: boolean) => void,
+  setFinished: (finished: boolean) => void
+) {
+  setToolCalls(new Map());
+  const messages: llm.Message[] = [
+    { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
+    { role: 'user', content: message },
+  ];
+
+  let response = await llm.chatCompletions({
+    model: llm.Model.BASE,
+    messages,
+    tools: mcp.convertToolsToOpenAI(tools),
+  });
+
+  let functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
+  
+  while (functionCalls.length > 0) {
+    messages.push(response.choices[0].message);
+    await Promise.all(functionCalls.map(fc => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
+    
+    response = await llm.chatCompletions({
+      model: llm.Model.LARGE,
+      messages,
+      tools: mcp.convertToolsToOpenAI(tools),
+    });
+    functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
+  }
+
+  setReply(response.choices[0].message.content!);
+  setStarted(false);
+  setFinished(true);
+}
+
+// Helper function to handle streaming chat completions
+async function handleStreamingChat(
+  message: string,
+  tools: Tool[],
+  client: any,
+  toolCalls: Map<string, RenderedToolCall>,
+  setToolCalls: (calls: Map<string, RenderedToolCall>) => void,
+  setReply: (reply: string) => void,
+  setStarted: (started: boolean) => void,
+  setFinished: (finished: boolean) => void
+) {
+  const messages: llm.Message[] = [
+    { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
+    { role: 'user', content: message },
+  ];
+
+  let stream = llm.streamChatCompletions({
+    model: llm.Model.LARGE,
+    messages,
+    tools: mcp.convertToolsToOpenAI(tools),
+  });
+
+  let [toolCallsStream, otherMessages] = partition(
+    stream,
+    (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
+  );
+
+  let contentMessages = otherMessages.pipe(
+    llm.accumulateContent(),
+    finalize(() => {
+      console.log('stream finalized');
+      setStarted(false);
+      setFinished(true);
+    })
+  );
+
+  // Subscribe to content messages immediately
+  contentMessages.subscribe(setReply);
+
+  let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
+    llm.accumulateToolCalls()
+  ));
+
+  while (toolCallMessages.tool_calls.length > 0) {
+    messages.push(toolCallMessages);
+    
+    const tcs = toolCallMessages.tool_calls.filter(tc => tc.type === 'function');
+    await Promise.all(tcs.map(fc => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
+
+    // `messages` now contains all tool call request and responses so far.
+    // Send it back to the LLM to get its response given those tool calls.
+    stream = llm.streamChatCompletions({
+      model: llm.Model.LARGE,
+      messages,
+      tools: mcp.convertToolsToOpenAI(tools),
+    });
+
+    [toolCallsStream, otherMessages] = partition(
+      stream,
+      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
+    );
+
+    // Include a pretend 'first message' in the reply, in case the model chose to send anything before its tool calls.
+    const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
+      choices: [{ delta: { role: 'assistant', content: '' } }],
+    };
+
+    contentMessages = otherMessages.pipe(
+      //@ts-expect-error
+      startWith(firstMessage),
+      llm.accumulateContent(),
+      finalize(() => {
+        console.log('stream finalized');
+      })
+    );
+
+    contentMessages.subscribe(setReply);
+
+    toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
+      llm.accumulateToolCalls()
+    ));
+  }
 }
 
 function AvailableTools({ tools }: { tools: Tool[] }) {
@@ -30,17 +185,51 @@ function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) 
     <div>
       <h4>Tool Calls</h4>
       {toolCalls.size === 0 && <div>No tool calls yet</div>}
-      <ul>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
         {Array.from(toolCalls.values()).map((toolCall, i) => (
-          <li key={i}>
-            <div>
-              {toolCall.name}
-              {' '}
-              (<code>{toolCall.arguments}</code>)
-              {' '}
-              <Icon name={toolCall.running ? 'spinner' : 'check'} size='sm' />
-              {toolCall.error && <code>{toolCall.error}</code>}
+          <li key={i} style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--background-color-secondary)', borderRadius: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontWeight: 500 }}>{toolCall.name}</span>
+              <code style={{ backgroundColor: 'var(--background-color-primary)', padding: '2px 6px', borderRadius: '4px' }}>
+                {toolCall.arguments}
+              </code>
+              {toolCall.running ? (
+                <Spinner size="sm" />
+              ) : (
+                <Icon name="check" size="sm" style={{ color: 'var(--success-color)' }} />
+              )}
             </div>
+            {toolCall.error && (
+              <div style={{ 
+                backgroundColor: 'var(--error-background)', 
+                color: 'var(--error-text-color)',
+                padding: '8px',
+                borderRadius: '4px',
+                marginTop: '4px',
+                fontSize: '0.9em'
+              }}>
+                <Icon name="exclamation-triangle" size="sm" style={{ marginRight: '4px' }} />
+                {toolCall.error}
+              </div>
+            )}
+            {!toolCall.error && toolCall.response && (
+              <CollapsableSection 
+                label={<span style={{ fontSize: '0.7em', fontWeight: 500 }}>Response</span>} 
+                isOpen={false}
+              >
+                <pre style={{ 
+                  backgroundColor: 'var(--background-color-primary)', 
+                  padding: '8px',
+                  borderRadius: '4px',
+                  marginTop: '8px',
+                  overflow: 'auto',
+                  maxHeight: '300px',
+                  fontSize: '0.9em'
+                }}>
+                  {JSON.stringify(toolCall.response, null, 2)}
+                </pre>
+              </CollapsableSection>
+            )}
           </li>
         ))}
       </ul>
@@ -65,211 +254,36 @@ const BasicChatTest = () => {
   const [finished, setFinished] = useState(true);
 
   const { loading, error, value } = useAsync(async () => {
-    // Check if the LLM plugin is enabled and configured.
-    // If not, we won't be able to make requests, so return early.
-    console.log("Logging works");
-    const openAIHealthDetails = await openai.enabled();
-    console.log("openAIHealthDetails: ", openAIHealthDetails);
-    const enabled = openAIHealthDetails;
-    console.log("enabled: ", enabled);
+    const enabled = await llm.enabled();
     if (!enabled) {
       return { enabled, tools: [] };
     }
-    const { tools } = await client.listTools();
 
+    const { tools } = await client.listTools();
     if (message === '') {
       return { enabled, tools };
     }
 
     setStarted(true);
     setFinished(false);
-    if (!useStream) {
-      setToolCalls(new Map());
-      const messages: openai.Message[] = [
-        { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
-        { role: 'user', content: message },
-      ];
-      // Make a single request to the LLM.
-      let response = await openai.chatCompletions({
-        model: openai.Model.BASE,
-        messages,
-        tools: mcp.convertToolsToOpenAI(tools),
-      });
 
-      // Handle any function calls, looping until there are no more.
-      let functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
-      while (functionCalls.length > 0) {
-        // We need to include the 'tool_call' request in future responses.
-        messages.push(response.choices[0].message);
-
-        // Submit all tool requests.
-        await Promise.all(functionCalls.map(async (fc) => {
-          // Update the tool call state for rendering.
-          setToolCalls(new Map(toolCalls.set(fc.id, { name: fc.function.name, arguments: fc.function.arguments, running: true })));
-          const { function: f, id } = fc;
-          try {
-            // OpenAI sends arguments as a JSON string, so we need to parse it.
-            const args = JSON.parse(f.arguments);
-            const response = await client.callTool({ name: f.name, arguments: args });
-            const toolResult = CallToolResultSchema.parse(response);
-            // Just handle text results for now.
-            const textContent = toolResult.content.filter(c => c.type === 'text').map(c => c.text).join('');
-            // Add the result to the message, with the correct role and id.
-            messages.push({ role: 'tool', tool_call_id: id, content: textContent });
-            // Update the tool call state for rendering.
-            setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false })));
-          } catch (e: any) {
-            const error = e.message ?? e.toString();
-            messages.push({ role: 'tool', tool_call_id: id, content: error });
-            // Update the tool call state for rendering.
-            setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false, error })));
-          }
-        }));
-        // `messages` now contains all tool call request and responses so far.
-        // Send it back to the LLM to get its response given those tool calls.
-        response = await openai.chatCompletions({
-          model: openai.Model.LARGE,
-          messages,
-          tools: mcp.convertToolsToOpenAI(tools),
-        });
-        functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
+    try {
+      if (!useStream) {
+        await handleNonStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
+      } else {
+        await handleStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
       }
-      // No more function calls, so we can just use the final response.
-      setReply(response.choices[0].message.content!);
-      setStarted(false);
+    } catch (e) {
+      console.error('Error in chat completion:', e);
       setFinished(true);
-      return { enabled, tools };
-    } else {
-      // Stream the completions. Each element is the next stream chunk.
-      const messages: llm.Message[] = [
-        { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
-        { role: 'user', content: message },
-      ];
-      let stream = llm.streamChatCompletions({
-        model: openai.Model.LARGE,
-        messages,
-        tools: mcp.convertToolsToOpenAI(tools),
-      });
-      let [toolCallsStream, otherMessages] = partition(
-        stream,
-        (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
-      );
-      let contentMessages = otherMessages.pipe(
-        // Accumulate the stream content into a stream of strings, where each
-        // element contains the accumulated message so far.
-        llm.accumulateContent(),
-        // The stream is just a regular Observable, so we can use standard rxjs
-        // functionality to update state, e.g. recording when the stream
-        // has completed.
-        // The operator decision tree on the rxjs website is a useful resource:
-        // https://rxjs.dev/operator-decision-tree.
-        finalize(() => {
-          console.log('stream finalized');
-          setStarted(false);
-          setFinished(true);
-        })
-      );
-      // Get all the tool call messages as an array.
-      let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
-        map(
-          (response: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => (response.choices[0].delta as llm.ToolCallsMessage)
-        ),
-        toArray(),
-      ));
-      // Handle any function calls, looping until there are no more.
-      while (toolCallMessages.length > 0) {
-        // The way tool use works for streaming chat completions is pretty nuts. We'll get lots of
-        // chunks; the first will include the tool name, id and index, then some others will
-        // gradually populate the 'arguments' JSON string, so we need to loop over them all and
-        // reconstruct the full tool call for each index.
-        const recoveredToolCallMessage: llm.ToolCallsMessage = {
-          role: 'assistant',
-          tool_calls: [],
-        };
-        for (const msg of toolCallMessages) {
-          for (const tc of msg.tool_calls) {
-            if (tc.index! >= recoveredToolCallMessage.tool_calls.length) {
-              // We have a new tool call, so let's create one with a sensible empty 'arguments' string.
-              recoveredToolCallMessage.tool_calls.push({ ...tc, function: { ...tc.function, arguments: tc.function.arguments ?? '' } });
-            } else {
-              // This refers to an existing tool call, so continue reconstructing the arguments.
-              recoveredToolCallMessage.tool_calls[tc.index!].function.arguments += tc.function.arguments;
-            }
-          }
-        }
-        messages.push(recoveredToolCallMessage)
-        const tcs = recoveredToolCallMessage.tool_calls.filter(tc => tc.type === 'function');
-
-        // Submit all tool requests.
-        await Promise.all(tcs.map(async (fc) => {
-          // Update the tool call state for rendering.
-          const { function: f, id } = fc;
-          setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: true })));
-          try {
-            // OpenAI sends arguments as a JSON string, so we need to parse it.
-            const args = JSON.parse(f.arguments);
-            const response = await client.callTool({ name: f.name, arguments: args });
-            const toolResult = CallToolResultSchema.parse(response);
-            // Just handle text results for now.
-            const textContent = toolResult.content.filter(c => c.type === 'text').map(c => c.text).join('');
-            // Add the result to the message, with the correct role and id.
-            messages.push({ role: 'tool', tool_call_id: id, content: textContent });
-            // Update the tool call state for rendering.
-            setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false })));
-          } catch (e: any) {
-            const error = e.message ?? e.toString();
-            messages.push({ role: 'tool', tool_call_id: id, content: error });
-            // Update the tool call state for rendering.
-            setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false, error })));
-          }
-        }));
-        // Stream the completions. Each element is the next stream chunk.
-        stream = llm.streamChatCompletions({
-          model: 'gpt-4o',
-          messages,
-          tools: mcp.convertToolsToOpenAI(tools),
-        });
-        [toolCallsStream, otherMessages] = partition(
-          stream,
-          (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
-        );
-        // Include a pretend 'first message' in the reply, in case the model chose to send anything before its tool calls.
-        const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
-          choices: [{ delta: { role: 'assistant', content: reply } }],
-        };
-        contentMessages = otherMessages.pipe(
-          //@ts-expect-error
-          startWith(firstMessage),
-          // Accumulate the stream content into a stream of strings, where each
-          // element contains the accumulated message so far.
-          llm.accumulateContent(),
-          // The stream is just a regular Observable, so we can use standard rxjs
-          // functionality to update state, e.g. recording when the stream
-          // has completed.
-          // The operator decision tree on the rxjs website is a useful resource:
-          // https://rxjs.dev/operator-decision-tree.
-          finalize(() => {
-            console.log('stream finalized');
-          })
-        );
-        // Subscribe to the stream and update the state for each returned value.
-        contentMessages.subscribe((val) => {
-          setReply(val);
-        });
-        toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
-          map(
-            (response: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => (response.choices[0].delta as llm.ToolCallsMessage)
-          ),
-          toArray(),
-        ));
-      }
+      setStarted(false);
     }
+
     return { enabled: true, tools };
   }, [message]);
 
   if (error) {
-    // TODO: handle errors.
-    return <div>error</div>;
+    return <div>Error: {error.message}</div>;
   }
 
   return (
@@ -287,7 +301,12 @@ const BasicChatTest = () => {
             <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
           </Stack>
           <br />
-          {!useStream && <div>{loading ? <Spinner /> : reply}</div>}
+          {!useStream && (
+            <div>
+              {loading && <Spinner />}
+              <p style={{ whiteSpace: 'pre-wrap' }}>{reply}</p>
+            </div>
+          )}
           {useStream && <div>{reply}</div>}
           <Stack direction="row" justifyContent="space-evenly">
             <div>{started ? "Response is started" : "Response is not started"}</div>
@@ -306,7 +325,6 @@ const BasicChatTest = () => {
     </div>
   );
 };
-
 
 export const DevSandbox = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
