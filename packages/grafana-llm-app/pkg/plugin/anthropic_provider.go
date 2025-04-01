@@ -59,7 +59,7 @@ func (p *anthropicProvider) Models(ctx context.Context) (ModelResponse, error) {
 func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toAnthropic(p.models)
-	log.DefaultLogger.Info("model", "model", r.Model)
+	log.DefaultLogger.Debug("model", "model", r.Model)
 
 	// Anthropic requires a max tokens value
 	if r.MaxTokens == 0 {
@@ -78,7 +78,7 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toAnthropic(p.models)
-	log.DefaultLogger.Info("model", "model", r.Model)
+	log.DefaultLogger.Debug("model", "model", r.Model)
 
 	// Anthropic requires a max tokens value
 	if r.MaxTokens == 0 {
