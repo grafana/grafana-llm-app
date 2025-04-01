@@ -132,6 +132,8 @@ func newMCPServer() *mcp.GrafanaLiveServer {
 	tools.AddIncidentTools(srv)
 	tools.AddPrometheusTools(srv)
 	tools.AddLokiTools(srv)
+	tools.AddAlertingTools(srv)
+	tools.AddOnCallTools(srv)
 	s := mcp.NewGrafanaLiveServer(srv, mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc))
 	return s
 }
