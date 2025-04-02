@@ -1,7 +1,5 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useCallback, useState } from "react";
 import { Button, FieldSet, Icon, LoadingPlaceholder, Modal, Spinner, Stack, TextArea, CollapsableSection } from "@grafana/ui";
-import { useAsync } from "react-use";
-import { finalize, lastValueFrom, partition, startWith } from "rxjs";
 import { llm, mcp } from "@grafana/llm";
 import { CallToolResultSchema, Tool } from '@modelcontextprotocol/sdk/types';
 
@@ -83,90 +81,6 @@ async function handleNonStreamingChat(
   setFinished(true);
 }
 
-// Helper function to handle streaming chat completions
-async function handleStreamingChat(
-  message: string,
-  tools: Tool[],
-  client: any,
-  toolCalls: Map<string, RenderedToolCall>,
-  setToolCalls: (calls: Map<string, RenderedToolCall>) => void,
-  setReply: (reply: string) => void,
-  setStarted: (started: boolean) => void,
-  setFinished: (finished: boolean) => void
-) {
-  const messages: llm.Message[] = [
-    { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
-    { role: 'user', content: message },
-  ];
-
-  let stream = llm.streamChatCompletions({
-    model: llm.Model.LARGE,
-    messages,
-    tools: mcp.convertToolsToOpenAI(tools),
-  });
-
-  let [toolCallsStream, otherMessages] = partition(
-    stream,
-    (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
-  );
-
-  let contentMessages = otherMessages.pipe(
-    llm.accumulateContent(),
-    finalize(() => {
-      console.log('stream finalized');
-      setStarted(false);
-      setFinished(true);
-    })
-  );
-
-  // Subscribe to content messages immediately
-  contentMessages.subscribe(setReply);
-
-  let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
-    llm.accumulateToolCalls()
-  ));
-
-  while (toolCallMessages.tool_calls.length > 0) {
-    messages.push(toolCallMessages);
-    
-    const tcs = toolCallMessages.tool_calls.filter(tc => tc.type === 'function');
-    await Promise.all(tcs.map(fc => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
-
-    // `messages` now contains all tool call request and responses so far.
-    // Send it back to the LLM to get its response given those tool calls.
-    stream = llm.streamChatCompletions({
-      model: llm.Model.LARGE,
-      messages,
-      tools: mcp.convertToolsToOpenAI(tools),
-    });
-
-    [toolCallsStream, otherMessages] = partition(
-      stream,
-      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
-    );
-
-    // Include a pretend 'first message' in the reply, in case the model chose to send anything before its tool calls.
-    const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
-      choices: [{ delta: { role: 'assistant', content: '' } }],
-    };
-
-    contentMessages = otherMessages.pipe(
-      //@ts-expect-error
-      startWith(firstMessage),
-      llm.accumulateContent(),
-      finalize(() => {
-        console.log('stream finalized');
-      })
-    );
-
-    contentMessages.subscribe(setReply);
-
-    toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
-      llm.accumulateToolCalls()
-    ));
-  }
-}
-
 function AvailableTools({ tools }: { tools: Tool[] }) {
   return (
     <Stack direction="column">
@@ -241,46 +155,108 @@ const BasicChatTest = () => {
   const client = mcp.useMCPClient();
   // The current input value.
   const [input, setInput] = useState('');
-  // The final message to send to the LLM, updated when the button is clicked.
-  const [message, setMessage] = useState('');
   // The latest reply from the LLM.
   const [reply, setReply] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [tools, setTools] = useState<Tool[]>([]);
 
   const [toolCalls, setToolCalls] = useState<Map<string, RenderedToolCall>>(new Map());
-
-  const [useStream, setUseStream] = useState(false);
 
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(true);
 
-  const { loading, error, value } = useAsync(async () => {
-    const enabled = await llm.enabled();
-    if (!enabled) {
-      return { enabled, tools: [] };
-    }
+  // Initialize the hook for streaming mode, but we'll only use it when useStream is true
+  const {
+    setMessages,
+    reply: streamReply,
+    streamStatus,
+    error,
+    toolCalls: streamToolCalls,
+    isEnabled
+  } = llm.useLLMStreamWithTools(
+    client,
+    llm.Model.LARGE,
+    1,
+    (title) => console.error(title),
+    tools,
+    "You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem."
+  );
 
-    const { tools } = await client.listTools();
-    if (message === '') {
-      return { enabled, tools };
-    }
+  // When the component mounts, check if LLM is enabled and fetch available tools
+  React.useEffect(() => {
+    const initializeTools = async () => {
+      try {
+        if (!isEnabled) {
+          setIsLoading(false);
+          return;
+        }
 
-    setStarted(true);
-    setFinished(false);
-
-    try {
-      if (!useStream) {
-        await handleNonStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
-      } else {
-        await handleStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
+        const { tools: availableTools } = await client.listTools();
+        setTools(availableTools);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error initializing tools:', error);
       }
-    } catch (e) {
-      console.error('Error in chat completion:', e);
-      setFinished(true);
-      setStarted(false);
-    }
+      setIsLoading(false);
+    };
 
-    return { enabled: true, tools };
-  }, [message]);
+    if (isEnabled !== undefined) {
+      initializeTools();
+    }
+  }, [client, isEnabled]);
+
+    // Handle form submission
+  const handleStreamingSubmit = useCallback(() => {
+    if (!input.trim()) {
+        return;
+    }
+        
+    setMessages([{ role: 'user', content: input }]);
+    setInput('');
+  }, [input, setMessages, setInput]);
+
+
+  // Update UI state based on stream status
+  React.useEffect(() => {
+      console.log("Stream status effect")
+      // Update started/finished based on streamStatus
+      if (streamStatus === llm.StreamStatus.GENERATING) {
+        setStarted(true);
+        setFinished(false);
+      } else if (streamStatus === llm.StreamStatus.COMPLETED || streamStatus === llm.StreamStatus.IDLE) {
+        setStarted(false);
+        setFinished(true);
+      }
+  }, [streamStatus, setStarted, setFinished]);
+
+  // Show the reply from the hook when streaming
+  React.useEffect(() => {
+    console.log("Reply effect")
+    if (streamReply) {
+      setReply(streamReply);
+    }
+  }, [streamReply, setReply]);
+
+  // Show tool calls from the hook when streaming
+  React.useEffect(() => {
+    console.log("Tool calls effect")
+    if (streamToolCalls.size > 0) {
+      // Convert from the hook's tool call format to our RenderedToolCall format
+      const convertedToolCalls = new Map<string, RenderedToolCall>();
+      streamToolCalls.forEach((call, id) => {
+        convertedToolCalls.set(id, {
+          name: call.name,
+          arguments: call.arguments,
+          running: call.running,
+          error: call.error,
+          response: call.response
+        });
+      });
+      setToolCalls(convertedToolCalls); 
+    }
+  }, [streamToolCalls, setToolCalls]);
+
+
 
   if (error) {
     return <div>Error: {error.message}</div>;
@@ -288,7 +264,7 @@ const BasicChatTest = () => {
 
   return (
     <div>
-      {value?.enabled ? (
+      {isEnabled ? (
         <Stack direction="column">
           <TextArea
             value={input}
@@ -297,17 +273,16 @@ const BasicChatTest = () => {
           />
           <br />
           <Stack direction="row" justifyContent="space-evenly">
-            <Button type="submit" onClick={() => { setMessage(input); setUseStream(true); }}>Submit Stream</Button>
-            <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
+            <Button type="submit" onClick={() => { handleStreamingSubmit(); }}>Submit Stream</Button>
+            <Button type="submit" onClick={() => { handleNonStreamingChat(input, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished); }}>Submit Request</Button>
           </Stack>
           <br />
-          {!useStream && (
+          {isLoading && <Spinner />}
+          {!isLoading && (
             <div>
-              {loading && <Spinner />}
               <p style={{ whiteSpace: 'pre-wrap' }}>{reply}</p>
             </div>
           )}
-          {useStream && <div>{reply}</div>}
           <Stack direction="row" justifyContent="space-evenly">
             <div>{started ? "Response is started" : "Response is not started"}</div>
             <div>{finished ? "Response is finished" : "Response is not finished"}</div>
@@ -315,7 +290,7 @@ const BasicChatTest = () => {
           <br />
           <br />
           <Stack direction="row" justifyContent="space-evenly">
-            <AvailableTools tools={value.tools!} />
+            <AvailableTools tools={tools} />
             <ToolCalls toolCalls={toolCalls} />
           </Stack>
         </Stack>

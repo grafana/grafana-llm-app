@@ -18,8 +18,8 @@ import { getBackendSrv, getGrafanaLiveSrv, logDebug /* logError */ } from '@graf
 
 import React, { useEffect, useCallback, useState } from 'react';
 import { useAsync } from 'react-use';
-import { pipe, Observable, UnaryFunction, Subscription } from 'rxjs';
-import { filter, map, scan, takeWhile, tap, toArray } from 'rxjs/operators';
+import { pipe, Observable, UnaryFunction, Subscription, lastValueFrom, partition } from 'rxjs';
+import { filter, finalize, map, scan, takeWhile, tap, toArray, startWith } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 
 import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE, setLLMPluginVersion } from './constants';
@@ -759,4 +759,372 @@ export function recoverToolCallMessage(toolCallMessages: ToolCallsMessage[]): To
   }
 
   return recoveredToolCallMessage;
+}
+
+/**
+ * State returned by the useLLMStreamWithTools hook.
+ */
+export type LLMStreamWithToolsState = {
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  reply: string;
+  streamStatus: StreamStatus;
+  error: Error | undefined;
+  toolCalls: Map<string, {
+    name: string;
+    arguments: string;
+    running: boolean;
+    error?: string;
+    response?: any;
+  }>;
+  isEnabled: boolean | undefined;
+};
+
+/**
+ * A custom React hook for managing an LLM stream that communicates with the provided model and handles tool calls.
+ *
+ * This hook simplifies tool calling by handling the complex streaming logic internally. It manages streaming
+ * content from the LLM, handling tool calls, executing tools via the MCP client, and gathering tool responses.
+ * 
+ * Example usage:
+ * ```tsx
+ * function MyComponent() {
+ *   const client = mcp.useMCPClient();
+ *   const [tools, setTools] = useState<Tool[]>([]);
+ *   
+ *   // Initialize tools
+ *   useEffect(() => {
+ *     async function init() {
+ *       const { tools: availableTools } = await client.listTools();
+ *       setTools(availableTools);
+ *     }
+ *     init();
+ *   }, [client]);
+ *   
+ *   const {
+ *     setMessages,
+ *     reply,
+ *     streamStatus,
+ *     error,
+ *     toolCalls
+ *   } = useLLMStreamWithTools(
+ *     client,
+ *     Model.LARGE,
+ *     0.7,
+ *     (title, text) => console.error(title, text),
+ *     tools,
+ *     "You are a helpful assistant."
+ *   );
+ *   
+ *   // To start a conversation
+ *   function handleSendMessage(userMessage: string) {
+ *     setMessages([{ role: 'user', content: userMessage }]);
+ *   }
+ *   
+ *   return (
+ *     <div>
+ *       <div>{reply}</div>
+ *       {streamStatus === StreamStatus.GENERATING && <Spinner />}
+ *       {toolCalls.size > 0 && (
+ *         <div>
+ *           <h3>Tool Calls:</h3>
+ *           {Array.from(toolCalls.entries()).map(([id, call]) => (
+ *             <div key={id}>
+ *               <div>Tool: {call.name}</div>
+ *               <div>Args: {call.arguments}</div>
+ *               {call.running && <Spinner />}
+ *               {call.error && <div>Error: {call.error}</div>}
+ *             </div>
+ *           ))}
+ *         </div>
+ *       )}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @param {Client} client - The MCP client instance to use for tool calls.
+ * @param {string} [model=Model.LARGE] - The LLM model to use for communication.
+ * @param {number} [temperature=1] - The temperature value for text generation (default is 1).
+ * @param {function} [notifyError] - A callback function for handling errors.
+ * @param {Tool[]} [tools=[]] - Array of tools available to the LLM.
+ * @param {string} [systemPrompt="You are a helpful assistant."] - System prompt to use.
+ *
+ * @returns {LLMStreamWithToolsState} - An object containing the state of the LLM stream with tool calling capability.
+ * @property {function} setMessages - A function to update the list of messages in the stream.
+ * @property {string} reply - The most recent reply received from the LLM stream.
+ * @property {StreamStatus} streamStatus - The status of the stream ("idle", "generating" or "completed").
+ * @property {Error|undefined} error - An error object if an error occurs, or undefined if no error.
+ * @property {Map} toolCalls - A map of tool calls that have been made.
+ * @property {boolean|undefined} isEnabled - Indicates whether the LLM feature is enabled.
+ */
+export function useLLMStreamWithTools(
+  client: any,
+  model = Model.LARGE,
+  temperature = 1,
+  notifyError: (title: string, text?: string, traceId?: string) => void = () => {},
+  tools: any[] = [],
+  systemPrompt = "You are a helpful assistant."
+): LLMStreamWithToolsState {
+  // The messages array to send to the LLM.
+  const [messages, setMessages] = useState<Message[]>([]);
+  // The latest reply from the LLM.
+  const [reply, setReply] = useState('');
+  const [streamStatus, setStreamStatus] = useState<StreamStatus>(StreamStatus.IDLE);
+  const [error, setError] = useState<Error | undefined>();
+  // Map of tool calls that have been made
+  const [toolCalls, setToolCalls] = useState<Map<string, {
+    name: string;
+    arguments: string;
+    running: boolean;
+    error?: string;
+    response?: any;
+  }>>(new Map());
+  
+  // Track if LLM is enabled
+  const [isEnabled, setIsEnabled] = useState<boolean | undefined>(undefined);
+  
+  // Reference to store the latest messages for async operations
+  const messagesRef = React.useRef<Message[]>([]);
+  
+  // Update the ref whenever messages changes
+  React.useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  // Handle errors
+  const onError = useCallback(
+    (e: Error) => {
+      setStreamStatus(StreamStatus.IDLE);
+      setError(e);
+      notifyError(
+        'Failed to generate content using LLM provider',
+        `Please try again or if the problem persists, contact your organization admin.`
+      );
+      console.error(e);
+    },
+    [notifyError]
+  );
+
+  // Handle tool calls
+  const handleToolCall = useCallback(async (
+    fc: { function: { name: string; arguments: string }; id: string },
+    allMessages: Message[]
+  ) => {
+    const { function: f, id } = fc;
+    
+    setToolCalls(prev => new Map(prev.set(id, { name: f.name, arguments: f.arguments, running: true })));
+    
+    const args = JSON.parse(f.arguments);
+
+    try {
+      const response = await client.callTool({ name: f.name, arguments: args });
+      const toolResult = response;
+      const textContent = toolResult.content?.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('') || 
+                         JSON.stringify(response);
+      
+      allMessages.push({ role: 'tool', tool_call_id: id, content: textContent });
+      
+      setToolCalls(prev => new Map(prev.set(id, { 
+        name: f.name, 
+        arguments: f.arguments, 
+        running: false, 
+        response 
+      })));
+      
+      return textContent;
+    } catch (e: any) {
+      const errorMessage = e.message ?? e.toString();
+      allMessages.push({ role: 'tool', tool_call_id: id, content: errorMessage });
+      
+      setToolCalls(prev => new Map(prev.set(id, { 
+        name: f.name, 
+        arguments: f.arguments, 
+        running: false, 
+        error: errorMessage 
+      })));
+      
+      return errorMessage;
+    }
+  }, [client]);
+
+  // Check if LLM is enabled
+  useEffect(() => {
+    let mounted = true;
+    
+    const checkEnabled = async () => {
+      try {
+        const isLLMEnabled = await enabled();
+        if (mounted) {
+          setIsEnabled(isLLMEnabled);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setIsEnabled(false);
+        }
+      }
+    };
+    
+    checkEnabled();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Handle main streaming logic when messages change
+  useEffect(() => {
+    if (!isEnabled || !messages.length) {
+      return;
+    }
+
+    let contentSubscription: Subscription | null = null;
+    let mounted = true;
+    let aborted = false;
+
+    const processStream = async () => {
+      console.log("Processing stream");
+      setStreamStatus(StreamStatus.GENERATING);
+      setError(undefined);
+      setToolCalls(new Map());
+      
+      // Create a copy of messages to work with
+      const workingMessages: Message[] = [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ];
+      
+      try {
+        // Initial stream of completions
+        let stream = streamChatCompletions({
+          model,
+          temperature,
+          messages: workingMessages,
+          tools: tools.length > 0 ? tools : undefined,
+        });
+        
+        // Partition the stream into tool calls and content messages
+        let [toolCallsStream, contentStream] = partition(
+          stream,
+          (chunk: ChatCompletionsResponse<ChatCompletionsChunk>) => isToolCallsMessage(chunk.choices[0].delta)
+        );
+        
+        // Process the content stream
+        let finalContentStream = contentStream.pipe(
+          accumulateContent(),
+          finalize(() => {
+            console.log('Content stream finalized');
+          })
+        );
+        
+        // Subscribe to content messages to update UI
+        contentSubscription = finalContentStream.subscribe(setReply);
+        
+        // Continue processing tool calls as long as they come in
+        let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
+          accumulateToolCalls()
+        )).catch(() => ({ tool_calls: [] }));
+        
+        // Process any tool calls
+        while (toolCallMessages.tool_calls?.length > 0 && !aborted) {
+          console.log("Processing tool calls");
+          // Process each tool call
+          const toolCallPromises = toolCallMessages.tool_calls
+            .filter((tc: ToolCall) => tc.type === 'function')
+            .map((tc: ToolCall) => handleToolCall(tc, workingMessages));
+          
+          await Promise.all(toolCallPromises);
+          
+          if (aborted) {
+            break;
+          }
+          
+          // After tool calls are processed, get the next response from the model
+          stream = streamChatCompletions({
+            model,
+            temperature,
+            messages: workingMessages,
+            tools: tools.length > 0 ? tools : undefined,
+          });
+          
+          // Re-partition the new stream
+          [toolCallsStream, contentStream] = partition(
+            stream,
+            (chunk: ChatCompletionsResponse<ChatCompletionsChunk>) => isToolCallsMessage(chunk.choices[0].delta)
+          );
+          
+          // Process the new content stream
+          finalContentStream = contentStream.pipe(
+            startWith({
+              choices: [{ delta: { role: 'assistant', content: '' } }],
+            } as any),
+            accumulateContent(),
+            finalize(() => {
+              console.log('New content stream finalized');
+            })
+          );
+          
+          // Unsubscribe from the old content stream and subscribe to the new one
+          if (contentSubscription) {
+            contentSubscription.unsubscribe();
+          }
+          
+          if (!aborted) {
+            contentSubscription = finalContentStream.subscribe(setReply);
+            
+            // Get the next tool call messages, if any
+            toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
+              accumulateToolCalls()
+            )).catch(() => ({ tool_calls: [] }));
+          }
+        }
+        
+        if (mounted && !aborted) {
+          setStreamStatus(StreamStatus.COMPLETED);
+          setTimeout(() => {
+            if (mounted) {
+              setStreamStatus(StreamStatus.IDLE);
+            }
+          }, 0);
+        }
+      } catch (e) {
+        if (mounted && !aborted) {
+          onError(e as Error);
+        }
+      }
+    };
+
+    processStream();
+
+    return () => {
+      aborted = true;
+      mounted = false;
+      if (contentSubscription) {
+        contentSubscription.unsubscribe();
+        contentSubscription = null;
+      }
+    };
+  }, [messages, isEnabled, tools, model, temperature, systemPrompt, handleToolCall, onError]);
+
+  // Handle timeout if stream is generating but no response appears
+  useEffect(() => {
+    let timeout: NodeJS.Timeout | undefined;
+    if (streamStatus === StreamStatus.GENERATING && reply === '' && toolCalls.size === 0) {
+      timeout = setTimeout(() => {
+        onError(new Error(`LLM stream timed out after ${TIMEOUT}ms`));
+      }, TIMEOUT);
+    }
+    return () => {
+      timeout && clearTimeout(timeout);
+    };
+  }, [streamStatus, reply, toolCalls, onError]);
+
+  return {
+    setMessages,
+    reply,
+    streamStatus,
+    error,
+    toolCalls,
+    isEnabled,
+  };
 }
