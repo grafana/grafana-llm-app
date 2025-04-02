@@ -112,4 +112,4 @@ It is recommended to run these using npm commands from root so that the entire p
 - Trigger release from "actions" tab on Github.
 
 ### llmclient Release
-- Push a new tag to the repo (e.g., `git tag -a llmclient/v0.X.X -m "llmclient v0.X.X release"`)
+- Push a new tag to the repo (e.g., `git tag -a v0.X.X -m "llmclient v0.X.X release"`)
