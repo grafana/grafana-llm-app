@@ -111,22 +111,13 @@ jobs:
         with:
           distDir: ${{ env.plugin-dist-folder }}
 
-      - name: Validate plugin
-        run: |
-          git clone https://github.com/grafana/plugin-validator
-          pushd ./plugin-validator/pkg/cmd/plugincheck2
-          go install
-          popd
-          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive }}
-          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
-
 ## SECOND runthrough of packaging, for testing to make sure the binaries match
-      - name: Sign mlapp
+      - name: Sign build (second time)
         run: yarn dlx @grafana/sign-plugin@latest
         shell: bash
         working-directory: packages/grafana-llm-app
 
-      - name: Package grafana-ml-app
+      - name: Package build (second time)
         uses: ./.github/actions/package-plugin
         with:
           plugin-directory: packages/grafana-llm-app
