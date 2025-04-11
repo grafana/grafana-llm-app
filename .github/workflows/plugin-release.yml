@@ -111,36 +111,34 @@ jobs:
         with:
           distDir: ${{ env.plugin-dist-folder }}
 
-## SECOND runthrough of packaging, for testing to make sure the binaries match
-      - name: Sign build (second time)
-        run: yarn dlx @grafana/sign-plugin@latest
-        shell: bash
-        working-directory: packages/grafana-llm-app
+# ## SECOND runthrough of packaging, for testing to make sure the binaries match
+#       - name: Sign build (second time)
+#         run: yarn dlx @grafana/sign-plugin@latest
+#         shell: bash
+#         working-directory: packages/grafana-llm-app
 
-      - name: Package build (second time)
-        uses: ./.github/actions/package-plugin
-        with:
-          plugin-directory: packages/grafana-llm-app
+#       - name: Package build (second time)
+#         uses: ./.github/actions/package-plugin
+#         with:
+#           plugin-directory: packages/grafana-llm-app
 
-      - name: Compare package hashes
+      - name: List package hashes
         run: |
-          echo "=== Comparing package hashes between methods ==="
-          echo "Files in __to-upload__:"
+          echo "=== Files in __to-upload__ ==="
           find __to-upload__ -type f -exec sha256sum {} \; | sort
           
-          echo -e "\nFiles in packages/grafana-llm-app/__packaging:"
-          find packages/grafana-llm-app/__packaging -type f -exec sha256sum {} \; | sort
-          
-          echo -e "\nDetailed comparison:"
-          for file in $(find __to-upload__ -type f -name "*.zip" -o -name "*.md5"); do
-            basename=$(basename "$file")
-            echo "Comparing $basename:"
-            if [ -f "packages/grafana-llm-app/__packaging/$basename" ]; then
-              echo "Original:  $(sha256sum "$file" | cut -d' ' -f1)"
-              echo "New:       $(sha256sum "packages/grafana-llm-app/__packaging/$basename" | cut -d' ' -f1)"
-              diff "$file" "packages/grafana-llm-app/__packaging/$basename" > /dev/null && echo "Files match!" || echo "Files differ!"
-            else
-              echo "WARNING: $basename not found in new packaging directory"
-            fi
-            echo
+          echo -e "\n=== Contents of ZIP files ==="
+          for zipfile in $(find __to-upload__ -type f -name "*.zip"); do
+            echo -e "\nContents of $zipfile:"
+            # Create a temporary directory for this zip
+            temp_dir=$(mktemp -d)
+            unzip -q "$zipfile" -d "$temp_dir"
+            
+            # Get hashes of all files in the zip
+            cd "$temp_dir"
+            find . -type f -exec sha256sum {} \; | sort
+            cd - > /dev/null
+            
+            # Cleanup
+            rm -rf "$temp_dir"
           done
