@@ -57,6 +57,10 @@ func (p *anthropicProvider) Models(ctx context.Context) (ModelResponse, error) {
 }
 
 func (p *anthropicProvider) forceUserMessage(req *openai.ChatCompletionRequest) {
+	if len(req.Messages) == 0 {
+		return
+	}
+
 	hasUserMessage := false
 	for _, message := range req.Messages {
 		if message.Role == "user" {
