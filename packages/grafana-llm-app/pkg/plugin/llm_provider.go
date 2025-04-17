@@ -55,9 +55,9 @@ func (m Model) toOpenAI(modelSettings *ModelSettings) string {
 	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
 		switch m {
 		case ModelBase:
-			return "gpt-4o-mini"
+			return "gpt-4.1-mini"
 		case ModelLarge:
-			return "gpt-4o"
+			return "gpt-4.1"
 		}
 		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}

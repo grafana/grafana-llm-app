@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Update model defaults:
+  - Base: `gpt-4o-mini` to `gpt-4.1-mini`
+  - Large: `gpt-4o` to `gpt-4.1`
+
 ## 0.16.0
 
 - chore: bump github.com/grafana/mcp-grafana to 0.2.4 by @sd2k in #618. This adds more tools to retrieve dashboards and OnCall details.
