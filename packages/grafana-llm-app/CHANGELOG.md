@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- Update model defaults:
+
+## 0.17.0
+
+- bug: Make sure at least one message has the user role for Anthropic by @edwardcqian in #629
+- Update model defaults by @csmarchbanks in #632 and #635:
   - Base: `gpt-4o-mini` to `gpt-4.1-mini`
   - Large: `gpt-4o` to `gpt-4.1`
 
