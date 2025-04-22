@@ -15,6 +15,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: packages/grafana-llm-app/go.mod
+          cache-dependency-path: packages/grafana-llm-app/go.sum
       - name: Install Mage
         uses: magefile/mage-action@v3
         with:
