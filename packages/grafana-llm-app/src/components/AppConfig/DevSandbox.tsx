@@ -238,7 +238,7 @@ function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) 
 }
 
 const BasicChatTest = () => {
-  const client = mcp.useMCPClient();
+  const { client } = mcp.useMCPClient();
   // The current input value.
   const [input, setInput] = useState('');
   // The final message to send to the LLM, updated when the button is clicked.
