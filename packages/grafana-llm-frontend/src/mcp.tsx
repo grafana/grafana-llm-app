@@ -7,6 +7,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index';
 import { JSONRPCMessage, JSONRPCMessageSchema, Tool as MCPTool } from '@modelcontextprotocol/sdk/types';
 import { Observable, filter } from 'rxjs';
 import { v4 as uuid } from 'uuid';
+import { useAsync } from 'react-use';
 
 import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from './constants';
 import { Tool as OpenAITool } from './openai';
@@ -201,10 +202,11 @@ async function isEnabled(): Promise<boolean> {
 }
 
 // Create a resource that works with Suspense.
-function createClientResource(appName: string, appVersion: string): ClientResource {
+async function createClientResource(appName: string, appVersion: string): Promise<ClientResource> {
   let status: 'pending' | 'success' | 'error' = 'pending';
   let result: ClientResult | null = null;
   let error: Error | null = null;
+  const enabled = await isEnabled();
 
   const key = clientKey(appName, appVersion);
   const promise = (async () => {
@@ -215,7 +217,6 @@ function createClientResource(appName: string, appVersion: string): ClientResour
     }
 
     try {
-      const enabled = await isEnabled();
       if (!enabled) {
         status = 'success';
         result = { client: null, enabled };
@@ -240,10 +241,6 @@ function createClientResource(appName: string, appVersion: string): ClientResour
   return {
     read() {
       if (status === 'pending') {
-        if (!result?.enabled) {
-          console.warn('MCP is not enabled');
-          return result || { client: null, enabled: false };
-        }
         throw promise;
       } else if (status === 'error') {
         throw error;
@@ -297,12 +294,12 @@ export function MCPClientProvider({
   appVersion,
   children,
 }: MCPClientProviderProps) {
-  const resource = createClientResource(appName, appVersion);
+  const { value: resource } = useAsync(async () => createClientResource(appName, appVersion));
 
   // This will either return the client or throw a promise/error.
   // If it throws a promise, Suspense will suspend the component until it resolves.
   // If it throws an error, it should be caught by an ErrorBoundary.
-  const result = resource.read();
+  const result = resource?.read();
 
   // Cleanup when the component unmounts.
   React.useEffect(() => {
@@ -315,7 +312,7 @@ export function MCPClientProvider({
   }, [result, appName, appVersion]);
 
   return (
-    <MCPClientContext.Provider value={result}>
+    <MCPClientContext.Provider value={result ?? null}>
       {children}
     </MCPClientContext.Provider>
   );
