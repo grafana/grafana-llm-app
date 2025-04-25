@@ -294,7 +294,7 @@ export function MCPClientProvider({
   appVersion,
   children,
 }: MCPClientProviderProps) {
-  const { value: resource } = useAsync(async () => createClientResource(appName, appVersion));
+  const { value: resource } = useAsync(() => createClientResource(appName, appVersion));
 
   // This will either return the client or throw a promise/error.
   // If it throws a promise, Suspense will suspend the component until it resolves.
