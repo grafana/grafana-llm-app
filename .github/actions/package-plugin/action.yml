@@ -1,0 +1,51 @@
+## This action is used to package a Grafana plugin into distributables using a centralized package.sh script
+## It is intended to be called from a workflow which handles building the plugin before calling this action and pushing the built plugin to file storage afterwards
+## Decoupling the build and packaging steps allows using this in projects which have different build and test tooling, especially surrounding typescript compilation
+## It is meant to be maximally maintainable and reusable, which is why the bulk of the logic is in the package.sh script, which should run anywhere and be legible to most engineers
+## It addresses the cases where we want to package a plugin for more than one platform (e.g., windows, macos, linux, amd, arm, etc.)
+## It also addresses cases where we may have a plugin which is not in document root, but rather in a subdirectory
+## Those cases were not well addressed by existing tooling
+
+name: 'Package Grafana Plugin'
+description: 'Packages a Grafana plugin into distributables using a centralized package.sh script'
+inputs:
+  plugin-directory:
+    description: 'Directory containing the built plugin with dist/ directory'
+    required: true
+    default: '.'
+outputs:
+  output-dir:
+    description: 'Path to the directory containing packaged plugin files'
+    value: ${{ steps.package.outputs.output-dir }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check plugin directory exists
+      shell: bash
+      run: |
+        if [ ! -d "${{ inputs.plugin-directory }}" ]; then
+          echo "Error: Plugin directory not found: ${{ inputs.plugin-directory }}"
+          exit 1
+        fi
+        if [ ! -d "${{ inputs.plugin-directory }}/dist" ]; then
+          echo "Error: dist/ directory not found in ${{ inputs.plugin-directory }}"
+          echo "Make sure the plugin has been built before packaging"
+          exit 1
+        fi
+
+    - name: Package plugin
+      id: package
+      shell: bash
+      run: |
+        # Run the packaging script with plugin directory as argument
+        ${{ github.action_path }}/package.sh "${{ inputs.plugin-directory }}"
+        
+        # Set output variable
+        echo "output-dir=${{ inputs.plugin-directory }}/__packaging" >> $GITHUB_OUTPUT
+        
+    - name: List generated packages
+      shell: bash
+      run: |
+        echo "Generated packages:"
+        find "${{ inputs.plugin-directory }}/__packaging" -name "*.zip" | sort 
