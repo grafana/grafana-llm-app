@@ -259,7 +259,7 @@ const BasicChatTest = () => {
       return { enabled, tools: [] };
     }
 
-    const { tools } = await client.listTools();
+    const { tools } = await client?.listTools() ?? { tools: [] };
     if (message === '') {
       return { enabled, tools };
     }
