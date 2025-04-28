@@ -30,6 +30,41 @@ if [ $MISSING_DEPS -ne 0 ]; then
   exit 1
 fi
 
+# Function to run the plugin signing tool
+run_plugin_signer() {
+  local dir_to_sign="$1"
+  echo "Signing plugin in directory: $dir_to_sign"
+  
+  # Change to the directory to sign
+  pushd "$dir_to_sign" > /dev/null
+  
+  # Check for yarn v2+ first, then fall back to npm
+  if which yarn &>/dev/null; then
+    # Check yarn version
+    YARN_VERSION=$(yarn --version)
+    YARN_MAJOR_VERSION="${YARN_VERSION%%.*}"
+    
+    # Only use Yarn if it's v2+
+    if [ "$YARN_MAJOR_VERSION" -ge 2 ]; then
+      echo "Using yarn dlx to sign plugin"
+      yarn dlx @grafana/sign-plugin@latest --distDir=.
+    elif which npm &>/dev/null; then
+      echo "Using npx to sign plugin (yarn v1 detected)"
+      npx --yes @grafana/sign-plugin@latest --distDir=.
+    else
+      echo "Warning: No suitable package manager found for signing plugin"
+    fi
+  elif which npm &>/dev/null; then
+    echo "Using npx to sign plugin"
+    npx --yes @grafana/sign-plugin@latest --distDir=.
+  else
+    echo "Warning: No suitable package manager found for signing plugin"
+  fi
+  
+  # Return to the previous directory
+  popd > /dev/null
+}
+
 # Get the absolute path of the plugin directory (first argument)
 PLUGIN_DIR="$1"
 if [ -z "$PLUGIN_DIR" ]; then
@@ -67,6 +102,35 @@ echo "Using temporary directory: $BUILD_DIR"
 echo "Copying plugin files..."
 cp -r "$DIST_DIR" "$PLUGIN_BUILD_DIR"
 
+# Look for the executable name in plugin.json
+EXECUTABLE=$(jq -r '.executable // empty' "${DIST_DIR}/plugin.json")
+
+# Build GO_BINARIES array if EXECUTABLE is set
+GO_BINARIES=()
+if [ -n "$EXECUTABLE" ]; then
+  PLATFORM_PATTERNS=(
+    "${EXECUTABLE}_darwin_amd64"
+    "${EXECUTABLE}_darwin_arm64"
+    "${EXECUTABLE}_linux_amd64"
+    "${EXECUTABLE}_linux_arm"
+    "${EXECUTABLE}_linux_arm64"
+    "${EXECUTABLE}_windows_amd64.exe"
+  )
+  for PATTERN in "${PLATFORM_PATTERNS[@]}"; do
+    found=$(find "$PLUGIN_BUILD_DIR" -name "$PATTERN" 2>/dev/null || true)
+    if [ -n "$found" ]; then
+      GO_BINARIES+=("$found")
+    fi
+  done
+  # Set permissions on all found Go binaries to 0755
+  for BINARY in "${GO_BINARIES[@]}"; do
+    chmod 0755 "$BINARY"
+  done
+fi
+
+# Sign the plugin before creating platform-agnostic package
+run_plugin_signer "$PLUGIN_BUILD_DIR"
+
 # Create the platform-agnostic zip
 echo "Creating platform-agnostic package..."
 PLATFORM_AGNOSTIC_ZIP="${OUTPUT_DIR}/${VERSION}/${PLUGIN_ID}-${VERSION}.zip"
@@ -75,8 +139,6 @@ LATEST_PLATFORM_AGNOSTIC_ZIP="${OUTPUT_DIR}/latest/${PLUGIN_ID}-latest.zip"
 (cd "$BUILD_DIR" && zip -r "$PLATFORM_AGNOSTIC_ZIP" "$PLUGIN_ID")
 cp "$PLATFORM_AGNOSTIC_ZIP" "$LATEST_PLATFORM_AGNOSTIC_ZIP"
 
-# Look for the executable name in plugin.json
-EXECUTABLE=$(jq -r '.executable // empty' "${DIST_DIR}/plugin.json")
 if [ -z "$EXECUTABLE" ]; then
   echo "No executable specified in plugin.json, skipping platform-specific packaging"
   # Generate SHA1 checksums for all zip files (with just the filename, not the full path)
@@ -87,28 +149,9 @@ if [ -z "$EXECUTABLE" ]; then
   exit 0
 fi
 
-# Platform patterns to search for
-PLATFORM_PATTERNS=(
-  "${EXECUTABLE}_darwin_amd64"
-  "${EXECUTABLE}_darwin_arm64"
-  "${EXECUTABLE}_linux_amd64"
-  "${EXECUTABLE}_linux_arm"
-  "${EXECUTABLE}_linux_arm64"
-  "${EXECUTABLE}_windows_amd64.exe"
-)
-
-# Find platform-specific binaries
-GO_BINARIES=()
-for PATTERN in "${PLATFORM_PATTERNS[@]}"; do
-  found=$(find "$PLUGIN_BUILD_DIR" -name "$PATTERN" 2>/dev/null || true)
-  if [ -n "$found" ]; then
-    GO_BINARIES+=("$found")
-  fi
-done
-
 if [ ${#GO_BINARIES[@]} -gt 0 ]; then
   echo "Found ${#GO_BINARIES[@]} platform-specific binaries, creating platform-specific packages..."
-  
+
   for BINARY in "${GO_BINARIES[@]}"; do
     # Extract the filename without path
     BINARY_NAME=$(basename "$BINARY")
@@ -136,35 +179,38 @@ if [ ${#GO_BINARIES[@]} -gt 0 ]; then
       echo "Warning: Could not determine platform for $BINARY_NAME, skipping"
       continue
     fi
-    
+
     echo "Processing binary for $GOOS/$GOARCH..."
-    
+
     # Create working directory for this platform
     PLATFORM_DIR="$BUILD_DIR/platform_${GOOS}_${GOARCH}"
     mkdir -p "$PLATFORM_DIR/$PLUGIN_ID"
-    
+
     # Copy all plugin files to the platform directory first
     cp -r "$PLUGIN_BUILD_DIR"/* "$PLATFORM_DIR/$PLUGIN_ID/"
-    
+
     # Remove all platform-specific binaries from the platform directory
     find "$PLATFORM_DIR/$PLUGIN_ID" -type f -name "${EXECUTABLE}_*" | xargs rm -f 2>/dev/null || true
-    
+
     # Copy just this specific binary to the correct location
     BINARY_REL_PATH=${BINARY#$PLUGIN_BUILD_DIR/}
     mkdir -p "$(dirname "$PLATFORM_DIR/$PLUGIN_ID/$BINARY_REL_PATH")"
     cp "$BINARY" "$PLATFORM_DIR/$PLUGIN_ID/$BINARY_REL_PATH"
-    
+
+    # Sign the plugin before creating platform-specific package
+    run_plugin_signer "$PLATFORM_DIR/$PLUGIN_ID"
+
     # Create platform-specific output directories
     mkdir -p "${OUTPUT_DIR}/${VERSION}/${GOOS}"
     mkdir -p "${OUTPUT_DIR}/latest/${GOOS}"
-    
+
     # Create the platform-specific zip
     PLATFORM_ZIP="${OUTPUT_DIR}/${VERSION}/${GOOS}/${PLUGIN_ID}-${VERSION}-${GOOS}_${GOARCH}.zip"
     LATEST_PLATFORM_ZIP="${OUTPUT_DIR}/latest/${GOOS}/${PLUGIN_ID}-latest-${GOOS}_${GOARCH}.zip"
-    
+
     (cd "$PLATFORM_DIR" && zip -r "$PLATFORM_ZIP" "$PLUGIN_ID")
     cp "$PLATFORM_ZIP" "$LATEST_PLATFORM_ZIP"
-    
+
     echo "Created $PLATFORM_ZIP"
   done
 else
