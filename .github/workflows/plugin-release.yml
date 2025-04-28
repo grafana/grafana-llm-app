@@ -106,39 +106,34 @@ jobs:
           echo "archive-latest-checksum=${GRAFANA_PLUGIN_ARTIFACT_LATEST_CHECKSUM}" >> $GITHUB_OUTPUT
           echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
-      - name: Package plugin
-        uses: sandersaarond/shared-workflows/actions/bundle-plugin@add-bundle-plugin
+      - name: Package grafana-ml-app
+        uses: ./.github/actions/package-plugin
         with:
-          distDir: ${{ env.plugin-dist-folder }}
+          plugin-directory: 'packages/grafana-llm-app'
 
-# ## SECOND runthrough of packaging, for testing to make sure the binaries match
-#       - name: Sign build (second time)
-#         run: yarn dlx @grafana/sign-plugin@latest
-#         shell: bash
-#         working-directory: packages/grafana-llm-app
+        # Weird file move, lets us modify the rest of the workflow a minimum.
+      - name: Move to upload folder
+        run: mv ./packages/grafana-llm-app/__packaging/grafana-llm-app/* __to-upload__
+        shell: bash
 
-#       - name: Package build (second time)
-#         uses: ./.github/actions/package-plugin
-#         with:
-#           plugin-directory: packages/grafana-llm-app
-
-      - name: List package hashes
+      - name: Validate plugin
         run: |
-          echo "=== Files in __to-upload__ ==="
-          find __to-upload__ -type f -exec sha256sum {} \; | sort
-          
-          echo -e "\n=== Contents of ZIP files ==="
-          for zipfile in $(find __to-upload__ -type f -name "*.zip"); do
-            echo -e "\nContents of $zipfile:"
-            # Create a temporary directory for this zip
-            temp_dir=$(mktemp -d)
-            unzip -q "$zipfile" -d "$temp_dir"
-            
-            # Get hashes of all files in the zip
-            cd "$temp_dir"
-            find . -type f -exec sha256sum {} \; | sort
-            cd - > /dev/null
-            
-            # Cleanup
-            rm -rf "$temp_dir"
-          done
+          git clone https://github.com/grafana/plugin-validator
+          pushd ./plugin-validator/pkg/cmd/plugincheck2
+          go install
+          popd
+          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive }}
+          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
+
+      - name: Create tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          github_token: ${{ steps.get_installation_token.outputs.token }}
+          message: "chore(tag): tag version ${{ steps.metadata.outputs.plugin-version }} [BOT]"
+          tag: v${{ steps.metadata.outputs.plugin-version }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-dir
+          path: __to-upload__
