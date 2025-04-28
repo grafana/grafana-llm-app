@@ -242,10 +242,6 @@ function createClientResource(appName: string, appVersion: string): ClientResour
   return {
     read() {
       if (status === 'pending') {
-        if (!result?.enabled) {
-          console.warn('MCP is not enabled');
-          return result || { client: null, enabled: false };
-        }
         throw promise;
       } else if (status === 'error') {
         throw error;
