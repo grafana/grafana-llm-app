@@ -219,6 +219,8 @@ function createClientResource(appName: string, appVersion: string): ClientResour
       if (!enabled) {
         status = 'success';
         result = { client: null, enabled };
+        clientMap.set(key, result);
+        return result;
       }
       const client = new Client({
         name: appName,
