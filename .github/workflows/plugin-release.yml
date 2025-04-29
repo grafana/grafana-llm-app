@@ -36,6 +36,7 @@ jobs:
           # Releases should always be made off of 'main'
           ref: 'main'
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Node.js environment
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610
@@ -111,6 +112,8 @@ jobs:
         with:
           distDir: ${{ env.plugin-dist-folder }}
 
+      # NOTE: The following step uses metadata outputs in shell commands. This is flagged as a potential template injection risk, but is considered acceptable here as all inputs are trusted.
+      # Specifically, the plugin release workflow is only run by the Grafana team, and the plugin validator is a trusted tool.
       - name: Validate plugin
         run: |
           git clone https://github.com/grafana/plugin-validator
@@ -119,7 +122,6 @@ jobs:
           popd
           plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive }}
           plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
-
 
       - name: Create tag
         uses: rickstaa/action-create-tag@a1c7777fcb2fee4f19b0f283ba888afa11678b72
@@ -156,6 +158,7 @@ jobs:
         with:
           ref: main
           token: ${{ steps.get_installation_token.outputs.token }}
+          persist-credentials: false
 
       - name: Download artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093

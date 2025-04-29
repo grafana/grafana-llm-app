@@ -3,9 +3,14 @@ on: [pull_request]
 
 jobs:
   compatibilitycheck:
+    permissions:
+      contents: read
+      id-token: none
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          persist-credentials: false
       - name: Setup Node.js environment
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610
         with:
