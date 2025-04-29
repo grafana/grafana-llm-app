@@ -114,14 +114,21 @@ jobs:
 
       # NOTE: The following step uses metadata outputs in shell commands. This is flagged as a potential template injection risk, but is considered acceptable here as all inputs are trusted.
       # Specifically, the plugin release workflow is only run by the Grafana team, and the plugin validator is a trusted tool.
+      # For good measure we have also escaped it.
       - name: Validate plugin
         run: |
           git clone https://github.com/grafana/plugin-validator
           pushd ./plugin-validator/pkg/cmd/plugincheck2
           go install
           popd
-          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive }}
-          plugincheck2 -config ./plugin-validator/config/default.yaml __to-upload__/latest/${{ steps.metadata.outputs.archive-latest }}
+
+          # Escape plugin metadata variables for safe use in shell commands
+          plugin_version_escaped=$(printf '%q' "${{ steps.metadata.outputs.plugin-version }}")
+          archive_escaped=$(printf '%q' "${{ steps.metadata.outputs.archive }}")
+          archive_latest_escaped=$(printf '%q' "${{ steps.metadata.outputs.archive-latest }}")
+
+          plugincheck2 -config ./plugin-validator/config/default.yaml "__to-upload__/${plugin_version_escaped}/${archive_escaped}"
+          plugincheck2 -config ./plugin-validator/config/default.yaml "__to-upload__/latest/${archive_latest_escaped}"
 
       - name: Create tag
         uses: rickstaa/action-create-tag@a1c7777fcb2fee4f19b0f283ba888afa11678b72
