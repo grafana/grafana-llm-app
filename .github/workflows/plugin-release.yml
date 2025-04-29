@@ -26,26 +26,26 @@ jobs:
       plugin-id: ${{ steps.metadata.outputs.plugin-id }}
 
     steps:
-      - uses: tibdex/github-app-token@v1
+      - uses: tibdex/github-app-token@32691ba7c9e7063bd457bd8f2a5703138591fa58
         id: get_installation_token
         with:
           app_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_ID }}
           installation_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_INSTALLATION_ID }}
           private_key: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_PRIVATE_KEY }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
           # Releases should always be made off of 'main'
           ref: 'main'
           fetch-depth: 0
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610
         with:
           node-version: 22
 
       - name: Setup Go environment
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639
         with:
           go-version: '1.21'
 
@@ -55,7 +55,7 @@ jobs:
 
       - name: Restore go-build cache
         id: restore-go-build-cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@84995e0d91a927aa8da027221d329f84446b8c9b
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
@@ -65,7 +65,7 @@ jobs:
         run: sudo apt-get install jq
 
       - name: Install Mage
-        uses: magefile/mage-action@v3
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b
         with:
             install-only: true
 
@@ -109,7 +109,7 @@ jobs:
           echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
       - name: Package plugin
-        uses: sandersaarond/shared-workflows/actions/bundle-plugin@add-bundle-plugin
+        uses: sandersaarond/shared-workflows/actions/bundle-plugin@5acdc66c5cdc33b59abf1390c0a8d3df7ddddd74
         with:
           distDir: ${{ env.plugin-dist-folder }}
 
@@ -124,14 +124,14 @@ jobs:
 
 
       - name: Create tag
-        uses: rickstaa/action-create-tag@v1
+        uses: rickstaa/action-create-tag@a1c7777fcb2fee4f19b0f283ba888afa11678b72
         with:
           github_token: ${{ steps.get_installation_token.outputs.token }}
           message: "chore(tag): tag version ${{ steps.metadata.outputs.plugin-version }} [BOT]"
           tag: v${{ steps.metadata.outputs.plugin-version }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: upload-dir
           path: __to-upload__
@@ -144,26 +144,26 @@ jobs:
       GCOM_ROOT: https://grafana.com
     steps:
 
-      - uses: tibdex/github-app-token@v1
+      - uses: tibdex/github-app-token@32691ba7c9e7063bd457bd8f2a5703138591fa58
         id: get_installation_token
         with:
           app_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_ID }}
           installation_id: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_INSTALLATION_ID }}
           private_key: ${{ secrets.GRAFANA_MACHINE_LEARNING_GITHUB_APP_PRIVATE_KEY }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
           ref: main
           token: ${{ steps.get_installation_token.outputs.token }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: upload-dir
           path: ${{ needs.build-release.outputs.upload-folder }}
 
       - name: Create Github release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           generate_release_notes: true
           files: |
@@ -171,19 +171,19 @@ jobs:
           tag_name: ${{ needs.build-release.outputs.version-tag }}
 
       - id: get-secrets
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        uses: grafana/shared-workflows/actions/get-vault-secrets@5d7e361bc7e0a183cde8afe9899fb7b596d2659b
         with:
           common_secrets: |
             GCP_UPLOAD_ARTIFACTS_KEY=grafana/integration-artifacts-uploader-service-account:'credentials.json'
 
       - id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+        uses: 'google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f'
         with:
           credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
 
       - id: 'upload-to-gcs'
         name: 'Upload assets to latest'
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+        uses: 'google-github-actions/upload-cloud-storage@e95a15f226403ed658d3e65f40205649f342ba2c'
         with:
           path: ./${{ needs.build-release.outputs.upload-folder }}
           destination: 'integration-artifacts/grafana-llm-app/release/'
@@ -191,7 +191,7 @@ jobs:
 
       - id: 'publish-to-gcom'
         name: 'Publish to Grafana.com'
-        uses: 'sandersaarond/shared-workflows/actions/publish-backend-plugin-on-site@publish-plugin-on-site'
+        uses: 'sandersaarond/shared-workflows/actions/publish-backend-plugin-on-site@publish-plugin-on-site@8f7b22795cdba3f6d30b05c186f17e3ac51dccf1'
         with:
           plugin-id: ${{ needs.build-release.outputs.plugin-id }}
           plugin-version: ${{ needs.build-release.outputs.version-tag }}
