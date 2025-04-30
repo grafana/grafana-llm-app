@@ -3,21 +3,26 @@ on: [pull_request]
 
 jobs:
   tests:
+    permissions:
+      contents: read
+      id-token: none
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          persist-credentials: false
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610
         with:
           node-version: '22'
           cache: 'npm'
       - name: Setup Go environment
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639
         with:
           go-version-file: packages/grafana-llm-app/go.mod
           cache-dependency-path: packages/grafana-llm-app/go.sum
       - name: Install Mage
-        uses: magefile/mage-action@v3
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b
         with:
           install-only: true
       - name: Install dependencies
