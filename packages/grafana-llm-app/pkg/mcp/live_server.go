@@ -101,7 +101,7 @@ func WithLLMAppAccessPolicyToken(token string) GrafanaLiveOption {
 }
 
 // NewGrafanaLiveServer creates a new GrafanaLiveServer.
-func NewGrafanaLiveServer(server *server.MCPServer, opts ...GrafanaLiveOption) *GrafanaLiveServer {
+func NewGrafanaLiveServer(server *server.MCPServer, opts ...GrafanaLiveOption) (*GrafanaLiveServer, error) {
 	s := &GrafanaLiveServer{
 		server: server,
 		done:   make(chan struct{}),
@@ -117,11 +117,10 @@ func NewGrafanaLiveServer(server *server.MCPServer, opts ...GrafanaLiveOption) *
 			TokenExchangeURL: "http://api-lb.auth.svc.cluster.local./v1/sign-access-token", // TODO: make this configurable.
 		})
 		if err != nil {
-			// TODO: Handle this better.
-			log.DefaultLogger.Error("Failed to create token exchange client", "error", err)
+			return nil, fmt.Errorf("failed to create token exchange client: %w", err)
 		}
 	}
-	return s
+	return s, nil
 }
 
 // SetContextFunc sets the context function for the GrafanaLiveServer.
