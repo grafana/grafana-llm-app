@@ -188,13 +188,13 @@ jobs:
             GCP_UPLOAD_ARTIFACTS_KEY=grafana/integration-artifacts-uploader-service-account:'credentials.json'
 
       - id: 'auth'
-        uses: 'google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f'
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f
         with:
           credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
 
       - id: 'upload-to-gcs'
         name: 'Upload assets to latest'
-        uses: 'google-github-actions/upload-cloud-storage@e95a15f226403ed658d3e65f40205649f342ba2c'
+        uses: google-github-actions/upload-cloud-storage@e95a15f226403ed658d3e65f40205649f342ba2c
         with:
           path: ./${{ needs.build-release.outputs.upload-folder }}
           destination: 'integration-artifacts/grafana-llm-app/release/'
@@ -202,7 +202,7 @@ jobs:
 
       - id: 'publish-to-gcom'
         name: 'Publish to Grafana.com'
-        uses: 'sandersaarond/shared-workflows/actions/publish-backend-plugin-on-site@publish-plugin-on-site@8f7b22795cdba3f6d30b05c186f17e3ac51dccf1'
+        uses: sandersaarond/shared-workflows/actions/publish-backend-plugin-on-site@8f7b22795cdba3f6d30b05c186f17e3ac51dccf1
         with:
           plugin-id: ${{ needs.build-release.outputs.plugin-id }}
           plugin-version: ${{ needs.build-release.outputs.version-tag }}
