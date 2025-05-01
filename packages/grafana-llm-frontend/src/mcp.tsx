@@ -1,14 +1,14 @@
 import React from 'react';
 
 import { isLiveChannelMessageEvent, LiveChannelAddress, LiveChannelMessageEvent, LiveChannelScope } from '@grafana/data';
-import { getGrafanaLiveSrv, GrafanaLiveSrv } from '@grafana/runtime';
+import { getBackendSrv, getGrafanaLiveSrv, GrafanaLiveSrv, logDebug } from '@grafana/runtime';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 import { Client } from '@modelcontextprotocol/sdk/client/index';
 import { JSONRPCMessage, JSONRPCMessageSchema, Tool as MCPTool } from '@modelcontextprotocol/sdk/types';
 import { Observable, filter } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
-import { LLM_PLUGIN_ID } from './constants';
+import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from './constants';
 import { Tool as OpenAITool } from './openai';
 
 const MCP_GRAFANA_PATH = 'mcp/grafana'
@@ -148,6 +148,16 @@ export class GrafanaLiveTransport implements Transport {
   }
 }
 
+/**
+ * A result object containing a client instance and whether MCP is enabled.
+ */
+interface ClientResult {
+  /* Whether MCP is enabled for the current Grafana instance. */
+  enabled: boolean;
+  /* The client instance. */
+  client: Client | null;
+}
+
 // Create a map to store client instances. These will be keyed by the appName and appVersion.
 // This effectively means:
 // - each app will have a single client instance that is reused across the application.
@@ -155,10 +165,10 @@ export class GrafanaLiveTransport implements Transport {
 //   cleaned up when the component unmounts.
 // - this also allows users to wrap the MCPClientProvider in Suspense, which will
 //   automatically suspend the component until the client is ready.
-const clientMap = new Map<string, Client>();
+const clientMap = new Map<string, ClientResult>();
 
-// Context holding a client instance.
-const MCPClientContext = React.createContext<Client | null>(null);
+// Context holding a client instance if MCP is enabled.
+const MCPClientContext = React.createContext<ClientResult | null>(null);
 
 // Create a key for the client map.
 function clientKey(appName: string, appVersion: string) {
@@ -168,13 +178,32 @@ function clientKey(appName: string, appVersion: string) {
 // A resource type, used with `createClientResource` to fetch the client or
 // throw a promise if it's not yet ready.
 type ClientResource = {
-  read: () => Client;
+  read: () => ClientResult;
 };
+
+async function isEnabled(): Promise<boolean> {
+  try {
+    const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
+      showSuccessAlert: false,
+      showErrorAlert: false,
+    });
+    if (!settings.enabled) {
+      return false;
+    }
+    return settings.jsonData.mcp.enabled;
+  } catch (e) {
+    logDebug(String(e));
+    logDebug(
+      'Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.'
+    );
+    return false;
+  }
+}
 
 // Create a resource that works with Suspense.
 function createClientResource(appName: string, appVersion: string): ClientResource {
   let status: 'pending' | 'success' | 'error' = 'pending';
-  let result: Client | null = null;
+  let result: ClientResult | null = null;
   let error: Error | null = null;
 
   const key = clientKey(appName, appVersion);
@@ -186,16 +215,23 @@ function createClientResource(appName: string, appVersion: string): ClientResour
     }
 
     try {
+      const enabled = await isEnabled();
+      if (!enabled) {
+        status = 'success';
+        result = { client: null, enabled };
+        clientMap.set(key, result);
+        return result;
+      }
       const client = new Client({
         name: appName,
         version: appVersion,
       });
       const transport = new GrafanaLiveTransport();
       await client.connect(transport);
-      clientMap.set(key, client);
+      result = { client, enabled };
+      clientMap.set(key, result);
       status = 'success';
-      result = client;
-      return client;
+      return result;
     } catch (e) {
       status = 'error';
       error = e as Error;
@@ -264,20 +300,20 @@ export function MCPClientProvider({
   // This will either return the client or throw a promise/error.
   // If it throws a promise, Suspense will suspend the component until it resolves.
   // If it throws an error, it should be caught by an ErrorBoundary.
-  const client = resource.read();
+  const result = resource.read();
 
   // Cleanup when the component unmounts.
   React.useEffect(() => {
     return () => {
-      if (client) {
-        client.close();
+      if (result?.client) {
+        result.client.close();
       }
       clientMap.delete(clientKey(appName, appVersion));
     };
-  }, [client, appName, appVersion]);
+  }, [result, appName, appVersion]);
 
   return (
-    <MCPClientContext.Provider value={client}>
+    <MCPClientContext.Provider value={result}>
       {children}
     </MCPClientContext.Provider>
   );
@@ -290,7 +326,7 @@ export function MCPClientProvider({
  *
  * @experimental
  */
-export function useMCPClient(): Client {
+export function useMCPClient(): ClientResult {
   const client = React.useContext(MCPClientContext);
   if (client === null) {
     throw new Error('useMCPClient must be used within an MCPClientProvider');
