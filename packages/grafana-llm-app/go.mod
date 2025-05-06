@@ -8,11 +8,11 @@ require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-beta.3
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/grafana/authlib v0.0.0-20250423111852-90ec44e81796
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20250108132429-8d7e1f158f65
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20250428202209-be3a35ff1dac
 	github.com/grafana/grafana-plugin-sdk-go v0.274.0
-	github.com/grafana/incident-go v0.0.0-20250211094540-dc6a98fdae43
-	github.com/grafana/mcp-grafana v0.2.6
-	github.com/mark3labs/mcp-go v0.21.0
+	github.com/grafana/incident-go v0.0.0-20250425172312-4be2558a0c7f
+	github.com/grafana/mcp-grafana v0.3.0
+	github.com/mark3labs/mcp-go v0.26.0
 	github.com/qdrant/go-client v1.13.0
 	github.com/sashabaranov/go-openai v1.38.1
 	github.com/stretchr/testify v1.10.0
@@ -102,6 +102,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/prometheus v0.302.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/spf13/cast v1.8.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -131,7 +132,7 @@ require (
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect
