@@ -26,8 +26,8 @@ const (
 	// publishSuffix is the suffix for the publish channel endpoint.
 	publishSuffix = "/publish"
 
-	// AccessTokenHeader is the HTTP header key for the access token.
-	AccessTokenHeader = "X-Access-Token"
+	// accessTokenHeader is the HTTP header key for the access token.
+	accessTokenHeader = "X-Access-Token"
 )
 
 // ErrStreamNotFound is an error returned when a publish message is sent to a path
@@ -57,7 +57,10 @@ type GrafanaLiveServer struct {
 	tenant string
 	// llmAppAccessPolicyToken is the token created from the LLM app's access policy.
 	llmAppAccessPolicyToken string
-	// enableGrafanaManagedLLM is a flag to indicate if this is running in Grafana Cloud.
+	// Note: Even though this flag is named enableGrafanaManagedLLM and was originally added as
+	// a setting to choose the Grafana Managed LLM, we are using it as a proxy to check if we are
+	// running in Grafana Cloud. This needs to be renamed in the future but it requires a larger
+	// refactor.
 	enableGrafanaManagedLLM bool
 	// tokenExchangeClient is the token exchange client for the Grafana Live session.
 	tokenExchangeClient *authn.TokenExchangeClient
@@ -272,7 +275,7 @@ func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backe
 	if len(accessToken) > 0 {
 		log.DefaultLogger.Info("Setting access token in grafana client", "len_access_token", len(accessToken))
 		t.HTTPHeaders = map[string]string{
-			AccessTokenHeader:                        accessToken,
+			accessTokenHeader:                        accessToken,
 			backend.GrafanaUserSignInTokenHeaderName: grafanaIdToken,
 		}
 	} else {
