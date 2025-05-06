@@ -9,11 +9,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-openapi/strfmt"
+	"github.com/grafana/authlib/authn"
 	"github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/incident-go"
 	mcpgrafana "github.com/grafana/mcp-grafana"
+
+	"github.com/go-openapi/strfmt"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -22,6 +25,9 @@ const (
 	subscribeSuffix = "/subscribe"
 	// publishSuffix is the suffix for the publish channel endpoint.
 	publishSuffix = "/publish"
+
+	// accessTokenHeader is the HTTP header key for the access token.
+	accessTokenHeader = "X-Access-Token"
 )
 
 // ErrStreamNotFound is an error returned when a publish message is sent to a path
@@ -32,7 +38,7 @@ var ErrStreamNotFound = errors.New("stream not found")
 // a potentially modified context.
 // pCtx is the plugin context for the current request. This will contain
 // some user specific information.
-type GrafanaLiveContextFunc func(ctx context.Context, pCtx *backend.PluginContext) context.Context
+type GrafanaLiveContextFunc func(ctx context.Context, pCtx *backend.PluginContext, accessToken string, grafanaIdToken string) context.Context
 
 // GrafanaLiveServer wraps an MCPServer and coordinates Grafana Live connections
 // to the MCP server.
@@ -46,6 +52,18 @@ type GrafanaLiveContextFunc func(ctx context.Context, pCtx *backend.PluginContex
 type GrafanaLiveServer struct {
 	// server is the MCP server that will handle the MCP messages.
 	server *server.MCPServer
+	// tenant is the stack ID (Hosted Grafana ID) of the instance this plugin
+	// is running on.
+	tenant string
+	// llmAppAccessPolicyToken is the token created from the LLM app's access policy.
+	llmAppAccessPolicyToken string
+	// Note: Even though this flag is named enableGrafanaManagedLLM and was originally added as
+	// a setting to choose the Grafana Managed LLM, we are using it as a proxy to check if we are
+	// running in Grafana Cloud. This needs to be renamed in the future but it requires a larger
+	// refactor.
+	enableGrafanaManagedLLM bool
+	// tokenExchangeClient is the token exchange client for the Grafana Live session.
+	tokenExchangeClient *authn.TokenExchangeClient
 	// sessions is a map of active Grafana Live connections, keyed by the path
 	// of the channel with the suffix "/subscribe" or "/publish" removed.
 	sessions sync.Map
@@ -67,8 +85,26 @@ func WithGrafanaLiveContextFunc(contextFunc GrafanaLiveContextFunc) GrafanaLiveO
 	}
 }
 
+func WithGrafanaTenant(tenant string) GrafanaLiveOption {
+	return func(s *GrafanaLiveServer) {
+		s.tenant = tenant
+	}
+}
+
+func WithGrafanaManagedLLM(enabled bool) GrafanaLiveOption {
+	return func(s *GrafanaLiveServer) {
+		s.enableGrafanaManagedLLM = enabled
+	}
+}
+
+func WithLLMAppAccessPolicyToken(token string) GrafanaLiveOption {
+	return func(s *GrafanaLiveServer) {
+		s.llmAppAccessPolicyToken = token
+	}
+}
+
 // NewGrafanaLiveServer creates a new GrafanaLiveServer.
-func NewGrafanaLiveServer(server *server.MCPServer, opts ...GrafanaLiveOption) *GrafanaLiveServer {
+func NewGrafanaLiveServer(server *server.MCPServer, opts ...GrafanaLiveOption) (*GrafanaLiveServer, error) {
 	s := &GrafanaLiveServer{
 		server: server,
 		done:   make(chan struct{}),
@@ -76,7 +112,18 @@ func NewGrafanaLiveServer(server *server.MCPServer, opts ...GrafanaLiveOption) *
 	for _, opt := range opts {
 		opt(s)
 	}
-	return s
+
+	if s.enableGrafanaManagedLLM {
+		var err error
+		s.tokenExchangeClient, err = authn.NewTokenExchangeClient(authn.TokenExchangeConfig{
+			Token:            s.llmAppAccessPolicyToken,
+			TokenExchangeURL: "http://api-lb.auth.svc.cluster.local./v1/sign-access-token", // TODO: make this configurable.
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create token exchange client: %w", err)
+		}
+	}
+	return s, nil
 }
 
 // SetContextFunc sets the context function for the GrafanaLiveServer.
@@ -94,15 +141,44 @@ type liveSession struct {
 	// sender is the StreamSender for the Grafana Live session. It is used to send
 	// JSON-RPC responses back to the client.
 	sender *backend.StreamSender
+
+	// accessToken is the access token for the Grafana Live session.
+	accessToken string
+	// grafanaIdToken is the Grafana ID token for the Grafana Live session.
+	grafanaIdToken string
 }
 
 // HandleStream handles a new Grafana Live session.
 func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	ls := &liveSession{
+		sender: sender,
+	}
+	var tokenExchangeResponse *authn.TokenExchangeResponse
+	var grafanaIdToken string
+	// Only do the token exchange if we are in Grafana Cloud.
+	if s.enableGrafanaManagedLLM {
+		var err error
+		// We need to use the token exchange API to create a token for the Grafana Live session.
+		tokenExchangeResponse, err = s.tokenExchangeClient.Exchange(ctx, authn.TokenExchangeRequest{
+			Namespace: fmt.Sprintf("stack-%s", s.tenant),
+			Audiences: []string{"grafana"},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to perform token exchange with auth api: %w", err)
+		}
+		ls.accessToken = tokenExchangeResponse.Token
+
+		// Get the Grafana ID token from the request.
+		grafanaIdToken = req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
+		if grafanaIdToken == "" {
+			return fmt.Errorf("grafana id token not found in request headers")
+		}
+		ls.grafanaIdToken = grafanaIdToken
+	}
+
 	// Store the session in the sessions map.
 	path := strings.TrimSuffix(req.Path, subscribeSuffix)
-	s.sessions.Store(path, &liveSession{
-		sender: sender,
-	})
+	s.sessions.Store(path, ls)
 	defer s.sessions.Delete(path)
 	// Block until the stream is closed or the Grafana Live server is shutting down.
 	for {
@@ -127,8 +203,10 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 
 	// Modify the context if a context function is set.
 	if s.contextFunc != nil {
-		ctx = s.contextFunc(ctx, &req.PluginContext)
+		ctx = s.contextFunc(ctx, &req.PluginContext, session.accessToken, session.grafanaIdToken)
 	}
+
+	log.DefaultLogger.Info("Handling message", "len_access_token", len(session.accessToken), "len_grafana_id_token", len(session.grafanaIdToken))
 
 	// Process the message through the MCPServer.
 	response := s.server.HandleMessage(ctx, req.Data)
@@ -145,9 +223,31 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 	}
 }
 
+func extractGrafanaInfoFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext, accessToken string, grafanaIdToken string) context.Context {
+	cfg := backend.GrafanaConfigFromContext(ctx)
+	if cfg == nil {
+		return ctx
+	}
+	url, err := cfg.AppURL()
+	if err != nil {
+		return ctx
+	}
+
+	// If we have an access token and grafana id token, use on-behalf-of auth.
+	if accessToken != "" && grafanaIdToken != "" {
+		// MustWithOnBehalfOfAuth will panic if the access token or grafana id token
+		// are empty. That is why we check for empty strings above.
+		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaURL(ctx, url), accessToken, grafanaIdToken)
+	}
+
+	// If we are not using Grafana Cloud, use the API key.
+	apiKey, _ := cfg.PluginAppClientSecret()
+	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
+}
+
 // ExtractClientFromGrafanaLiveRequest is a GrafanaLiveContextFunc which extracts the Grafana config
 // from settings and sets the client in the context.
-func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext, accessToken string, grafanaIdToken string) context.Context {
 	t := client.DefaultTransportConfig()
 
 	cfg := backend.GrafanaConfigFromContext(ctx)
@@ -171,31 +271,24 @@ func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backe
 		t.Schemes = []string{"http"}
 	}
 
-	// TODO: fetch ID token / auth token from headers, as the app client secret
-	// uses the plugin's service account, not the current user.
-	// Tracked in https://github.com/grafana/grafana-llm-app/issues/593.
-	if apiKey, err := cfg.PluginAppClientSecret(); err == nil {
-		t.APIKey = apiKey
+	// If we have an access token, set it in the HTTP headers.
+	if len(accessToken) > 0 {
+		log.DefaultLogger.Info("Setting access token in grafana client", "len_access_token", len(accessToken))
+		t.HTTPHeaders = map[string]string{
+			accessTokenHeader:                        accessToken,
+			backend.GrafanaUserSignInTokenHeaderName: grafanaIdToken,
+		}
+	} else {
+		if apiKey, err := cfg.PluginAppClientSecret(); err == nil {
+			t.APIKey = apiKey
+		}
 	}
 
 	c := client.NewHTTPClientWithConfig(strfmt.Default, t)
 	return mcpgrafana.WithGrafanaClient(ctx, c)
 }
 
-func extractGrafanaInfoFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext) context.Context {
-	cfg := backend.GrafanaConfigFromContext(ctx)
-	if cfg == nil {
-		return ctx
-	}
-	url, err := cfg.AppURL()
-	if err != nil {
-		return ctx
-	}
-	apiKey, _ := cfg.PluginAppClientSecret()
-	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
-}
-
-func extractIncidentClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+func extractIncidentClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext, accessToken string, grafanaIdToken string) context.Context {
 	cfg := backend.GrafanaConfigFromContext(ctx)
 	if cfg == nil {
 		return ctx
@@ -206,15 +299,17 @@ func extractIncidentClientFromGrafanaLiveRequest(ctx context.Context, pCtx *back
 	}
 	apiKey, _ := cfg.PluginAppClientSecret()
 	incidentUrl := fmt.Sprintf("%s/api/plugins/grafana-incident-app/resources/api/", strings.TrimSuffix(grafanaURL, "/"))
+	// TODO: incident client does not support access tokens. For this reason,
+	// we will not be enabling Incident tools in Grafana Cloud yet.
 	client := incident.NewClient(incidentUrl, apiKey)
 	return mcpgrafana.WithIncidentClient(ctx, client)
 }
 
 // ComposeStdioContextFuncs composes multiple GrafanaLiveContextFunc into a single one.
 func composeStdioContextFuncs(funcs ...GrafanaLiveContextFunc) GrafanaLiveContextFunc {
-	return func(ctx context.Context, pCtx *backend.PluginContext) context.Context {
+	return func(ctx context.Context, pCtx *backend.PluginContext, accessToken string, grafanaIdToken string) context.Context {
 		for _, f := range funcs {
-			ctx = f(ctx, pCtx)
+			ctx = f(ctx, pCtx, accessToken, grafanaIdToken)
 		}
 		return ctx
 	}
