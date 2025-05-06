@@ -161,14 +161,14 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 			Audiences: []string{"grafana"},
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to perform token exchange with auth api: %w", err)
 		}
 		ls.accessToken = tokenExchangeResponse.Token
 
 		// Get the Grafana ID token from the request.
 		grafanaIdToken = req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
 		if grafanaIdToken == "" {
-			return errors.New("grafana id token not found in request headers")
+			return fmt.Errorf("grafana id token not found in request headers")
 		}
 		ls.grafanaIdToken = grafanaIdToken
 	}
@@ -230,15 +230,16 @@ func extractGrafanaInfoFromGrafanaLiveRequest(ctx context.Context, pCtx *backend
 		return ctx
 	}
 
-	// If we are not using Grafana Cloud, use the API key. In this case, the
-	// access token and grafana id token will be empty.
-	if accessToken == "" || grafanaIdToken == "" {
-		apiKey, _ := cfg.PluginAppClientSecret()
-		return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
+	// If we have an access token and grafana id token, use on-behalf-of auth.
+	if accessToken != "" && grafanaIdToken != "" {
+		// MustWithOnBehalfOfAuth will panic if the access token or grafana id token
+		// are empty. That is why we check for empty strings above.
+		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaURL(ctx, url), accessToken, grafanaIdToken)
 	}
 
-	// If we have an access token and grafana id token, use on-behalf-of auth.
-	return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaURL(ctx, url), accessToken, grafanaIdToken)
+	// If we are not using Grafana Cloud, use the API key.
+	apiKey, _ := cfg.PluginAppClientSecret()
+	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
 }
 
 // ExtractClientFromGrafanaLiveRequest is a GrafanaLiveContextFunc which extracts the Grafana config
