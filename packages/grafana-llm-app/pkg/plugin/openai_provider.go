@@ -24,7 +24,14 @@ func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvi
 		Timeout: 2 * time.Minute,
 	}
 	cfg := openai.DefaultConfig(settings.apiKey)
-	base, err := url.JoinPath(settings.URL, "/v1")
+
+	// Defensively check that APIPath is not nil to avoid potential panics
+	// if settings aren't loaded using loadSettings.
+	if settings.APIPath == nil {
+		*settings.APIPath = defaultOpenAIAPIPath
+	}
+
+	base, err := url.JoinPath(settings.URL, *settings.APIPath)
 	if err != nil {
 		return nil, fmt.Errorf("join url: %w", err)
 	}
