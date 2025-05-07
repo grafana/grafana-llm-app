@@ -248,6 +248,7 @@ export function LLMConfig({
                   secrets={secrets}
                   secretsSet={secretsSet}
                   onChangeSecrets={onChangeSecrets}
+                  allowCustomPath={false}
                 />
               )}
             </Card.Description>
@@ -288,6 +289,7 @@ export function LLMConfig({
                   secrets={secrets}
                   secretsSet={secretsSet}
                   onChangeSecrets={onChangeSecrets}
+                  allowCustomPath={true}
                 />
               )}
             </Card.Description>
