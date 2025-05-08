@@ -12,8 +12,15 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-const openAIKey = "openAIKey"
-const encodedTenantAndTokenKey = "base64EncodedAccessToken"
+const (
+	openAIKey                = "openAIKey"
+	encodedTenantAndTokenKey = "base64EncodedAccessToken"
+)
+
+var (
+	// This has to be a var so we can take its address later.
+	defaultOpenAIAPIPath = "/v1"
+)
 
 type ProviderType string
 
@@ -30,6 +37,10 @@ const (
 type OpenAISettings struct {
 	// The URL to the OpenAI provider
 	URL string `json:"url"`
+
+	// The API path to append to the URL.
+	// If nil, the default path of /v1 is used.
+	APIPath *string `json:"apiPath"`
 
 	// The OrgID to be passed to OpenAI in requests
 	OrganizationID string `json:"organizationId"`
@@ -205,6 +216,10 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	// an empty string.
 	if settings.OpenAI.URL == "" {
 		settings.OpenAI.URL = "https://api.openai.com"
+	}
+	// Use default API path if not overridden in settings.
+	if settings.OpenAI.APIPath == nil {
+		settings.OpenAI.APIPath = &defaultOpenAIAPIPath
 	}
 	if settings.Anthropic.URL == "" {
 		settings.Anthropic.URL = "https://api.anthropic.com"

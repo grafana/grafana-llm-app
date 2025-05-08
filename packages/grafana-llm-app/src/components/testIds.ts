@@ -3,6 +3,8 @@ export const testIds = {
     container: 'data-testid ac-container',
     provider: 'data-testid ac-provider',
     openAIKey: 'data-testid ac-openai-api-key',
+    customizeOpenAIApiPath: 'data-testid ac-customize-openai-api-path',
+    openAIApiPath: 'data-testid ac-openai-api-path',
     openAIOrganizationID: 'data-testid ac-openai-api-organization-id',
     openAIUrl: 'data-testid ac-openai-api-url',
     anthropicKey: 'data-testid ac-anthropic-api-key',
