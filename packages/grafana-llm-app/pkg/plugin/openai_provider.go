@@ -50,6 +50,10 @@ func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
 func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
+
+	ForceUserMessage(&r)
+
+	log.DefaultLogger.Info("CCCCCCCCCChat completion request", "req", fmt.Sprintf("%+v", r))
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error creating openai chat completion", "err", err)
@@ -61,11 +65,17 @@ func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) 
 func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
+
+	ForceUserMessage(&r)
+
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
 
 func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc *openai.Client) (<-chan ChatCompletionStreamResponse, error) {
 	r.Stream = true
+
+	ForceUserMessage(&r)
+
 	stream, err := oc.CreateChatCompletionStream(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error establishing stream", "err", err)

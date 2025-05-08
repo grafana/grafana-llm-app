@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAnthropicProvider_forceUserMessage(t *testing.T) {
+func TestForceUserMessage(t *testing.T) {
 	tests := []struct {
 		name     string
 		messages []openai.ChatCompletionMessage
@@ -89,14 +89,12 @@ func TestAnthropicProvider_forceUserMessage(t *testing.T) {
 		},
 	}
 
-	provider := &anthropicProvider{}
-
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			req := &openai.ChatCompletionRequest{
 				Messages: tc.messages,
 			}
-			provider.forceUserMessage(req)
+			ForceUserMessage(req)
 			assert.Equal(t, tc.expected, req.Messages)
 		})
 	}
