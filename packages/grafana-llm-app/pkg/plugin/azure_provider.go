@@ -113,7 +113,3 @@ func (p *azure) getAzureMapping() (map[Model]string, error) {
 	}
 	return result, nil
 }
-
-func (p *azure) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return p.oc.ListAssistants(ctx, limit, order, after, before)
-}

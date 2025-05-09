@@ -32,7 +32,6 @@ The Grafana LLM App is designed to be extensible, allowing you to add support fo
      - `Models()` - Returns available models
      - `ChatCompletion()` - Handles chat completion requests
      - `ChatCompletionStream()` - Handles streaming chat completion requests
-     - `ListAssistants()` - Handles assistant-related functionality (can return an error if not supported)
 
 
 3. **Register the Provider**:
@@ -298,11 +297,6 @@ func (p *myLLMProvider) ChatCompletion(ctx context.Context, req ChatCompletionRe
 
 func (p *myLLMProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
     // Implement streaming support
-}
-
-func (p *myLLMProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-    // Implement or return an error if not supported
-    return openai.AssistantsList{}, fmt.Errorf("myllm does not support assistants")
 }
 ```
 

@@ -109,7 +109,3 @@ func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc
 	}()
 	return c, nil
 }
-
-func (p *openAI) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return p.oc.ListAssistants(ctx, limit, order, after, before)
-}
