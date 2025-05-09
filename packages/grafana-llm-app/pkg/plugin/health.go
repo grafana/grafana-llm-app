@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
@@ -23,7 +22,6 @@ type llmProviderHealthDetails struct {
 	OK         bool                  `json:"ok"`
 	Error      string                `json:"error,omitempty"`
 	Models     map[Model]modelHealth `json:"models"`
-	Assistant  modelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
@@ -70,17 +68,6 @@ func (a *App) testProviderModel(ctx context.Context, model Model) error {
 	return nil
 }
 
-func (a *App) testProviderAssistant(ctx context.Context) error {
-	llmProvider, err := createProvider(a.settings)
-	if err != nil {
-		return err
-	}
-
-	limit := 1
-	_, err = llmProvider.ListAssistants(ctx, &limit, nil, nil, nil)
-	return err
-}
-
 // llmProviderHealth checks the health of the LLM provider configuration and caches the
 // result if successful. The caller must lock a.healthCheckMutex.
 func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, error) {
@@ -101,7 +88,6 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 		OK:         true,
 		Configured: a.settings.Configured(),
 		Models:     map[Model]modelHealth{},
-		Assistant:  modelHealth{OK: false, Error: "Assistant not available"},
 	}
 
 	for _, model := range supportedModels {
@@ -127,17 +113,6 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 	if !anyOK {
 		d.OK = false
 		d.Error = "No functioning models are available"
-	}
-
-	if d.Configured {
-		err := a.testProviderAssistant(ctx)
-		if err == nil {
-			d.Assistant.OK = true
-			d.Assistant.Error = ""
-		} else {
-			d.Assistant.OK = false
-			d.Assistant.Error = strings.Join([]string{d.Assistant.Error, err.Error()}, ": ")
-		}
 	}
 
 	// Only cache result if provider is ok to use.
