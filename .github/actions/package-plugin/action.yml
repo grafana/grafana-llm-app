@@ -6,30 +6,54 @@
 ## It also addresses cases where we may have a plugin which is not in document root, but rather in a subdirectory
 ## Those cases were not well addressed by existing tooling
 
-name: 'Package Grafana Plugin'
-description: 'Packages a Grafana plugin into distributables using a centralized package.sh script'
+name: "Package Grafana Plugin"
+description: "Packages a Grafana plugin into distributables using a centralized package.sh script"
 inputs:
   plugin-directory:
-    description: 'Directory containing the built plugin with dist/ directory'
+    description: "Directory containing the built plugin with dist/ directory"
     required: true
-    default: '.'
+    default: "."
 outputs:
   output-dir:
-    description: 'Path to the directory containing packaged plugin files'
+    description: "Path to the directory containing packaged plugin files"
     value: ${{ steps.package.outputs.output-dir }}
 
 runs:
   using: "composite"
   steps:
-    - name: Check plugin directory exists
+    - name: Validate plugin directory input
       shell: bash
+      env:
+        PLUGIN_DIR: ${{ inputs.plugin-directory }}
       run: |
-        if [ ! -d "${{ inputs.plugin-directory }}" ]; then
-          echo "Error: Plugin directory not found: ${{ inputs.plugin-directory }}"
+        # Check to make sure the plugin directory is within the current working directory
+        # Resolve absolute paths for the plugin directory and the current working directory
+        PLUGIN_DIR_ABS="$(realpath "$PLUGIN_DIR")"
+        PWD_ABS="$(realpath "$PWD")"
+
+        # Check if PLUGIN_DIR_ABS is NOT the same as PWD_ABS and NOT a subdirectory of it
+        if [[ "$PLUGIN_DIR_ABS" != "$PWD_ABS" ]] && [[ "$PLUGIN_DIR_ABS" != "$PWD_ABS/"* ]]; then
+          echo "Error: Plugin directory ($PLUGIN_DIR_ABS) is not inside the current working directory ($PWD_ABS)"
           exit 1
         fi
-        if [ ! -d "${{ inputs.plugin-directory }}/dist" ]; then
-          echo "Error: dist/ directory not found in ${{ inputs.plugin-directory }}"
+
+        # Validate directory exists
+        if [ ! -d "$PLUGIN_DIR" ] || [ ! -r "$PLUGIN_DIR" ]; then
+          echo "Error: Plugin directory does not exist or is not readable"
+          exit 1
+        fi
+
+    - name: Check plugin directory exists
+      shell: bash
+      env:
+        PLUGIN_DIR: ${{ inputs.plugin-directory }}
+      run: |
+        if [ ! -d "$PLUGIN_DIR" ]; then
+          echo "Error: Plugin directory not found: $PLUGIN_DIR"
+          exit 1
+        fi
+        if [ ! -d "$PLUGIN_DIR/dist" ]; then
+          echo "Error: dist/ directory not found in $PLUGIN_DIR"
           echo "Make sure the plugin has been built before packaging"
           exit 1
         fi
@@ -37,15 +61,19 @@ runs:
     - name: Package plugin
       id: package
       shell: bash
+      env:
+        PLUGIN_DIR: ${{ inputs.plugin-directory }}
       run: |
-        # Run the packaging script with plugin directory as argument
-        ${{ github.action_path }}/package.sh "${{ inputs.plugin-directory }}"
-        
+        echo "Executing: ${{ github.action_path }}/package.sh -d $PLUGIN_DIR"
+        ${{ github.action_path }}/package.sh -d "$PLUGIN_DIR"
+
         # Set output variable
-        echo "output-dir=${{ inputs.plugin-directory }}/__packaging" >> $GITHUB_OUTPUT
-        
+        echo "output-dir=$PLUGIN_DIR/__packaging" >> $GITHUB_OUTPUT
+
     - name: List generated packages
       shell: bash
+      env:
+        PLUGIN_DIR: ${{ inputs.plugin-directory }}
       run: |
         echo "Generated packages:"
-        find "${{ inputs.plugin-directory }}/__packaging" -name "*.zip" | sort 
+        find "$PLUGIN_DIR/__packaging" -name "*.zip" | sort
