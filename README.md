@@ -114,6 +114,7 @@ It is recommended to run these using npm commands from root so that the entire p
 ### NPM Release
 This is for the npm package `@grafana/llm`.
 - Bump version in `packages/grafana-llm-frontend/package.json` (e.g., 0.2.0 to 0.2.1)
+- Tip: You can do this in the same PR as the Plugin Release one above.
 - Trigger "NPM Release" action from the Actions tab on Github.
 
 ### llmclient Release
