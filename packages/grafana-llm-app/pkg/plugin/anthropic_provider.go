@@ -91,7 +91,3 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 
 	return streamOpenAIRequest(ctx, r, p.client)
 }
-
-func (p *anthropicProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return openai.AssistantsList{}, fmt.Errorf("anthropic does not support assistants")
-}

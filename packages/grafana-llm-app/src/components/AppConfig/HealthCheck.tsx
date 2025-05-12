@@ -21,21 +21,12 @@ interface LLMProviderHealthDetails {
   // The health check attempts to call the provider API with each
   // of the configured models and records the result of each call here.
   models: Record<string, ModelHealthDetails>;
-  assistant: AssistantHealthDetails;
 }
 
 interface ModelHealthDetails {
   // Whether we can use this model in calls to the provider.
   ok: boolean;
   // If set, the error returned when trying to call the provider API.
-  // Will be undefined if ok is true.
-  error?: string;
-}
-
-interface AssistantHealthDetails {
-  // Whether we can use the assistant API with the provided settings.
-  ok: boolean;
-  // If set, the error returned when trying to call the assistant API.
   // Will be undefined if ok is true.
   error?: string;
 }
@@ -128,7 +119,6 @@ function ShowLLMProviderHealth({ provider }: { provider: LLMProviderHealthDetail
 
   const message = provider.ok ? 'LLM provider health check succeeded!' : 'LLM provider health check failed.';
   const severity = provider.ok ? 'success' : 'error';
-  const assistantMessage = provider.assistant.ok ? 'Assistant API health check passed!' : 'Assistant API not available.';
 
   return (
     <Stack direction="column" width="100%">
@@ -142,16 +132,6 @@ function ShowLLMProviderHealth({ provider }: { provider: LLMProviderHealthDetail
           ))}
         </div>
       </Alert>
-
-      {(
-        <Alert severity="info" title={assistantMessage}>
-          <div>
-            <li>
-              Assistant: {provider.assistant.ok ? 'OK' : `The configured provider may not offer assistants APIs. ${provider.assistant.error}`}
-            </li>
-          </div>
-        </Alert>
-      )}
     </Stack>
   );
 }

@@ -36,12 +36,6 @@ type ChatCompletionRequest struct {
 	Model Model `json:"model"`
 }
 
-// AssistantRequest is a request for creating an assistant using an abstract model.
-type AssistantRequest struct {
-	openai.AssistantRequest
-	Model Model `json:"model"`
-}
-
 // LLMProvider is an interface for talking to LLM providers via the Grafana LLM app.
 // Requests made using this interface will be routed to the configured LLM provider backend
 // with authentication handled by the LLM app.
@@ -53,44 +47,6 @@ type LLMProvider interface {
 	ChatCompletions(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error)
 	// ChatCompletionsStream makes a streaming request to the LLM provider Chat Completion API.
 	ChatCompletionsStream(ctx context.Context, req ChatCompletionRequest) (*openai.ChatCompletionStream, error)
-}
-
-// LLMAssistant is an interface for exposing the LLM provider Assistant features to the Grafana LLM app.
-// Requests made using this interface will be routed to the configured LLM provider backend
-// with authentication handled by the LLM app.
-type LLMAssistant interface {
-	// LLMProvider embeds some core features in the client.
-	LLMProvider
-	// CreateAssistant creates an assistant using the given request.
-	CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error)
-	// RetrieveAssistant retrieves an assistant by ID.
-	RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error)
-	// ListAssistants lists assistants.
-	ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error)
-	// DeleteAssistant deletes an assistant by ID.
-	DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error)
-	// CreateThread creates a new thread.
-	CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error)
-	// RetrieveThread retrieves a thread by ID.
-	RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error)
-	// DeleteThread deletes a thread by ID.
-	DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error)
-	// CreateMessage creates a new message in a thread.
-	CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error)
-	// ListMessages lists messages in a thread.
-	ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (openai.MessagesList, error)
-	// RetrieveMessage retrieves a message in a thread.
-	RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error)
-	// DeleteMessage deletes a message in a thread.
-	DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error)
-	// CreateRun creates a new run in a thread.
-	CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error)
-	// RetrieveRun retrieves a run in a thread.
-	RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
-	// CancelRun cancels a run in a thread.
-	CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error)
-	// SubmitToolOutputs submits tool outputs for a run in a thread.
-	SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error)
 }
 
 type llmProvider struct {
@@ -105,13 +61,6 @@ type llmProvider struct {
 func NewLLMProvider(grafanaURL, grafanaAPIKey string) LLMProvider {
 	httpClient := &http.Client{}
 	return NewLLMProviderWithClient(grafanaURL, grafanaAPIKey, httpClient)
-}
-
-// NewLLMAssistant creates a new LLM provider client talking to the Grafana LLM app installed
-// on the given Grafana instance, with the LLMAssistant interface.
-func NewLLMAssistant(grafanaURL, grafanaAPIKey string) LLMAssistant {
-	httpClient := &http.Client{}
-	return NewLLMAssistantWithClient(grafanaURL, grafanaAPIKey, httpClient)
 }
 
 // NewLLMProviderWithClient creates a new LLM provider client talking to the Grafana LLM app installed
@@ -131,12 +80,6 @@ func NewLLMProviderWithClient(grafanaURL, grafanaAPIKey string, httpClient *http
 	}
 }
 
-// NewLLMAssistantWithClient creates a new LLM provider client talking to the Grafana LLM app installed
-// on the given Grafana instance, using the given HTTP client.
-func NewLLMAssistantWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) LLMAssistant {
-	return NewLLMProviderWithClient(grafanaURL, grafanaAPIKey, httpClient).(LLMAssistant)
-}
-
 type modelHealth struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error,omitempty"`
@@ -147,7 +90,6 @@ type llmProviderHealthDetails struct {
 	OK         bool                  `json:"ok"`
 	Error      string                `json:"error,omitempty"`
 	Models     map[Model]modelHealth `json:"models"`
-	Assistant  modelHealth           `json:"assistant"`
 }
 
 type vectorHealthDetails struct {
@@ -216,66 +158,4 @@ func (o *llmProvider) ChatCompletionsStream(ctx context.Context, req ChatComplet
 	r := req.ChatCompletionRequest
 	r.Model = string(req.Model)
 	return o.client.CreateChatCompletionStream(ctx, r)
-}
-
-func (o *llmProvider) CreateAssistant(ctx context.Context, req AssistantRequest) (openai.Assistant, error) {
-	r := req.AssistantRequest
-	r.Model = string(req.Model)
-	return o.client.CreateAssistant(ctx, r)
-}
-
-func (o *llmProvider) RetrieveAssistant(ctx context.Context, assistantID string) (openai.Assistant, error) {
-	return o.client.RetrieveAssistant(ctx, assistantID)
-}
-
-func (o *llmProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return o.client.ListAssistants(ctx, limit, order, after, before)
-}
-
-func (o *llmProvider) DeleteAssistant(ctx context.Context, assistantID string) (openai.AssistantDeleteResponse, error) {
-	return o.client.DeleteAssistant(ctx, assistantID)
-}
-
-func (o *llmProvider) CreateThread(ctx context.Context, req openai.ThreadRequest) (openai.Thread, error) {
-	return o.client.CreateThread(ctx, req)
-}
-
-func (o *llmProvider) RetrieveThread(ctx context.Context, threadID string) (openai.Thread, error) {
-	return o.client.RetrieveThread(ctx, threadID)
-}
-
-func (o *llmProvider) DeleteThread(ctx context.Context, threadID string) (openai.ThreadDeleteResponse, error) {
-	return o.client.DeleteThread(ctx, threadID)
-}
-
-func (o *llmProvider) CreateMessage(ctx context.Context, threadID string, request openai.MessageRequest) (msg openai.Message, err error) {
-	return o.client.CreateMessage(ctx, threadID, request)
-}
-
-func (o *llmProvider) ListMessages(ctx context.Context, threadID string, limit *int, order *string, after *string, before *string, runID *string) (msg openai.MessagesList, err error) {
-	return o.client.ListMessage(ctx, threadID, limit, order, after, before, runID)
-}
-
-func (o *llmProvider) RetrieveMessage(ctx context.Context, threadID string, messageID string) (msg openai.Message, err error) {
-	return o.client.RetrieveMessage(ctx, threadID, messageID)
-}
-
-func (o *llmProvider) DeleteMessage(ctx context.Context, threadID string, messageID string) (msg openai.MessageDeletionStatus, err error) {
-	return o.client.DeleteMessage(ctx, threadID, messageID)
-}
-
-func (o *llmProvider) CreateRun(ctx context.Context, threadID string, request openai.RunRequest) (run openai.Run, err error) {
-	return o.client.CreateRun(ctx, threadID, request)
-}
-
-func (o *llmProvider) RetrieveRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
-	return o.client.RetrieveRun(ctx, threadID, runID)
-}
-
-func (o *llmProvider) CancelRun(ctx context.Context, threadID string, runID string) (run openai.Run, err error) {
-	return o.client.CancelRun(ctx, threadID, runID)
-}
-
-func (o *llmProvider) SubmitToolOutputs(ctx context.Context, threadID string, runID string, request openai.SubmitToolOutputsRequest) (response openai.Run, err error) {
-	return o.client.SubmitToolOutputs(ctx, threadID, runID, request)
 }
