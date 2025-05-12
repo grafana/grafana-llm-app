@@ -56,24 +56,6 @@ func (p *anthropicProvider) Models(ctx context.Context) (ModelResponse, error) {
 	}, nil
 }
 
-func (p *anthropicProvider) forceUserMessage(req *openai.ChatCompletionRequest) {
-	if len(req.Messages) == 0 {
-		return
-	}
-
-	hasUserMessage := false
-	for _, message := range req.Messages {
-		if message.Role == "user" {
-			hasUserMessage = true
-			break
-		}
-	}
-
-	if !hasUserMessage {
-		req.Messages[len(req.Messages)-1].Role = "user"
-	}
-}
-
 func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toAnthropic(p.models)
@@ -84,7 +66,7 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 		r.MaxTokens = 1000
 	}
 
-	p.forceUserMessage(&r)
+	ForceUserMessage(&r)
 
 	resp, err := p.client.CreateChatCompletion(ctx, r)
 	if err != nil {
@@ -105,11 +87,7 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 		r.MaxTokens = 1000
 	}
 
-	p.forceUserMessage(&r)
+	ForceUserMessage(&r)
 
 	return streamOpenAIRequest(ctx, r, p.client)
-}
-
-func (p *anthropicProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return openai.AssistantsList{}, fmt.Errorf("anthropic does not support assistants")
 }

@@ -24,7 +24,14 @@ func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvi
 		Timeout: 2 * time.Minute,
 	}
 	cfg := openai.DefaultConfig(settings.apiKey)
-	base, err := url.JoinPath(settings.URL, "/v1")
+
+	// Defensively check that APIPath is not nil to avoid potential panics
+	// if settings aren't loaded using loadSettings.
+	if settings.APIPath == nil {
+		*settings.APIPath = defaultOpenAIAPIPath
+	}
+
+	base, err := url.JoinPath(settings.URL, *settings.APIPath)
 	if err != nil {
 		return nil, fmt.Errorf("join url: %w", err)
 	}
@@ -50,6 +57,10 @@ func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
 func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
+
+	ForceUserMessage(&r)
+
+	log.DefaultLogger.Info("CCCCCCCCCChat completion request", "req", fmt.Sprintf("%+v", r))
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error creating openai chat completion", "err", err)
@@ -61,11 +72,17 @@ func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) 
 func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
+
+	ForceUserMessage(&r)
+
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
 
 func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc *openai.Client) (<-chan ChatCompletionStreamResponse, error) {
 	r.Stream = true
+
+	ForceUserMessage(&r)
+
 	stream, err := oc.CreateChatCompletionStream(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error establishing stream", "err", err)
@@ -91,8 +108,4 @@ func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc
 		}
 	}()
 	return c, nil
-}
-
-func (p *openAI) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return p.oc.ListAssistants(ctx, limit, order, after, before)
 }

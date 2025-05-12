@@ -131,13 +131,16 @@ func (a *App) Dispose() {
 
 func newMCPServer(settings *Settings) (*mcp.GrafanaLiveServer, error) {
 	srv := server.NewMCPServer("grafana-llm-app", PluginVersion)
-	tools.AddDatasourceTools(srv)
 	tools.AddSearchTools(srv)
+	tools.AddDatasourceTools(srv)
 	tools.AddIncidentTools(srv)
 	tools.AddPrometheusTools(srv)
 	tools.AddLokiTools(srv)
 	tools.AddAlertingTools(srv)
+	tools.AddDashboardTools(srv)
 	tools.AddOnCallTools(srv)
+	tools.AddAssertsTools(srv)
+	tools.AddSiftTools(srv)
 	return mcp.NewGrafanaLiveServer(srv,
 		mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc),
 		mcp.WithGrafanaTenant(settings.Tenant),

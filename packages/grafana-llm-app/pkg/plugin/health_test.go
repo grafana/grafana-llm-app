@@ -71,9 +71,8 @@ func TestCheckHealth(t *testing.T) {
 			},
 			expDetails: healthCheckDetails{
 				LLMProvider: llmProviderHealthDetails{
-					Error:     "No functioning models are available",
-					Models:    map[Model]modelHealth{},
-					Assistant: modelHealth{OK: false, Error: "Assistant not available"},
+					Error:  "No functioning models are available",
+					Models: map[Model]modelHealth{},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -95,67 +94,6 @@ func TestCheckHealth(t *testing.T) {
 					Configured: true,
 					Error:      "LLM functionality is disabled",
 					Models:     map[Model]modelHealth{},
-					Assistant:  modelHealth{OK: false, Error: ""},
-				},
-				Vector:  vectorHealthDetails{},
-				Version: "unknown",
-			},
-		},
-		{
-			name: "provider enabled, has assistant support",
-			settings: backend.AppInstanceSettings{
-				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
-				JSONData: json.RawMessage(`{
-					"openai": {
-						"provider": "openai",
-						"url": "%s"
-					}
-				}`),
-			},
-			responses: []mockProviderHealthResponse{
-				{code: http.StatusOK, body: "{}"},
-				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
-				{code: http.StatusOK, body: `{}`},
-			},
-			expDetails: healthCheckDetails{
-				LLMProvider: llmProviderHealthDetails{
-					Configured: true,
-					OK:         true,
-					Models: map[Model]modelHealth{
-						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, message: model does not exist`},
-					},
-					Assistant: modelHealth{OK: true, Error: ""},
-				},
-				Vector:  vectorHealthDetails{},
-				Version: "unknown",
-			},
-		},
-		{
-			name: "provider enabled, no assistant support",
-			settings: backend.AppInstanceSettings{
-				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
-				JSONData: json.RawMessage(`{
-					"openai": {
-						"provider": "openai",
-						"url": "%s"
-					}
-				}`),
-			},
-			responses: []mockProviderHealthResponse{
-				{code: http.StatusOK, body: "{}"},
-				{code: http.StatusNotFound, body: `{"error": {"message": "model does not exist"}}`},
-				{code: http.StatusNotFound, body: `{"error": {"message": "Assistant not available"}}`},
-			},
-			expDetails: healthCheckDetails{
-				LLMProvider: llmProviderHealthDetails{
-					Configured: true,
-					OK:         true,
-					Models: map[Model]modelHealth{
-						ModelBase:  {OK: true, Error: ""},
-						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, message: model does not exist`},
-					},
-					Assistant: modelHealth{OK: false, Error: `Assistant not available: error, status code: 404, status: 404 Not Found, message: Assistant not available`},
 				},
 				Vector:  vectorHealthDetails{},
 				Version: "unknown",
@@ -186,9 +124,8 @@ func TestCheckHealth(t *testing.T) {
 			vService: &mockVectorService{},
 			expDetails: healthCheckDetails{
 				LLMProvider: llmProviderHealthDetails{
-					Error:     "No functioning models are available",
-					Models:    map[Model]modelHealth{},
-					Assistant: modelHealth{OK: false, Error: "Assistant not available"},
+					Error:  "No functioning models are available",
+					Models: map[Model]modelHealth{},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -234,7 +171,6 @@ func TestCheckHealth(t *testing.T) {
 						ModelBase:  {OK: true, Error: ""},
 						ModelLarge: {OK: false, Error: `error, status code: 404, status: 404 Not Found, message: model does not exist`},
 					},
-					Assistant: modelHealth{OK: false, Error: "Assistant not available: error, status code: 502, status: 502 Bad Gateway, message: unexpected end of JSON input, body: "},
 				},
 				Vector: vectorHealthDetails{
 					Enabled: true,
@@ -285,8 +221,6 @@ func TestCheckHealth(t *testing.T) {
 			assert.Equal(t, details.LLMProvider, details.OpenAI)
 
 			if details.LLMProvider.OK != tc.expDetails.LLMProvider.OK ||
-				details.LLMProvider.Assistant.OK != tc.expDetails.LLMProvider.Assistant.OK ||
-				details.LLMProvider.Assistant.Error != tc.expDetails.LLMProvider.Assistant.Error ||
 				details.LLMProvider.Configured != tc.expDetails.LLMProvider.Configured ||
 				details.LLMProvider.Error != tc.expDetails.LLMProvider.Error {
 				t.Errorf("LLMProvider details should be %+v, got %+v", tc.expDetails.LLMProvider, details.LLMProvider)

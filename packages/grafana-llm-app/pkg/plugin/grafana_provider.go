@@ -60,6 +60,9 @@ func (p *grafanaProvider) Models(ctx context.Context) (ModelResponse, error) {
 func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(DEFAULT_MODEL_SETTINGS)
+
+	ForceUserMessage(&r)
+
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error creating grafana chat completion", "err", err)
@@ -71,9 +74,8 @@ func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletion
 func (p *grafanaProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(DEFAULT_MODEL_SETTINGS)
-	return streamOpenAIRequest(ctx, r, p.oc)
-}
 
-func (p *grafanaProvider) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return p.oc.ListAssistants(ctx, limit, order, after, before)
+	ForceUserMessage(&r)
+
+	return streamOpenAIRequest(ctx, r, p.oc)
 }

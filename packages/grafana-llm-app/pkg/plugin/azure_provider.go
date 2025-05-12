@@ -73,6 +73,9 @@ func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (
 
 	r := req.ChatCompletionRequest
 	r.Model = deployment
+
+	ForceUserMessage(&r)
+
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error creating azure chat completion", "err", err)
@@ -90,6 +93,9 @@ func (p *azure) ChatCompletionStream(ctx context.Context, req ChatCompletionRequ
 	r := req.ChatCompletionRequest
 	// For the Azure mapping we want to use the name of the mapped deployment as the model.
 	r.Model = deployment
+
+	ForceUserMessage(&r)
+
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
 
@@ -106,8 +112,4 @@ func (p *azure) getAzureMapping() (map[Model]string, error) {
 		result[model] = v[1]
 	}
 	return result, nil
-}
-
-func (p *azure) ListAssistants(ctx context.Context, limit *int, order *string, after *string, before *string) (openai.AssistantsList, error) {
-	return p.oc.ListAssistants(ctx, limit, order, after, before)
 }
