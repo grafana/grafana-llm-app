@@ -108,7 +108,11 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	app.healthCheckMutex = sync.Mutex{}
 
 	if app.settings.MCP.Enabled {
-		app.mcpServer = newMCPServer()
+		app.mcpServer, err = newMCPServer(app.settings)
+		if err != nil {
+			log.DefaultLogger.Error("Error creating MCP server", "err", err)
+			return nil, err
+		}
 	}
 
 	return &app, nil
@@ -125,7 +129,7 @@ func (a *App) Dispose() {
 	}
 }
 
-func newMCPServer() *mcp.GrafanaLiveServer {
+func newMCPServer(settings *Settings) (*mcp.GrafanaLiveServer, error) {
 	srv := server.NewMCPServer("grafana-llm-app", PluginVersion)
 	tools.AddSearchTools(srv)
 	tools.AddDatasourceTools(srv)
@@ -137,6 +141,10 @@ func newMCPServer() *mcp.GrafanaLiveServer {
 	tools.AddOnCallTools(srv)
 	tools.AddAssertsTools(srv)
 	tools.AddSiftTools(srv)
-	s := mcp.NewGrafanaLiveServer(srv, mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc))
-	return s
+	return mcp.NewGrafanaLiveServer(srv,
+		mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc),
+		mcp.WithGrafanaTenant(settings.Tenant),
+		mcp.WithGrafanaManagedLLM(settings.EnableGrafanaManagedLLM),
+		mcp.WithLLMAppAccessPolicyToken(settings.GrafanaComAPIKey),
+	)
 }
