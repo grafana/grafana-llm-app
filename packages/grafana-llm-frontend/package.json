@@ -46,7 +46,7 @@
     "typescript": "5.6.2"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.11.3",
     "react-use": "^17.6.0",
     "semver": "^7.6.3",
     "uuid": "^11.0.5"
