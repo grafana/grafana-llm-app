@@ -173,7 +173,7 @@ function AvailableTools({ tools }: { tools: Tool[] }) {
       <h4>Available MCP Tools</h4>
       <ul>
         {tools.map((tool, i) => (
-          <li key={i}>{tool.name}</li>
+          <li key={i}>{tool.annotations?.title ?? tool.name}</li>
         ))}
       </ul>
     </Stack>
