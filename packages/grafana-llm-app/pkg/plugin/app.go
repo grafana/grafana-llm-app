@@ -107,12 +107,11 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	app.healthCheckMutex = sync.Mutex{}
 
-	if app.settings.MCP.Enabled {
-		app.mcpServer, err = newMCPServer(app.settings)
-		if err != nil {
-			log.DefaultLogger.Error("Error creating MCP server", "err", err)
-			return nil, err
-		}
+	// Enable MCP server in the LLM app
+	app.mcpServer, err = newMCPServer(app.settings)
+	if err != nil {
+		log.DefaultLogger.Error("Error creating MCP server", "err", err)
+		return nil, err
 	}
 
 	return &app, nil
