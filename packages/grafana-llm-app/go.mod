@@ -10,11 +10,11 @@ require (
 	github.com/grafana/grafana-plugin-sdk-go v0.277.1
 	github.com/grafana/incident-go v0.0.0-20250425172312-4be2558a0c7f
 	github.com/grafana/mcp-grafana v0.3.0
-	github.com/mark3labs/mcp-go v0.26.0
+	github.com/mark3labs/mcp-go v0.28.0
 	github.com/qdrant/go-client v1.14.0
-	github.com/sashabaranov/go-openai v1.39.1
+	github.com/sashabaranov/go-openai v1.40.0
 	github.com/stretchr/testify v1.10.0
-	google.golang.org/grpc v1.72.0
+	google.golang.org/grpc v1.72.1
 )
 
 require (
