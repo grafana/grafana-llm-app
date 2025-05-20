@@ -139,7 +139,6 @@ func newMCPServer(settings *Settings) (*mcp.GrafanaLiveServer, error) {
 	tools.AddAlertingTools(srv)
 	tools.AddDashboardTools(srv)
 	tools.AddOnCallTools(srv)
-	tools.AddAssertsTools(srv)
 	tools.AddSiftTools(srv)
 	return mcp.NewGrafanaLiveServer(srv,
 		mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc),
