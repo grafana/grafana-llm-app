@@ -144,6 +144,12 @@ type LLMGatewaySettings struct {
 	URL string `json:"url"`
 }
 
+// MCPSettings contains the configuration for the Grafana MCP server.
+type MCPSettings struct {
+	// Disabled indicates whether the MCP server should be disabled.
+	Disabled bool `json:"disabled"`
+}
+
 // Settings contains the plugin's settings and secrets required by the plugin backend.
 type Settings struct {
 	// Tenant is the stack ID (Hosted Grafana ID) of the instance this plugin
@@ -184,6 +190,9 @@ type Settings struct {
 
 	// Allows enabling the dev sandbox on the plugin page.
 	EnableDevSandbox bool `json:"enableDevSandbox"`
+
+	// MCP settings.
+	MCP MCPSettings `json:"mcp"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {

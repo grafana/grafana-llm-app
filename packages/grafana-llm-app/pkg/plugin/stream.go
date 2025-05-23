@@ -19,8 +19,9 @@ const (
 )
 
 // allowMCPRequest returns true if the request path is for the MCP server
+// and the MCP server is enabled and running.
 func (a *App) allowMCPRequest(path string) bool {
-	return strings.HasPrefix(path, mcpPath) && a.mcpServer != nil
+	return strings.HasPrefix(path, mcpPath) && !a.settings.MCP.Disabled && a.mcpServer != nil
 }
 
 func (a *App) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
