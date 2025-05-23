@@ -146,8 +146,8 @@ type LLMGatewaySettings struct {
 
 // MCPSettings contains the configuration for the Grafana MCP server.
 type MCPSettings struct {
-	// Enabled indicates whether the MCP server should be enabled.
-	Enabled bool `json:"enabled"`
+	// Disabled indicates whether the MCP server should be disabled.
+	Disabled bool `json:"disabled"`
 }
 
 // Settings contains the plugin's settings and secrets required by the plugin backend.

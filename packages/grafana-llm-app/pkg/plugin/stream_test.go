@@ -253,7 +253,7 @@ func TestRunStreamMCP(t *testing.T) {
 	// Initialize app (need to set OpenAISettings:URL in here)
 	settings := Settings{
 		OpenAI: OpenAISettings{Provider: ProviderTypeOpenAI},
-		MCP:    MCPSettings{Enabled: true},
+		MCP:    MCPSettings{Disabled: false},
 	}
 
 	jsonData, err := json.Marshal(settings)
