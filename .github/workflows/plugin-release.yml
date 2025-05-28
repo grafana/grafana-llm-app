@@ -38,6 +38,12 @@ jobs:
             private_key=grafana-machine-learning-github-app:private-key
           export_env: false
 
+      - id: get-access-policy-secret
+        uses: grafana/shared-workflows/actions/get-vault-secrets@5d7e361bc7e0a183cde8afe9899fb7b596d2659b
+        with:
+          repo_secrets: |
+            GRAFANA_API_KEY=grafana-cloud-access-policy:token
+
       - name: Print secrets obfuscated summary to verify length and format
         run: |
           echo "Private Key Length: $(echo -n "${{ fromJSON(steps.get-secrets.outputs.secrets).private_key }}" | wc -c)"
@@ -165,7 +171,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: ['build-release']
     env:
-      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_SIGNING_KEY }}
       GCOM_ROOT: https://grafana.com
     steps:
       - id: get-secrets
@@ -178,6 +183,13 @@ jobs:
             app_id=grafana-machine-learning-github-app:app-id
             app_installation_id=grafana-machine-learning-github-app:app-installation-id
             private_key=grafana-machine-learning-github-app:private-key
+          export_env: false
+
+      - id: get-access-policy-secret
+        uses: grafana/shared-workflows/actions/get-vault-secrets@5d7e361bc7e0a183cde8afe9899fb7b596d2659b
+        with:
+          repo_secrets: |
+            GRAFANA_CLOUD_ACCESS_POLICY_TOKEN=grafana-cloud-access-policy:token
           export_env: false
 
       - uses: tibdex/github-app-token@32691ba7c9e7063bd457bd8f2a5703138591fa58
@@ -235,5 +247,5 @@ jobs:
           plugin-version: ${{ needs.build-release.outputs.version-tag }}
           plugin-dist: "https://www.github.com/grafana/grafana-llm-app/tree/main/packages/grafana-llm-app/dist"
           gcp-bucket: integration-artifacts
-          gcom-token: ${{ env.GRAFANA_API_KEY }}
+          gcom-token: ${{ fromJSON(steps.get-access-policy-secret.outputs.secrets).GRAFANA_CLOUD_ACCESS_POLICY_TOKEN }}
           gcom-api: ${{ env.GCOM_ROOT }}
