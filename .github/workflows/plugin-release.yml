@@ -21,7 +21,6 @@ jobs:
       id-token: write
     env:
       plugin-dist-folder: ./packages/grafana-llm-app/dist
-      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_SIGNING_KEY }} # Requires a Grafana API key from Grafana.com.
 
     outputs:
       upload-folder: ${{ steps.metadata.outputs.upload-folder }}
