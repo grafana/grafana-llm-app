@@ -162,6 +162,7 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 		tokenExchangeResponse, err = s.tokenExchangeClient.Exchange(ctx, authn.TokenExchangeRequest{
 			Namespace: fmt.Sprintf("stack-%s", s.tenant),
 			Audiences: []string{"grafana"},
+			ExpiresIn: &[]int{1800}[0], // 30 minutes
 		})
 		if err != nil {
 			return fmt.Errorf("failed to perform token exchange with auth api: %w", err)
