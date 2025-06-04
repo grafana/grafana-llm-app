@@ -142,10 +142,15 @@ func newMCPServer(settings *Settings) (*mcp.GrafanaLiveServer, error) {
 	tools.AddOnCallTools(srv)
 	tools.AddAssertsTools(srv)
 	tools.AddSiftTools(srv)
-	return mcp.NewGrafanaLiveServer(srv,
-		mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc),
+
+	m, err := mcp.NewGrafanaLiveServer(srv,
 		mcp.WithGrafanaTenant(settings.Tenant),
 		mcp.WithGrafanaManagedLLM(settings.EnableGrafanaManagedLLM),
 		mcp.WithLLMAppAccessPolicyToken(settings.GrafanaComAPIKey),
 	)
+	if err != nil {
+		return nil, err
+	}
+	m.SetContextFunc(m.ComposedContextFunc())
+	return m, err
 }
