@@ -69,13 +69,6 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 		app.settings.Models = DEFAULT_MODEL_SETTINGS
 	}
 
-	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
-	// to use a *http.ServeMux for resource calls, so we can map multiple routes
-	// to CallResource without having to implement extra logic.
-	mux := http.NewServeMux()
-	app.registerRoutes(mux)
-	app.CallResourceHandler = httpadapter.New(mux)
-
 	// Getting the service account token that has been shared with the plugin
 	cfg := backend.GrafanaConfigFromContext(ctx)
 	app.saToken, err = cfg.PluginAppClientSecret()
@@ -118,6 +111,13 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 			return nil, err
 		}
 	}
+
+	// Use a httpadapter (provided by the SDK) for resource calls. This allows us
+	// to use a *http.ServeMux for resource calls, so we can map multiple routes
+	// to CallResource without having to implement extra logic.
+	mux := http.NewServeMux()
+	app.registerRoutes(mux)
+	app.CallResourceHandler = httpadapter.New(mux)
 
 	return &app, nil
 }
