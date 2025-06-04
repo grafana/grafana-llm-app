@@ -67,18 +67,22 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	}
 
 	liveServer := NewGrafanaLiveServer(srv, acc, WithIsGrafanaCloud(settings.IsGrafanaCloud))
-	httpServer := server.NewStreamableHTTPServer(srv,
-		server.WithStateLess(true),
-		server.WithLogger(&Logger{}),
-		server.WithHTTPContextFunc(HTTPContextFunc),
-	)
-	return &MCP{
+	// We need to create the MCP struct before the HTTP server, because we need to
+	// pass use a context func returned by one of the MCP struct's methods to the
+	// HTTP server.
+	m := &MCP{
 		Server:            srv,
 		LiveServer:        liveServer,
-		HTTPServer:        httpServer,
 		Settings:          settings,
 		accessTokenClient: acc,
-	}, nil
+	}
+	m.HTTPServer = server.NewStreamableHTTPServer(srv,
+		// Only allow Stateless mode.
+		server.WithStateLess(true),
+		server.WithLogger(&Logger{}),
+		server.WithHTTPContextFunc(m.httpContextFunc()),
+	)
+	return m, nil
 }
 
 // Close shuts down the MCP instance, closing the Live server and cleaning up resources.
