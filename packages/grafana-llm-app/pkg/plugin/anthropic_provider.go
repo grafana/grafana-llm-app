@@ -35,8 +35,8 @@ func NewAnthropicProvider(settings AnthropicSettings, models *ModelSettings) (LL
 	defaultModels := &ModelSettings{
 		Default: ModelBase,
 		Mapping: map[Model]string{
-			ModelBase:  anthropic.ModelClaude3_5HaikuLatest,
-			ModelLarge: anthropic.ModelClaude3_5SonnetLatest,
+			ModelBase:  string(anthropic.ModelClaude3_5HaikuLatest),
+			ModelLarge: string(anthropic.ModelClaude3_5SonnetLatest),
 		},
 	}
 

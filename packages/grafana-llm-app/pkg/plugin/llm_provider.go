@@ -68,9 +68,9 @@ func (m Model) toAnthropic(modelSettings *ModelSettings) string {
 	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
 		switch m {
 		case ModelBase:
-			return anthropic.ModelClaude3_5SonnetLatest
+			return string(anthropic.ModelClaude3_5SonnetLatest)
 		case ModelLarge:
-			return anthropic.ModelClaude3_5SonnetLatest
+			return string(anthropic.ModelClaude3_5SonnetLatest)
 		}
 		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}
