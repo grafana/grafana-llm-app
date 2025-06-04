@@ -34,6 +34,9 @@ type MCP struct {
 	Server *server.MCPServer
 	// LiveServer handles Grafana Live connections for MCP communication.
 	LiveServer *GrafanaLiveServer
+	// HTTPServer is the MCP Streamable HTTP server for handling MCP requests over HTTP
+	// via plugin resource endpoints.
+	HTTPServer *server.StreamableHTTPServer
 	// Settings contains the configuration for the MCP servers.
 	Settings Settings
 
@@ -64,9 +67,15 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	}
 
 	liveServer := NewGrafanaLiveServer(srv, acc, WithIsGrafanaCloud(settings.IsGrafanaCloud))
+	httpServer := server.NewStreamableHTTPServer(srv,
+		server.WithStateLess(true),
+		server.WithLogger(&Logger{}),
+		server.WithHTTPContextFunc(HTTPContextFunc),
+	)
 	return &MCP{
 		Server:            srv,
 		LiveServer:        liveServer,
+		HTTPServer:        httpServer,
 		Settings:          settings,
 		accessTokenClient: acc,
 	}, nil
