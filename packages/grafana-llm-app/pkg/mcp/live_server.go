@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/grafana/authlib/authn"
 	"github.com/grafana/grafana-openapi-client-go/client"
@@ -142,10 +143,30 @@ type liveSession struct {
 	// JSON-RPC responses back to the client.
 	sender *backend.StreamSender
 
+	// mu protects concurrent access to the tokens.
+	mu sync.RWMutex
 	// accessToken is the access token for the Grafana Live session.
 	accessToken string
-	// grafanaIdToken is the Grafana ID token for the Grafana Live session.
-	grafanaIdToken string
+}
+
+// tokenTimeoutSeconds is the expiration time for the Grafana Live session token.
+var tokenTimeout = time.Minute * 30
+
+// tokenRefreshInterval is the time between token refreshes.
+var tokenRefreshInterval = tokenTimeout - time.Minute
+
+// exchangeToken uses the token exchange API to create an access token for the Grafana Live session.
+func (s *GrafanaLiveServer) exchangeToken(ctx context.Context) (*authn.TokenExchangeResponse, error) {
+	tokenTimeoutSeconds := int(tokenTimeout.Seconds())
+	tr, err := s.tokenExchangeClient.Exchange(ctx, authn.TokenExchangeRequest{
+		Namespace: fmt.Sprintf("stack-%s", s.tenant),
+		Audiences: []string{"grafana"},
+		ExpiresIn: &tokenTimeoutSeconds,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform token exchange with auth api: %w", err)
+	}
+	return tr, nil
 }
 
 // HandleStream handles a new Grafana Live session.
@@ -153,28 +174,23 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 	ls := &liveSession{
 		sender: sender,
 	}
-	var tokenExchangeResponse *authn.TokenExchangeResponse
-	var grafanaIdToken string
+
+	// This timer is only used if we're in Grafana Cloud, but we need to declare it here
+	// so that it can be used in the select statement below without it panicking (due to
+	// the channel being nil).
+	// Outside of Grafana Cloud it will just tick occasionally and be a no-op.
+	// The timer will fire one minute before the token is due to expire.
+	t := time.NewTimer(tokenRefreshInterval)
+	defer t.Stop()
 	// Only do the token exchange if we are in Grafana Cloud.
 	if s.enableGrafanaManagedLLM {
-		var err error
-		// We need to use the token exchange API to create a token for the Grafana Live session.
-		tokenExchangeResponse, err = s.tokenExchangeClient.Exchange(ctx, authn.TokenExchangeRequest{
-			Namespace: fmt.Sprintf("stack-%s", s.tenant),
-			Audiences: []string{"grafana"},
-			ExpiresIn: &[]int{1800}[0], // 30 minutes
-		})
+		tokenExchangeResponse, err := s.exchangeToken(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to perform token exchange with auth api: %w", err)
+			return err
 		}
+		ls.mu.Lock()
 		ls.accessToken = tokenExchangeResponse.Token
-
-		// Get the Grafana ID token from the request.
-		grafanaIdToken = req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
-		if grafanaIdToken == "" {
-			return fmt.Errorf("grafana id token not found in request headers")
-		}
-		ls.grafanaIdToken = grafanaIdToken
+		ls.mu.Unlock()
 	}
 
 	// Store the session in the sessions map.
@@ -186,6 +202,21 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-t.C:
+			// Only refresh the token if we're in Grafana Cloud.
+			if !s.enableGrafanaManagedLLM {
+				continue
+			}
+			tr, err := s.exchangeToken(ctx)
+			if err != nil {
+				log.DefaultLogger.Error("failed to refresh token", "error", err)
+				return err
+			}
+			ls.mu.Lock()
+			ls.accessToken = tr.Token
+			ls.mu.Unlock()
+			// Reset the timer so that it fires again one minute before the token is due to be expire.
+			t.Reset(tokenRefreshInterval)
 		case <-s.done:
 			return nil
 		}
@@ -202,12 +233,21 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 	}
 	session := sessionI.(*liveSession)
 
-	// Modify the context if a context function is set.
-	if s.contextFunc != nil {
-		ctx = s.contextFunc(ctx, &req.PluginContext, session.accessToken, session.grafanaIdToken)
+	// Get the tokens with read lock protection.
+	session.mu.RLock()
+	accessToken := session.accessToken
+	session.mu.RUnlock()
+	grafanaIdToken := req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
+	if s.enableGrafanaManagedLLM && grafanaIdToken == "" {
+		return fmt.Errorf("grafana id token not found in request headers")
 	}
 
-	log.DefaultLogger.Info("Handling message", "len_access_token", len(session.accessToken), "len_grafana_id_token", len(session.grafanaIdToken))
+	// Modify the context if a context function is set.
+	if s.contextFunc != nil {
+		ctx = s.contextFunc(ctx, &req.PluginContext, accessToken, grafanaIdToken)
+	}
+
+	log.DefaultLogger.Info("Handling message", "len_access_token", len(accessToken), "len_grafana_id_token", len(grafanaIdToken))
 
 	// Process the message through the MCPServer.
 	response := s.server.HandleMessage(ctx, req.Data)
