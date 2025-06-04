@@ -147,8 +147,6 @@ type liveSession struct {
 	mu sync.RWMutex
 	// accessToken is the access token for the Grafana Live session.
 	accessToken string
-	// grafanaIdToken is the Grafana ID token for the Grafana Live session.
-	grafanaIdToken string
 }
 
 // tokenTimeoutSeconds is the expiration time for the Grafana Live session token.
@@ -176,7 +174,6 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 	ls := &liveSession{
 		sender: sender,
 	}
-	var grafanaIdToken string
 
 	// This timer is only used if we're in Grafana Cloud, but we need to declare it here
 	// so that it can be used in the select statement below without it panicking (due to
@@ -193,14 +190,6 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 		}
 		ls.mu.Lock()
 		ls.accessToken = tokenExchangeResponse.Token
-
-		// Get the Grafana ID token from the request.
-		grafanaIdToken = req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
-		if grafanaIdToken == "" {
-			ls.mu.Unlock()
-			return fmt.Errorf("grafana id token not found in request headers")
-		}
-		ls.grafanaIdToken = grafanaIdToken
 		ls.mu.Unlock()
 	}
 
@@ -247,8 +236,11 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 	// Get the tokens with read lock protection.
 	session.mu.RLock()
 	accessToken := session.accessToken
-	grafanaIdToken := session.grafanaIdToken
 	session.mu.RUnlock()
+	grafanaIdToken := req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
+	if s.enableGrafanaManagedLLM && grafanaIdToken == "" {
+		return fmt.Errorf("grafana id token not found in request headers")
+	}
 
 	// Modify the context if a context function is set.
 	if s.contextFunc != nil {
