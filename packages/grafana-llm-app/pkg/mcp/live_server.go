@@ -143,6 +143,8 @@ type liveSession struct {
 	// JSON-RPC responses back to the client.
 	sender *backend.StreamSender
 
+	// mu protects concurrent access to the tokens.
+	mu sync.RWMutex
 	// accessToken is the access token for the Grafana Live session.
 	accessToken string
 	// grafanaIdToken is the Grafana ID token for the Grafana Live session.
@@ -189,14 +191,17 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 		if err != nil {
 			return err
 		}
+		ls.mu.Lock()
 		ls.accessToken = tokenExchangeResponse.Token
 
 		// Get the Grafana ID token from the request.
 		grafanaIdToken = req.GetHTTPHeader(backend.GrafanaUserSignInTokenHeaderName)
 		if grafanaIdToken == "" {
+			ls.mu.Unlock()
 			return fmt.Errorf("grafana id token not found in request headers")
 		}
 		ls.grafanaIdToken = grafanaIdToken
+		ls.mu.Unlock()
 	}
 
 	// Store the session in the sessions map.
@@ -218,7 +223,9 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 				log.DefaultLogger.Error("failed to refresh token", "error", err)
 				return err
 			}
+			ls.mu.Lock()
 			ls.accessToken = tr.Token
+			ls.mu.Unlock()
 			// Reset the timer so that it fires again one minute before the token is due to be expire.
 			t.Reset(tokenRefreshInterval)
 		case <-s.done:
@@ -237,12 +244,18 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 	}
 	session := sessionI.(*liveSession)
 
+	// Get the tokens with read lock protection.
+	session.mu.RLock()
+	accessToken := session.accessToken
+	grafanaIdToken := session.grafanaIdToken
+	session.mu.RUnlock()
+
 	// Modify the context if a context function is set.
 	if s.contextFunc != nil {
-		ctx = s.contextFunc(ctx, &req.PluginContext, session.accessToken, session.grafanaIdToken)
+		ctx = s.contextFunc(ctx, &req.PluginContext, accessToken, grafanaIdToken)
 	}
 
-	log.DefaultLogger.Info("Handling message", "len_access_token", len(session.accessToken), "len_grafana_id_token", len(session.grafanaIdToken))
+	log.DefaultLogger.Info("Handling message", "len_access_token", len(accessToken), "len_grafana_id_token", len(grafanaIdToken))
 
 	// Process the message through the MCPServer.
 	response := s.server.HandleMessage(ctx, req.Data)
