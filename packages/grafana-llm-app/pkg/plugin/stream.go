@@ -86,7 +86,7 @@ func (a *App) runChatCompletionsStream(ctx context.Context, req *backend.RunStre
 }
 
 func (a *App) runMCPStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	return a.mcpServer.HandleStream(ctx, req, sender)
+	return a.mcpServer.LiveServer.HandleStream(ctx, req, sender)
 }
 
 func (a *App) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
@@ -118,7 +118,7 @@ func (a *App) PublishStream(ctx context.Context, req *backend.PublishStreamReque
 	log.DefaultLogger.Debug(fmt.Sprintf("PublishStream: %s", req.Path), "data", string(req.Data))
 	// Handle messages for the MCP server.
 	if a.allowMCPRequest(req.Path) {
-		err := a.mcpServer.HandleMessage(ctx, req)
+		err := a.mcpServer.LiveServer.HandleMessage(ctx, req)
 		if errors.Is(err, mcp.ErrStreamNotFound) {
 			return &backend.PublishStreamResponse{
 				Status: backend.PublishStreamStatusNotFound,

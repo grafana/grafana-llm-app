@@ -7,15 +7,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mark3labs/mcp-go/server"
-
 	"github.com/grafana/grafana-llm-app/pkg/mcp"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
-	"github.com/grafana/mcp-grafana/tools"
 )
 
 // PluginVersion is the version of the plugin, as stored in the plugin.json
@@ -51,7 +48,7 @@ type App struct {
 	// It should only ever be set in tests.
 	ignoreResponsePadding bool
 
-	mcpServer *mcp.GrafanaLiveServer
+	mcpServer *mcp.MCP
 }
 
 // NewApp creates a new example *App instance.
@@ -109,7 +106,13 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 
 	// Only instantiate the MCP server if it is not disabled.
 	if !app.settings.MCP.Disabled {
-		app.mcpServer, err = newMCPServer(app.settings)
+		mcpSettings := mcp.Settings{
+			AccessToken:         app.settings.GrafanaComAPIKey,
+			ServiceAccountToken: app.saToken,
+			IsGrafanaCloud:      app.settings.EnableGrafanaManagedLLM,
+			Tenant:              app.settings.Tenant,
+		}
+		app.mcpServer, err = mcp.New(mcpSettings, PluginVersion)
 		if err != nil {
 			log.DefaultLogger.Error("Error creating MCP server", "err", err)
 			return nil, err
@@ -128,24 +131,4 @@ func (a *App) Dispose() {
 	if a.mcpServer != nil {
 		a.mcpServer.Close()
 	}
-}
-
-func newMCPServer(settings *Settings) (*mcp.GrafanaLiveServer, error) {
-	srv := server.NewMCPServer("grafana-llm-app", PluginVersion)
-	tools.AddSearchTools(srv)
-	tools.AddDatasourceTools(srv)
-	tools.AddIncidentTools(srv)
-	tools.AddPrometheusTools(srv)
-	tools.AddLokiTools(srv)
-	tools.AddAlertingTools(srv)
-	tools.AddDashboardTools(srv)
-	tools.AddOnCallTools(srv)
-	tools.AddAssertsTools(srv)
-	tools.AddSiftTools(srv)
-	return mcp.NewGrafanaLiveServer(srv,
-		mcp.WithGrafanaLiveContextFunc(mcp.ContextFunc),
-		mcp.WithGrafanaTenant(settings.Tenant),
-		mcp.WithGrafanaManagedLLM(settings.EnableGrafanaManagedLLM),
-		mcp.WithLLMAppAccessPolicyToken(settings.GrafanaComAPIKey),
-	)
 }
