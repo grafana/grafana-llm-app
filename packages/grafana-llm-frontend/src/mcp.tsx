@@ -195,7 +195,13 @@ export async function enabled(): Promise<boolean> {
     if (!settings.enabled) {
       return false;
     }
-    return settings.jsonData.mcp.enabled;
+    // If the `enabled` property is present, it's an older version of the plugin;
+    // use this field.
+    if (settings.jsonData.mcp.enabled !== undefined) {
+      return settings.jsonData.mcp.enabled;
+    }
+    // Otherwise use the `disabled` property.
+    return !settings.jsonData.mcp.disabled;
   } catch (e) {
     logDebug(String(e));
     logDebug(
