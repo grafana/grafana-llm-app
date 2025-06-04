@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/grafana/authlib/authn"
 	"github.com/grafana/grafana-openapi-client-go/client"
@@ -148,24 +149,44 @@ type liveSession struct {
 	grafanaIdToken string
 }
 
+// tokenTimeoutSeconds is the expiration time for the Grafana Live session token.
+var tokenTimeoutSeconds = int((time.Minute * 30).Seconds())
+
+// tokenRefreshInterval is the time between token refreshes.
+var tokenRefreshInterval = time.Duration(tokenTimeoutSeconds) - time.Minute
+
+// exchangeToken uses the token exchange API to create an access token for the Grafana Live session.
+func (s *GrafanaLiveServer) exchangeToken(ctx context.Context) (*authn.TokenExchangeResponse, error) {
+	tr, err := s.tokenExchangeClient.Exchange(ctx, authn.TokenExchangeRequest{
+		Namespace: fmt.Sprintf("stack-%s", s.tenant),
+		Audiences: []string{"grafana"},
+		ExpiresIn: &tokenTimeoutSeconds,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform token exchange with auth api: %w", err)
+	}
+	return tr, nil
+}
+
 // HandleStream handles a new Grafana Live session.
 func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	ls := &liveSession{
 		sender: sender,
 	}
-	var tokenExchangeResponse *authn.TokenExchangeResponse
 	var grafanaIdToken string
+
+	// This timer is only used if we're in Grafana Cloud, but we need to declare it here
+	// so that it can be used in the select statement below without it panicking (due to
+	// the channel being nil).
+	// Outside of Grafana Cloud it will just tick occasionally and be a no-op.
+	// The timer will fire one minute before the token is due to expire.
+	t := time.NewTimer(time.Duration(tokenTimeoutSeconds) - time.Minute)
+	defer t.Stop()
 	// Only do the token exchange if we are in Grafana Cloud.
 	if s.enableGrafanaManagedLLM {
-		var err error
-		// We need to use the token exchange API to create a token for the Grafana Live session.
-		tokenExchangeResponse, err = s.tokenExchangeClient.Exchange(ctx, authn.TokenExchangeRequest{
-			Namespace: fmt.Sprintf("stack-%s", s.tenant),
-			Audiences: []string{"grafana"},
-			ExpiresIn: &[]int{1800}[0], // 30 minutes
-		})
+		tokenExchangeResponse, err := s.exchangeToken(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to perform token exchange with auth api: %w", err)
+			return err
 		}
 		ls.accessToken = tokenExchangeResponse.Token
 
@@ -186,6 +207,19 @@ func (s *GrafanaLiveServer) HandleStream(ctx context.Context, req *backend.RunSt
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-t.C:
+			// Only refresh the token if we're in Grafana Cloud.
+			if !s.enableGrafanaManagedLLM {
+				continue
+			}
+			tr, err := s.exchangeToken(ctx)
+			if err != nil {
+				log.DefaultLogger.Error("failed to refresh token", "error", err)
+				return err
+			}
+			ls.accessToken = tr.Token
+			// Reset the timer so that it fires again one minute before the token is due to be expire.
+			t.Reset(time.Duration(tokenTimeoutSeconds) - time.Minute)
 		case <-s.done:
 			return nil
 		}
