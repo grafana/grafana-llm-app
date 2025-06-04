@@ -181,7 +181,12 @@ type ClientResource = {
   read: () => ClientResult;
 };
 
-async function isEnabled(): Promise<boolean> {
+/**
+ * Check if the Grafana LLM app is installed and the MCP server is enabled for the current Grafana instance.
+ *
+ * @returns Whether MCP is enabled for the current Grafana instance.
+ */
+export async function enabled(): Promise<boolean> {
   try {
     const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
       showSuccessAlert: false,
@@ -215,10 +220,10 @@ function createClientResource(appName: string, appVersion: string): ClientResour
     }
 
     try {
-      const enabled = await isEnabled();
-      if (!enabled) {
+      const isEnabled = await enabled();
+      if (!isEnabled) {
         status = 'success';
-        result = { client: null, enabled };
+        result = { client: null, enabled: isEnabled };
         clientMap.set(key, result);
         return result;
       }
@@ -228,7 +233,7 @@ function createClientResource(appName: string, appVersion: string): ClientResour
       });
       const transport = new GrafanaLiveTransport();
       await client.connect(transport);
-      result = { client, enabled };
+      result = { client, enabled: isEnabled };
       clientMap.set(key, result);
       status = 'success';
       return result;
