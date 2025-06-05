@@ -1,6 +1,6 @@
 {
   "name": "@grafana/llm-app",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Plugin to easily allow llm based extensions to grafana",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
