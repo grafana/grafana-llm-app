@@ -1,7 +1,7 @@
 import React from 'react';
 import { testIds } from '../components/testIds';
 import { useAsync } from 'react-use';
-import { getBackendSrv, PluginPage } from '@grafana/runtime';
+import { getBackendSrv } from '@grafana/runtime';
 
 export function Models() {
   const { error, loading, value } = useAsync(() => {
@@ -27,11 +27,9 @@ export function Models() {
   }
 
   return (
-    <PluginPage>
-      <div data-testid={testIds.models.container}>
-        <h1>Available Models</h1>
-        <pre>{JSON.stringify(value, null, 2)}</pre>
-      </div>
-    </PluginPage>
+    <div data-testid={testIds.models.container}>
+      <h1>Available Models</h1>
+      <pre>{JSON.stringify(value, null, 2)}</pre>
+    </div>
   );
 }
