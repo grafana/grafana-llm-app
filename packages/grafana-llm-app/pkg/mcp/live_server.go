@@ -150,7 +150,9 @@ type liveSession struct {
 }
 
 // tokenTimeoutSeconds is the expiration time for the Grafana Live session token.
-var tokenTimeout = time.Minute * 30
+// Note: We tried setting this to 30 minutes, but it caused the following error:
+// "failed to perform token exchange with auth api: invalid exchange response: invalid expiresIn: requested token expiration 30m0s exceeds maximum allowed expiration: 10m0s"
+var tokenTimeout = time.Minute * 10
 
 // tokenRefreshInterval is the time between token refreshes.
 var tokenRefreshInterval = tokenTimeout - time.Minute
