@@ -1,0 +1,226 @@
+name: E2E Tests
+
+env:
+  NODE_VERSION: 22
+  GO_VERSION: '1.24'
+
+on:
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to test (chromium, firefox, webkit, all)'
+        required: false
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - all
+      update_snapshots:
+        description: 'Update visual test snapshots'
+        required: false
+        default: false
+        type: boolean
+      grafana_version:
+        description: 'Grafana version to test against'
+        required: false
+        default: 'main'
+        type: string
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  pull_request:
+    paths:
+      - 'packages/grafana-llm-app/tests/**'
+      - 'packages/grafana-llm-app/playwright.config.ts'
+      - 'packages/grafana-llm-app/docker-compose.yaml'
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ (github.event.inputs.browser == 'all' && fromJSON('["chromium", "firefox", "webkit"]')) || (github.event.inputs.browser && fromJSON(format('["{0}"]', github.event.inputs.browser))) || fromJSON('["chromium"]') }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Go environment
+        uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Store Go cache paths
+        id: go-cache-paths
+        run: echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+
+      - name: Restore go-build cache
+        uses: actions/cache/restore@84995e0d91a927aa8da027221d329f84446b8c9b
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-build-
+
+      - name: Install Mage
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b
+        with:
+          install-only: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build:all
+
+      - name: Configure Playwright for specific browser
+        if: ${{ matrix.browser != 'chromium' }}
+        run: |
+          cd packages/grafana-llm-app
+          # Enable additional browsers in playwright config
+          sed -i 's|// {|{|g; s|// }|}|g' playwright.config.ts
+
+      - name: Run e2e tests
+        run: |
+          cd packages/grafana-llm-app
+          if [ "${{ github.event.inputs.update_snapshots }}" == "true" ]; then
+            npm run playwright:update-snapshots
+          else
+            npm run test:e2e
+          fi
+        env:
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          GRAFANA_VERSION: ${{ github.event.inputs.grafana_version || 'main' }}
+          # Run specific browser if not chromium
+          PLAYWRIGHT_PROJECT: ${{ matrix.browser }}
+
+      - name: Generate test report
+        if: always()
+        run: |
+          cd packages/grafana-llm-app
+          if [ -d "playwright-report" ]; then
+            echo "## E2E Test Results (${{ matrix.browser }})" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            if [ -f "playwright-report/index.html" ]; then
+              echo "📊 Detailed HTML report available in artifacts" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Count test results if available
+            if [ -d "test-results" ]; then
+              FAILED_TESTS=$(find test-results -name "*.json" | wc -l || echo "0")
+              if [ "$FAILED_TESTS" -gt "0" ]; then
+                echo "❌ $FAILED_TESTS test(s) failed" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: e2e-results-${{ matrix.browser }}-${{ github.run_number }}
+          path: |
+            packages/grafana-llm-app/test-results/
+            packages/grafana-llm-app/playwright-report/
+            packages/grafana-llm-app/tests/visual.spec.ts-snapshots/
+          retention-days: 7
+
+      - name: Upload updated snapshots
+        if: ${{ github.event.inputs.update_snapshots == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: updated-snapshots-${{ matrix.browser }}
+          path: packages/grafana-llm-app/tests/visual.spec.ts-snapshots/
+          retention-days: 30
+
+      - name: Check Docker container logs on failure
+        if: failure()
+        run: |
+          cd packages/grafana-llm-app
+          echo "=== Grafana Logs ==="
+          docker compose logs grafana || true
+          echo "=== Playwright Runner Logs ==="
+          docker compose logs playwright-runner || true
+
+      - name: Cleanup e2e services
+        if: always()
+        run: |
+          cd packages/grafana-llm-app
+          npm run server:down || true
+          npm run playwright:stop || true
+          # Clean up any dangling containers or networks
+          docker container prune -f || true
+          docker network prune -f || true
+          docker volume prune -f || true
+
+  test-summary:
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate workflow summary
+        run: |
+          echo "# E2E Test Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+            echo "✅ **All e2e tests passed successfully**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.e2e-tests.result }}" == "failure" ]; then
+            echo "❌ **Some e2e tests failed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the individual job results and uploaded artifacts for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **E2E tests completed with warnings**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Browser(s):** ${{ github.event.inputs.browser || 'chromium' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Grafana Version:** ${{ github.event.inputs.grafana_version || 'main' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Update Snapshots:** ${{ github.event.inputs.update_snapshots || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410
+        with:
+          script: |
+            const result = '${{ needs.e2e-tests.result }}';
+            const browsers = '${{ github.event.inputs.browser || 'chromium' }}';
+            
+            let emoji = result === 'success' ? '✅' : '❌';
+            let message = `${emoji} **E2E Tests ${result}** 
+            
+            **Configuration:**
+            - Browser(s): ${browsers}
+            - Grafana Version: ${{ github.event.inputs.grafana_version || 'main' }}
+            
+            `;
+            
+            if (result !== 'success') {
+              message += `
+            **Action Required:**
+            Please check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results and artifacts.
+            `;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
