@@ -33,3 +33,30 @@ jobs:
         run: npm run test:ci
       - name: Run backend tests
         run: npm run backend:test
+
+      - name: Run e2e tests
+        run: |
+          cd packages/grafana-llm-app
+          npm run test:e2e
+        env:
+          # Ensure clean environment for e2e tests
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+
+      - name: Upload e2e test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: e2e-test-results-pr
+          path: |
+            packages/grafana-llm-app/test-results/
+            packages/grafana-llm-app/playwright-report/
+          retention-days: 3
+
+      - name: Cleanup e2e services
+        if: always()
+        run: |
+          cd packages/grafana-llm-app
+          npm run server:down || true
+          npm run playwright:stop || true
+          docker system prune -f || true
