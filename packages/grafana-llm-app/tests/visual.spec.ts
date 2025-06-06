@@ -2,6 +2,9 @@ import { test, expect } from '@grafana/plugin-e2e';
 
 test.describe('LLM App Visual Tests', () => {
   test('should render main page with beautiful layout', async ({ page }) => {
+    // Set consistent viewport size
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     await page.goto('/a/grafana-llm-app');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
