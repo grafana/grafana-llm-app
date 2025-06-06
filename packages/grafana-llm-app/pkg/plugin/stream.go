@@ -120,6 +120,7 @@ func (a *App) PublishStream(ctx context.Context, req *backend.PublishStreamReque
 	if a.allowMCPRequest(req.Path) {
 		err := a.mcpServer.HandleMessage(ctx, req)
 		if errors.Is(err, mcp.ErrStreamNotFound) {
+			log.DefaultLogger.Error("MCP stream not found", "err", err, "path", req.Path)
 			return &backend.PublishStreamResponse{
 				Status: backend.PublishStreamStatusNotFound,
 			}, nil
