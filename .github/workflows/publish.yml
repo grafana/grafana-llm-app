@@ -1,0 +1,48 @@
+name: Plugins - CD
+run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ github.actor }}
+
+defaults:
+  run:
+    working-directory: packages/grafana-llm-app
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to publish from. Can be used to deploy PRs to dev
+        default: main
+      environment:
+        description: Environment to publish to
+        required: true
+        type: choice
+        options:
+          - "dev"
+          - "ops"
+          - "prod"
+      docs-only:
+        description: Only publish docs, do not publish the plugin
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  cd:
+    name: CD
+    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@bdb7870609eebc6d4795493affc2aa35bcbec829
+    with:
+      branch: ${{ github.event.inputs.branch }}
+      environment: ${{ github.event.inputs.environment }}
+      docs-only: ${{ fromJSON(github.event.inputs.docs-only) }}
+      # Disable playwright tests for now
+      run-playwright: false
+
+      # Choose the correct scope for the plugin version published to the catalog:
+      # - 'universal' (default) if the plugin in the catalog should be visible to all users
+      # - 'grafana_cloud' if the plugin in the catalog should be visible only to Grafana Cloud users (hidden for on-prem users)
+      scopes: universal
+      # scopes: grafana_cloud
+
+      grafana-cloud-deployment-type: provisioned
+      argo-workflow-slack-channel: "#machine-learning-deploys"
