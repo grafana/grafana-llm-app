@@ -7,6 +7,11 @@ func createProvider(settings *Settings) (LLMProvider, error) {
 
 	switch provider {
 	case ProviderTypeOpenAI, ProviderTypeCustom:
+		// Handle the case when the OpenAI provider is set to Azure
+		// for backwards compatibility.
+		if settings.OpenAI.Provider == ProviderTypeAzure {
+			return NewAzureProvider(settings.OpenAI, settings.Models.Default)
+		}
 		return NewOpenAIProvider(settings.OpenAI, settings.Models)
 	case ProviderTypeAzure:
 		return NewAzureProvider(settings.OpenAI, settings.Models.Default)

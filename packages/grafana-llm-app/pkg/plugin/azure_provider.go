@@ -27,6 +27,7 @@ func NewAzureProvider(settings OpenAISettings, defaultModel Model) (LLMProvider,
 
 	// go-openai expects the URL without the '/openai' suffix, which is
 	// the same as us.
+	log.DefaultLogger.Debug("Using Azure OpenAI", "url", settings.URL)
 	cfg := openai.DefaultAzureConfig(settings.apiKey, settings.URL)
 	cfg.HTTPClient = client
 	// We pass the deployment as the name of the model, so just return the untransformed string.
