@@ -21,6 +21,9 @@ jobs:
       id-token: write
       attestations: write
     with:
+      go-version: "1.24.1"
+      node-version: "22"
+
       # Checkout/build PR or main branch, depending on event
       branch: ${{ github.event_name == 'push' && github.ref_name || github.ref }}
 
