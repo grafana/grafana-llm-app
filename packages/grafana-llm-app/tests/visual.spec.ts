@@ -9,12 +9,6 @@ test.describe('LLM App Visual Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
 
-    // Take a full page screenshot
-    await expect(page).toHaveScreenshot('main-page-full.png', {
-      fullPage: true,
-      animations: 'disabled',
-    });
-
     // Take a screenshot of just the main content area
     const mainContent = page.locator('.plugin-page-content');
     if ((await mainContent.count()) > 0) {
