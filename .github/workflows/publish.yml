@@ -31,7 +31,7 @@ jobs:
       go-version: "1.24.1"
       golangci-lint-version: "2.1.6"
       node-version: "22"
-      working-directory: packages/grafana-llm-app
+      plugin-directory: packages/grafana-llm-app
 
       branch: ${{ github.event.inputs.branch }}
       environment: ${{ github.event.inputs.environment }}
