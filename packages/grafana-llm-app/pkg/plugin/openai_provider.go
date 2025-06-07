@@ -91,7 +91,7 @@ func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc
 	c := make(chan ChatCompletionStreamResponse)
 
 	go func() {
-		defer stream.Close()
+		defer stream.Close() //nolint:errcheck
 		defer close(c)
 		for {
 			resp, err := stream.Recv()

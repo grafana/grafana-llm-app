@@ -207,11 +207,11 @@ func TestCheckHealth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("CheckHealth error: %s", err)
 			}
-			if resp == nil {
+			if resp == nil { //nolint:staticcheck
 				t.Fatal("no response received from CheckHealth")
 			}
 			var details healthCheckDetails
-			if err = json.Unmarshal(resp.JSONDetails, &details); err != nil {
+			if err = json.Unmarshal(resp.JSONDetails, &details); err != nil { //nolint:staticcheck
 				t.Errorf("non-JSON response details (%s): %s", resp.JSONDetails, err)
 			}
 

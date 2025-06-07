@@ -22,6 +22,6 @@ func createProvider(settings *Settings) (LLMProvider, error) {
 	case ProviderTypeTest:
 		return &settings.OpenAI.TestProvider, nil
 	default:
-		return nil, errors.New("Invalid Provider configuration")
+		return nil, errors.New("invalid provider configuration")
 	}
 }
