@@ -22,6 +22,7 @@ jobs:
       attestations: write
     with:
       go-version: "1.24.1"
+      golangci-lint-version: "2.1.6"
       node-version: "22"
       working-directory: packages/grafana-llm-app
       package-manager: npm
