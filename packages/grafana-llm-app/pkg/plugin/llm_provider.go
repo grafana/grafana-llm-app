@@ -102,7 +102,7 @@ func (c *ChatCompletionRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if t, ok := r["temperature"].(float64); ok && t == 0 {
-		a.ChatCompletionRequest.Temperature = math.SmallestNonzeroFloat32
+		a.Temperature = math.SmallestNonzeroFloat32
 	}
 	*c = ChatCompletionRequest(a)
 	return nil

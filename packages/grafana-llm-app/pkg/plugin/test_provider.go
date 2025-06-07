@@ -72,10 +72,10 @@ func (p *testProvider) Models(context.Context) (ModelResponse, error) {
 }
 
 func validateChatCompletionRequest(req ChatCompletionRequest) error {
-	if len(req.ChatCompletionRequest.Messages) == 0 {
+	if len(req.Messages) == 0 {
 		return errors.New("at least one message is required")
 	}
-	for _, m := range req.ChatCompletionRequest.Messages {
+	for _, m := range req.Messages {
 		if m.Role == "" {
 			return errors.New("role is required for each message")
 		}

@@ -109,7 +109,7 @@ func getLLMOptInState(ctx context.Context, settings *Settings) (llmGatewayRespon
 	if err != nil {
 		return llmGatewayResponse{}, fmt.Errorf("failed to send request to llm-gateway %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		log.DefaultLogger.Error("Error response from llm-gateway", "status", resp.Status)
@@ -242,7 +242,7 @@ func (app *App) handleSaveLLMOptInState(w http.ResponseWriter, req *http.Request
 		handleError(w, fmt.Errorf("failed to send request to llm-gateway %w", err), http.StatusBadRequest)
 		return
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode/100 != 2 {
 		log.DefaultLogger.Error("Error response from llm-gateway", "status", resp.Status)
 		// parse the response body and return it
@@ -416,7 +416,7 @@ func doRequest(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("send http request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
 	if err != nil {
 		return nil, fmt.Errorf("read http response: %w", err)
@@ -533,7 +533,7 @@ func handleStreamError(w http.ResponseWriter, err error, code int) error {
 	if err != nil {
 		return fmt.Errorf("marshaling error response: %w", err)
 	}
-	_, err = w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(resp))))
+	_, err = fmt.Fprintf(w, "data: %s\n\n", string(resp))
 	if err != nil {
 		return fmt.Errorf("writing error response: %w", err)
 	}

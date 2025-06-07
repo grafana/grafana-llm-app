@@ -43,7 +43,7 @@ func newQdrantStore(s qdrantSettings, secrets map[string]string) (ReadVectorStor
 	} else {
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
-	conn, err := grpc.DialContext(context.Background(), s.Address, dialOptions...)
+	conn, err := grpc.NewClient(s.Address, dialOptions...)
 	if err != nil {
 		return nil, nil, err
 	}

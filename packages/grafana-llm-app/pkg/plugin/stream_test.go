@@ -32,7 +32,7 @@ func newMockOpenAIStreamServer(t *testing.T, statusCode int, includeDone bool) *
 
 		if statusCode != http.StatusOK {
 			w.WriteHeader(statusCode)
-			_, _ = w.Write([]byte(fmt.Sprintf(`{"error": {"code": %d}}`, statusCode)))
+			_, _ = fmt.Fprintf(w, `{"error": {"code": %d}}`, statusCode)
 			flusher := w.(http.Flusher)
 			flusher.Flush()
 			return

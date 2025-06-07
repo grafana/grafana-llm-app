@@ -46,7 +46,7 @@ func (a *App) runChatCompletionsStream(ctx context.Context, req *backend.RunStre
 	var err error
 	err = json.Unmarshal(req.Data, &requestBody)
 	if err != nil {
-		return fmt.Errorf("Unable to unmarshal request body: %w", err)
+		return fmt.Errorf("unable to unmarshal request body: %w", err)
 	}
 
 	llmProvider, err := createProvider(a.settings)
