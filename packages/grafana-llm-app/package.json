@@ -1,6 +1,7 @@
 {
   "name": "@grafana/llm-app",
   "version": "0.21.2",
+  "private": true,
   "description": "Plugin to easily allow llm based extensions to grafana",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -18,6 +19,7 @@
     "e2e": "npm exec cypress install && npm exec grafana-e2e run",
     "e2e:ci": "npm run server:detach && npm exec cypress install && npm exec grafana-e2e run && npm run server:down",
     "e2e:update": "npm exec cypress install && npm exec grafana-e2e run --update-screenshots",
+    "preinstall": "cd ../.. && npm install --ignore-scripts && npm run build",
     "server": "docker compose up --build",
     "server:detach": "docker compose up --build -d",
     "server:down": "docker compose down",
