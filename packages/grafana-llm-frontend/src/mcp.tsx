@@ -222,10 +222,10 @@ export async function enabled(): Promise<boolean> {
  * @param appId the ID of the Grafana app plugin to use. The plugin must be exposing the
  *              MCP server's streamable HTTP API as a resource handler.
  * @param mcpPath the path to the MCP server's streamable HTTP API, with leading slash.
- *              Defaults to `/mcp`.
+ *              Defaults to `/mcp/grafana`.
  * @returns A URL to use as the `url` argument of `StreamableHTTPClientTransport`.
  */
-export function streamableHTTPURL(appId: string = LLM_PLUGIN_ID, mcpPath = '/mcp'): URL {
+export function streamableHTTPURL(appId: string = LLM_PLUGIN_ID, mcpPath = MCP_GRAFANA_PATH): URL {
   let grafanaUrl = config.appUrl || 'http://localhost:3000/';
   if (!grafanaUrl.endsWith('/')) {
     grafanaUrl = `${grafanaUrl}/`;
@@ -329,7 +329,7 @@ interface MCPClientProviderProps {
   /**
    * The path to the MCP server's streamable HTTP API, with leading slash.
    *
-   * Defaults to `/mcp`.
+   * Defaults to `/mcp/grafana`.
    */
   mcpAppPath?: string;
   children: React.ReactNode;
@@ -370,7 +370,7 @@ export function MCPClientProvider({
   appName,
   appVersion,
   mcpAppName = LLM_PLUGIN_ID,
-  mcpAppPath = '/mcp',
+  mcpAppPath = MCP_GRAFANA_PATH,
   children,
 }: MCPClientProviderProps) {
   const resource = createClientResource({ appName, appVersion, mcpAppName, mcpAppPath });

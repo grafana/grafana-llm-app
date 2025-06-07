@@ -602,6 +602,6 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/save-plugin-settings", a.handleSavePluginSettings)
 
 	if a.mcpServer != nil {
-		mux.HandleFunc("/mcp", a.mcpServer.HTTPServer.ServeHTTP)
+		mux.HandleFunc("/mcp/grafana", a.mcpServer.HTTPServer.ServeHTTP)
 	}
 }
