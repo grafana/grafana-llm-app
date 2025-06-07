@@ -14,7 +14,7 @@
     "server": "npm run server --workspace=@grafana/llm-app",
     "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "test:ci": "npm run test:ci --workspaces",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run build && npm run typecheck --workspaces"
   },
   "author": "Grafana",
   "license": "Apache-2.0",
