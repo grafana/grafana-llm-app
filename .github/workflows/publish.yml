@@ -20,13 +20,16 @@ on:
         default: false
         type: boolean
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   cd:
     name: CD
     uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@custom-working-directory # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     with:
       go-version: "1.24.1"
       golangci-lint-version: "2.1.6"
