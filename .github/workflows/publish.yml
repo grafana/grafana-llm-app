@@ -33,11 +33,16 @@ jobs:
       node-version: "22"
       plugin-directory: packages/grafana-llm-app
 
+      # Disable playwright tests for now
+      run-playwright: false
+      # The playwright action assumes that the plugin is in the root of the repository
+      # and gets the Grafana dependency from src/plugin.json. This is not the case for
+      # this plugin, so we need to explicitly set the Grafana dependency version.
+      run-playwright-with-grafana-dependency: ">=9.5.2"
+
       branch: ${{ github.event.inputs.branch }}
       environment: ${{ github.event.inputs.environment }}
       docs-only: ${{ fromJSON(github.event.inputs.docs-only) }}
-      # Disable playwright tests for now
-      run-playwright: false
 
       # Choose the correct scope for the plugin version published to the catalog:
       # - 'universal' (default) if the plugin in the catalog should be visible to all users
