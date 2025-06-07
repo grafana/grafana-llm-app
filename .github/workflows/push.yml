@@ -8,10 +8,6 @@ on:
 
 permissions: {}
 
-defaults:
-  run:
-    working-directory: packages/grafana-llm-app
-
 jobs:
   cd:
     name: CI / CD
