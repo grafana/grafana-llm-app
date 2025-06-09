@@ -3,7 +3,7 @@ module github.com/grafana/grafana-llm-app
 go 1.24.1
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.3.0
+	github.com/anthropics/anthropic-sdk-go v1.4.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/grafana/authlib v0.0.0-20250423111852-90ec44e81796
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250516123951-83fcd32d7bbe
@@ -14,7 +14,7 @@ require (
 	github.com/qdrant/go-client v1.14.0
 	github.com/sashabaranov/go-openai v1.40.1
 	github.com/stretchr/testify v1.10.0
-	google.golang.org/grpc v1.72.2
+	google.golang.org/grpc v1.73.0
 )
 
 require (
@@ -137,8 +137,8 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250227231956-55c901821b1e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250324211829-b45e905df463 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
