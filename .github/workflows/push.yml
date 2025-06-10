@@ -1,0 +1,48 @@
+name: Plugins - CI / CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: {}
+
+jobs:
+  cd:
+    name: CI / CD
+    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@main # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    with:
+      go-version: "1.24.1"
+      golangci-lint-version: "2.1.6"
+      node-version: "22"
+      plugin-directory: packages/grafana-llm-app
+      package-manager: npm
+
+      # Disable playwright tests for now.
+      run-playwright: false
+      # The playwright action assumes that the plugin is in the root of the repository
+      # and gets the Grafana dependency from src/plugin.json. This is not the case for
+      # this plugin, so we need to explicitly set the Grafana dependency version.
+      run-playwright-with-grafana-dependency: ">=9.5.2"
+
+      # Checkout/build PR or main branch, depending on event
+      branch: ${{ github.event_name == 'push' && github.ref_name || github.ref }}
+
+      # When pushing to "main", publish and deploy to "dev" (CD). For PRs, skip publishing and deploying (run CI only)
+      environment: ${{ (github.event_name == 'push' && github.ref_name == 'main') && 'dev' || 'none' }}
+
+      # Deploy provisioned plugin to Grafana Cloud
+      grafana-cloud-deployment-type: provisioned
+      argo-workflow-slack-channel: "#machine-learning-deploys"
+
+      # Scope for the plugin published to the catalog. Setting this to "grafana_cloud" will make it visible only in Grafana Cloud
+      # (and hide it for on-prem). This is required for some provisioned plugins.
+      scopes: universal
+
+      # Add the git head ref sha to the plugin version as suffix (`+abcdef`). This is required for CD builds.
+      plugin-version-suffix: ${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}

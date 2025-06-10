@@ -1,0 +1,57 @@
+name: Plugins - CD
+run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to publish from. Can be used to deploy PRs to dev
+        default: main
+      environment:
+        description: Environment to publish to
+        required: true
+        type: choice
+        options:
+          - "dev"
+          - "ops"
+          - "prod"
+      docs-only:
+        description: Only publish docs, do not publish the plugin
+        default: false
+        type: boolean
+
+permissions: {}
+
+jobs:
+  cd:
+    name: CD
+    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@main # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    with:
+      go-version: "1.24.1"
+      golangci-lint-version: "2.1.6"
+      node-version: "22"
+      plugin-directory: packages/grafana-llm-app
+
+      # Disable playwright tests for now
+      run-playwright: false
+      # The playwright action assumes that the plugin is in the root of the repository
+      # and gets the Grafana dependency from src/plugin.json. This is not the case for
+      # this plugin, so we need to explicitly set the Grafana dependency version.
+      run-playwright-with-grafana-dependency: ">=9.5.2"
+
+      branch: ${{ github.event.inputs.branch }}
+      environment: ${{ github.event.inputs.environment }}
+      docs-only: ${{ fromJSON(github.event.inputs.docs-only) }}
+
+      # Choose the correct scope for the plugin version published to the catalog:
+      # - 'universal' (default) if the plugin in the catalog should be visible to all users
+      # - 'grafana_cloud' if the plugin in the catalog should be visible only to Grafana Cloud users (hidden for on-prem users)
+      scopes: universal
+      # scopes: grafana_cloud
+
+      grafana-cloud-deployment-type: provisioned
+      argo-workflow-slack-channel: "#machine-learning-deploys"
