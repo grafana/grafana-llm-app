@@ -1,9 +1,10 @@
 import React from 'react';
 
 import { isLiveChannelMessageEvent, LiveChannelAddress, LiveChannelMessageEvent, LiveChannelScope } from '@grafana/data';
-import { getBackendSrv, getGrafanaLiveSrv, GrafanaLiveSrv, logDebug } from '@grafana/runtime';
+import { config, getBackendSrv, getGrafanaLiveSrv, GrafanaLiveSrv, logDebug } from '@grafana/runtime';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 import { Client } from '@modelcontextprotocol/sdk/client/index';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
 import { JSONRPCMessage, JSONRPCMessageSchema, Tool as MCPTool } from '@modelcontextprotocol/sdk/types';
 import { Observable, filter } from 'rxjs';
 import { v4 as uuid } from 'uuid';
@@ -19,6 +20,7 @@ const MCP_GRAFANA_PATH = 'mcp/grafana'
  *
  * Use this with a client from `@modelcontextprotocol/sdk`.
  *
+ * @deprecated Use a `StreamableHTTPClientTransport` with URL returned by `streamableHTTPURL` instead.
  * @experimental
  */
 export class GrafanaLiveTransport implements Transport {
@@ -211,8 +213,33 @@ export async function enabled(): Promise<boolean> {
   }
 }
 
+/**
+ * Get the URL to use if manually creating a StreamableHTTPClientTransport.
+ *
+ * This can be used if you don't want to use the `mcp.MCPClientProvider` component, or if you
+ * want to host the MCP server on your own app plugin.
+ *
+ * @param appId the ID of the Grafana app plugin to use. The plugin must be exposing the
+ *              MCP server's streamable HTTP API as a resource handler.
+ * @param mcpPath the path to the MCP server's streamable HTTP API, with leading slash.
+ *              Defaults to `/mcp/grafana`.
+ * @returns A URL to use as the `url` argument of `StreamableHTTPClientTransport`.
+ */
+export function streamableHTTPURL(appId: string = LLM_PLUGIN_ID, mcpPath = MCP_GRAFANA_PATH): URL {
+  let grafanaUrl = config.appUrl || 'http://localhost:3000/';
+  if (!grafanaUrl.endsWith('/')) {
+    grafanaUrl = `${grafanaUrl}/`;
+  }
+  if (!mcpPath.startsWith('/')) {
+    mcpPath = `/${mcpPath}`;
+  }
+  return new URL(`${grafanaUrl}api/plugins/${appId}/resources${mcpPath}`);
+}
+
+type ClientResourceOptions = Required<Omit<MCPClientProviderProps, 'children'>>;
+
 // Create a resource that works with Suspense.
-function createClientResource(appName: string, appVersion: string): ClientResource {
+function createClientResource({ appName, appVersion, mcpAppName, mcpAppPath }: ClientResourceOptions): ClientResource {
   let status: 'pending' | 'success' | 'error' = 'pending';
   let result: ClientResult | null = null;
   let error: Error | null = null;
@@ -237,7 +264,14 @@ function createClientResource(appName: string, appVersion: string): ClientResour
         name: appName,
         version: appVersion,
       });
-      const transport = new GrafanaLiveTransport();
+      const transport = new StreamableHTTPClientTransport(streamableHTTPURL(mcpAppName, mcpAppPath), {
+        reconnectionOptions: {
+          maxRetries: 5,
+          initialReconnectionDelay: 1000,
+          maxReconnectionDelay: 5000,
+          reconnectionDelayGrowFactor: 1.5,
+        },
+      });
       await client.connect(transport);
       result = { client, enabled: isEnabled };
       clientMap.set(key, result);
@@ -265,8 +299,39 @@ function createClientResource(appName: string, appVersion: string): ClientResour
 }
 
 interface MCPClientProviderProps {
+  /**
+   * The name of the application using the MCP server.
+   *
+   * This will be used as the `name` argument of the `Client` constructor,
+   * and also to cache MCP clients to avoid recreating them multiple times,
+   * when using the `mcp.MCPClientProvider` component.
+   */
   appName: string;
+  /**
+   * The version of the application using the MCP server.
+   *
+   * This will be used as the `version` argument of the `Client` constructor,
+   * and also to cache MCP clients to avoid recreating them multiple times,
+   * when using the `mcp.MCPClientProvider` component.
+   */
   appVersion: string;
+  /**
+   * The Grafana app plugin to use for the MCP server.
+   *
+   * Defaults to `grafana-llm-app`, meaning the MCP server embedded in the Grafana LLM plugin
+   * will be used.
+   *
+   * If you want to use a different app plugin, you can set this to the ID of the plugin.
+   * You will need to ensure that the plugin is exposing the MCP server's streamable HTTP API
+   * as a resource handler.
+   */
+  mcpAppName?: string;
+  /**
+   * The path to the MCP server's streamable HTTP API, with leading slash.
+   *
+   * Defaults to `/mcp/grafana`.
+   */
+  mcpAppPath?: string;
   children: React.ReactNode;
 }
 
@@ -304,9 +369,11 @@ interface MCPClientProviderProps {
 export function MCPClientProvider({
   appName,
   appVersion,
+  mcpAppName = LLM_PLUGIN_ID,
+  mcpAppPath = MCP_GRAFANA_PATH,
   children,
 }: MCPClientProviderProps) {
-  const resource = createClientResource(appName, appVersion);
+  const resource = createClientResource({ appName, appVersion, mcpAppName, mcpAppPath });
 
   // This will either return the client or throw a promise/error.
   // If it throws a promise, Suspense will suspend the component until it resolves.
@@ -350,7 +417,7 @@ export function useMCPClient(): ClientResult {
  *
  * @experimental
  */
-export { Client };
+export { Client, StreamableHTTPClientTransport };
 
 /**
  * Convert an array of MCP tools to an array of OpenAI tools.

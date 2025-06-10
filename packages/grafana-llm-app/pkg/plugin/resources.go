@@ -600,4 +600,9 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/vector/search", a.handleVectorSearch)
 	mux.HandleFunc("/grafana-llm-state", a.handleLLMState)
 	mux.HandleFunc("/save-plugin-settings", a.handleSavePluginSettings)
+
+	if a.mcpServer != nil {
+		log.DefaultLogger.Debug("Registering Grafana MCP endpoints on /mcp/grafana")
+		mux.HandleFunc("/mcp/grafana", a.mcpServer.HTTPServer.ServeHTTP)
+	}
 }

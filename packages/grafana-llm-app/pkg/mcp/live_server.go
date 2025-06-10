@@ -280,7 +280,7 @@ func composeGrafanaLiveContextFuncs(funcs ...GrafanaLiveContextFunc) GrafanaLive
 	}
 }
 
-// ComposedContextFunc returns a GrafanaLiveContextFunc that calls all the context
+// composedGrafanaLiveContextFunc is a GrafanaLiveContextFunc that calls all the context
 // extraction functions in order to set up the complete context for MCP requests.
 var composedGrafanaLiveContextFunc = composeGrafanaLiveContextFuncs(
 	extractGrafanaInfoFromGrafanaLiveRequest,

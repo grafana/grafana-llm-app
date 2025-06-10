@@ -12,6 +12,49 @@ First, add the latest version of `@grafana/llm` to your dependencies in package.
 }
 ```
 
+**Note:** If you're writing tests that import from `@grafana/llm`, you may need to configure Jest to handle ES modules. See the Jest Configuration section below for details.
+
+## Jest Configuration
+
+### ESM errors with Jest
+
+When writing tests that import from `@grafana/llm`, you may encounter Jest errors like `SyntaxError: Cannot use import statement outside a module`. This happens because `@grafana/llm` uses ES module dependencies that Jest needs to transform.
+
+If you're using Grafana's plugin scaffolding, extend your Jest configuration to include the additional ES modules. For convenience, `@grafana/llm` exports the required module list:
+
+```javascript
+// jest.config.js
+const { grafanaESModules, nodeModulesToTransform } = require('./.config/jest/utils');
+const { grafanaLLMESModules } = require('@grafana/llm/jest');
+
+module.exports = {
+  // Jest configuration provided by Grafana scaffolding
+  ...require('./.config/jest.config'),
+  transformIgnorePatterns: [nodeModulesToTransform([...grafanaESModules, ...grafanaLLMESModules])],
+};
+```
+
+### MCP Functionality
+
+If you're testing code that uses MCP (Model Context Protocol) features, add the `TransformStream` polyfill to your `jest-setup.js`:
+
+```javascript
+// jest-setup.js
+// Jest setup provided by Grafana scaffolding
+import './.config/jest-setup';
+
+// Add this import and global for MCP functionality
+import { TransformStream } from 'node:stream/web';
+import { TextEncoder } from 'util';
+
+// TextEncoder may already be present in your setup
+global.TextEncoder = TextEncoder;
+// Add this line for MCP TransformStream support
+global.TransformStream = TransformStream;
+```
+
+## Usage
+
 Then in your components you can use the `llm` object from `@grafana/llm` like so:
 
 ```typescript

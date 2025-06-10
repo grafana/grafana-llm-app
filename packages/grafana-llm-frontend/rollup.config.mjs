@@ -37,10 +37,34 @@ export default [
     },
   },
   {
+    input: "src/jest.ts",
+    plugins: plugins,
+    output: [
+      {
+        format: "cjs",
+        sourcemap: env === "production" ? true : "inline",
+        file: "./dist/jest.js",
+      },
+      {
+        format: "esm",
+        sourcemap: env === "production" ? true : "inline",
+        file: "./dist/esm/jest.js",
+      },
+    ],
+  },
+  {
     input: "src/index.ts",
     plugins: [dts()],
     output: {
       file: "./dist/index.d.ts",
+      format: "es",
+    },
+  },
+  {
+    input: "src/jest.ts",
+    plugins: [dts()],
+    output: {
+      file: "./dist/jest.d.ts",
       format: "es",
     },
   },

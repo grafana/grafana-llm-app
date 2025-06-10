@@ -45,9 +45,10 @@ func TestCallResource(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 
-		method string
-		path   string
-		body   []byte
+		method  string
+		headers map[string][]string
+		path    string
+		body    []byte
 
 		expStatus int
 		expBody   []byte
@@ -58,14 +59,25 @@ func TestCallResource(t *testing.T) {
 			path:      "not_found",
 			expStatus: http.StatusNotFound,
 		},
+		{
+			name:   "get mcp grafana handler 200",
+			method: http.MethodPost,
+			headers: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+			body:      []byte(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`),
+			path:      "/mcp/grafana",
+			expStatus: http.StatusOK,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Request by calling CallResource. This tests the httpadapter.
 			var r mockCallResourceResponseSender
 			err = app.CallResource(ctx, &backend.CallResourceRequest{
-				Method: tc.method,
-				Path:   tc.path,
-				Body:   tc.body,
+				Method:  tc.method,
+				Headers: tc.headers,
+				Path:    tc.path,
+				Body:    tc.body,
 			}, &r)
 			if err != nil {
 				t.Fatalf("CallResource error: %s", err)

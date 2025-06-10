@@ -6,6 +6,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 
 import { Models } from './Models';
 import { MCPToolsWithProvider } from './MCPTools';
+import { testIds } from 'components/testIds';
 
 const getStyles = (theme: GrafanaTheme2) => ({
   container: css`
@@ -36,7 +37,7 @@ const getStyles = (theme: GrafanaTheme2) => ({
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: ${theme.spacing(4)};
-    
+
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
     }
@@ -58,11 +59,12 @@ const getStyles = (theme: GrafanaTheme2) => ({
   `,
   sectionContent: css`
     // Remove default margins from child components
-    h1, h2 {
+    h1,
+    h2 {
       margin-top: 0;
       font-size: ${theme.typography.h4.fontSize};
     }
-    
+
     pre {
       max-height: 300px;
       overflow-y: auto;
@@ -72,12 +74,12 @@ const getStyles = (theme: GrafanaTheme2) => ({
       padding: ${theme.spacing(2)};
       font-size: ${theme.typography.bodySmall.fontSize};
     }
-    
+
     ul {
       margin: 0;
       padding-left: ${theme.spacing(3)};
     }
-    
+
     li {
       margin-bottom: ${theme.spacing(0.5)};
       line-height: 1.5;
@@ -109,17 +111,15 @@ export function MainPage() {
 
   return (
     <PluginPage>
-      <div className={styles.container}>
+      <div data-testid={testIds.mainPage.container} className={styles.container}>
         <header className={styles.header}>
           <h1 className={styles.title}>Grafana LLM</h1>
-          <p className={styles.subtitle}>
-            Large Language Model integration with Model Context Protocol support
-          </p>
+          <p className={styles.subtitle}>Large Language Model integration with Model Context Protocol support</p>
         </header>
 
         <div className={styles.infoBox}>
-          <strong>About this plugin:</strong> This plugin provides LLM capabilities to Grafana through OpenAI-compatible APIs
-          and extends functionality with Model Context Protocol (MCP) tools for enhanced AI workflows.
+          <strong>About this plugin:</strong> This plugin provides LLM capabilities to Grafana through OpenAI-compatible
+          APIs and extends functionality with Model Context Protocol (MCP) tools for enhanced AI workflows.
         </div>
 
         <div className={styles.sectionsContainer}>
@@ -146,9 +146,9 @@ export function MainPage() {
               Models are provided through the configured LLM provider (OpenAI, Anthropic, or custom).
             </p>
             <p>
-              <strong>MCP Tools:</strong> Model Context Protocol tools extend LLM capabilities with access to Grafana data sources,
-              dashboards, alerts, and other contextual information. These tools can be used by AI assistants to provide
-              more relevant and data-driven responses.
+              <strong>MCP Tools:</strong> Model Context Protocol tools extend LLM capabilities with access to Grafana
+              data sources, dashboards, alerts, and other contextual information. These tools can be used by AI
+              assistants to provide more relevant and data-driven responses.
             </p>
           </div>
         </section>
