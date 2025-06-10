@@ -22,4 +22,15 @@ export const testIds = {
   models: {
     container: 'data-testid models-container',
   },
+  mcpTools: {
+    container: 'data-testid mcp-tools-container',
+    disabled: 'data-testid mcp-tools-disabled',
+    loading: 'data-testid mcp-tools-loading',
+    error: 'data-testid mcp-tools-error',
+    empty: 'data-testid mcp-tools-empty',
+    list: 'data-testid mcp-tools-list',
+    toolItem: 'data-testid mcp-tools-tool-item',
+    toolName: 'data-testid mcp-tools-tool-name',
+    toolDescription: 'data-testid mcp-tools-tool-description',
+  },
 };

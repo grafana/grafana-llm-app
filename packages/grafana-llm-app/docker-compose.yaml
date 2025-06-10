@@ -59,6 +59,46 @@ services:
     profiles:
       - vector
 
+  # Playwright server for interactive development
+  playwright-server:
+    image: mcr.microsoft.com/playwright:v1.52.0-noble
+    container_name: 'playwright-server'
+    working_dir: /app
+    command: sh -c "npm install --legacy-peer-deps && npx playwright@1.52.0 run-server --port 5000 --host 0.0.0.0"
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    profiles:
+      - testing
+    depends_on:
+      - grafana
+
+  # Playwright runner for CI/automated testing
+  playwright-runner:
+    image: mcr.microsoft.com/playwright:v1.52.0-noble
+    container_name: 'playwright-runner'
+    working_dir: /app
+    command: sh -c "npm install --legacy-peer-deps && echo 'Waiting for Grafana to be ready...' && until curl -f http://grafana:3000/api/health; do echo 'Waiting for Grafana...'; sleep 2; done && echo 'Grafana is ready! Starting tests...' && npx playwright test"
+    environment:
+      GRAFANA_BASE_URL: http://grafana:3000
+      PW_TEST_HTML_REPORT_OPEN: never
+      # SKIP_PREINSTALL: Prevents the preinstall script from running during npm install
+      # in the container. The preinstall script normally builds the entire workspace
+      # but causes npm tracker conflicts when running inside Docker. Since the workspace
+      # is already built before running e2e tests, we can safely skip it here.
+      SKIP_PREINSTALL: true
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    profiles:
+      - testing
+    depends_on:
+      - grafana
+
 volumes:
   sentence-transformers:
   # For grafana/vectorapi embedder or store
