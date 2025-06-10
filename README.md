@@ -87,13 +87,28 @@ It is recommended to run these using npm commands from root so that the entire p
    npm run test:ci
    ```
 
-5. Spin up a Grafana instance and run the plugin inside it (using Docker)
+5. Run end-to-end tests (using Playwright)
+
+   ```bash
+   # Run e2e tests (builds the plugin, starts containers, runs tests, cleans up)
+   npm run test:e2e
+
+   # Run e2e tests with full build (same as above but explicitly builds first)
+   npm run test:e2e-full
+
+   # Run e2e tests in CI mode (with optimized Docker builds)
+   npm run test:e2e-ci
+   ```
+
+   **Note:** The e2e tests use Docker containers and require the workspace to be built first. The tests use a special `SKIP_PREINSTALL=true` environment variable in the Docker containers to prevent npm installation conflicts with the workspace's preinstall script.
+
+6. Spin up a Grafana instance and run the plugin inside it (using Docker)
 
    ```bash
    npm run server
    ```
 
-6. Run the linter
+7. Run the linter
 
    ```bash
    npm run lint

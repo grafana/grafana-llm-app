@@ -84,6 +84,11 @@ services:
     environment:
       GRAFANA_BASE_URL: http://grafana:3000
       PW_TEST_HTML_REPORT_OPEN: never
+      # SKIP_PREINSTALL: Prevents the preinstall script from running during npm install
+      # in the container. The preinstall script normally builds the entire workspace
+      # but causes npm tracker conflicts when running inside Docker. Since the workspace
+      # is already built before running e2e tests, we can safely skip it here.
+      SKIP_PREINSTALL: true
     volumes:
       - .:/app
       - /app/node_modules

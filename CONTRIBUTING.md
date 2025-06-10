@@ -306,6 +306,34 @@ func (p *myLLMProvider) ChatCompletionStream(ctx context.Context, req ChatComple
 2. Test the provider with real API calls using the developer sandbox
 3. Ensure all existing functionality works with your new provider
 
+## Development and Testing
+
+### End-to-End Testing
+
+The project includes Playwright-based e2e tests that run in Docker containers. To run these tests:
+
+```bash
+# Run e2e tests (builds the plugin, starts containers, runs tests, cleans up)
+npm run test:e2e
+
+# Run e2e tests with full build (same as above but explicitly builds first)
+npm run test:e2e-full
+
+# Run e2e tests in CI mode (with optimized Docker builds)
+npm run test:e2e-ci
+```
+
+#### SKIP_PREINSTALL Environment Variable
+
+The e2e tests use a special environment variable `SKIP_PREINSTALL=true` to prevent npm installation conflicts. This is necessary because:
+
+1. This project uses an npm workspace where the `grafana-llm-app` plugin depends on other packages in the workspace
+2. The plugin has a `preinstall` script that builds the entire workspace when `npm install` is run directly in the plugin directory (required for CI)
+3. When running e2e tests in Docker containers, the Playwright runner executes `npm install --legacy-peer-deps`, which would trigger this preinstall script
+4. This causes an "npm error Tracker 'idealTree' already exists" conflict
+
+The `SKIP_PREINSTALL=true` environment variable is set in the `playwright-runner` service in `docker-compose.yaml` to conditionally skip the preinstall script execution during e2e testing, while preserving the functionality for CI/CD workflows.
+
 ### Provisioning Your Provider
 
 Once implemented, users can provision your provider using configuration like:
