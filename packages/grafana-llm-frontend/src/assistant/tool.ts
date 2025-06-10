@@ -170,13 +170,6 @@ export class ToolRegistry {
   private registrations = new Map<string, ToolRegistration<any>>();
   private eventsSubject = new BehaviorSubject<ToolRegistryEvent | null>(null);
   private static instance: ToolRegistry | null = null;
-  private instanceId: string;
-  private createdAt: Date;
-
-  constructor() {
-    this.instanceId = Math.random().toString(36).substring(2, 15);
-    this.createdAt = new Date();
-  }
 
   /**
    * Get the singleton instance of the tool registry
@@ -201,57 +194,6 @@ export class ToolRegistry {
     }
 
     return ToolRegistry.instance;
-  }
-
-  /**
-   * Get debug information about this registry instance
-   */
-  getDebugInfo(): {
-    instanceId: string;
-    createdAt: Date;
-    toolCount: number;
-    pluginCount: number;
-    isGlobalInstance: boolean;
-    registeredPlugins: string[];
-  } {
-    const pluginIds = new Set<string>();
-    for (const registration of this.registrations.values()) {
-      pluginIds.add(registration.pluginId);
-    }
-
-    return {
-      instanceId: this.instanceId,
-      createdAt: this.createdAt,
-      toolCount: this.registrations.size,
-      pluginCount: pluginIds.size,
-      isGlobalInstance: (globalThis as any)[GLOBAL_REGISTRY_SYMBOL] === this,
-      registeredPlugins: Array.from(pluginIds),
-    };
-  }
-
-  /**
-   * Verify that this is the same registry instance across different imports
-   * Returns true if all instances point to the same registry
-   */
-  static verifyRegistryConsistency(): {
-    isConsistent: boolean;
-    localInstance: string | null;
-    globalInstance: string | null;
-    message: string;
-  } {
-    const localId = ToolRegistry.instance?.instanceId || null;
-    const globalId = (globalThis as any)[GLOBAL_REGISTRY_SYMBOL]?.instanceId || null;
-
-    const isConsistent = localId === globalId && localId !== null;
-
-    return {
-      isConsistent,
-      localInstance: localId,
-      globalInstance: globalId,
-      message: isConsistent 
-        ? 'Registry instances are consistent across imports'
-        : `Registry instances are inconsistent. Local: ${localId}, Global: ${globalId}`,
-    };
   }
 
   /**
@@ -528,24 +470,3 @@ export function registerTool<T extends ToolParams>(
 export function unregisterTool(toolName: string, pluginId: string): boolean {
   return getToolRegistry().unregisterTool(toolName, pluginId);
 }
-
-/**
- * Debug helper to verify registry consistency across imports
- */
-export function debugToolRegistry(): void {
-  const registry = getToolRegistry();
-  const debugInfo = registry.getDebugInfo();
-  const consistency = ToolRegistry.verifyRegistryConsistency();
-  
-  console.log('🔧 Tool Registry Debug Info:', {
-    ...debugInfo,
-    consistency,
-  });
-}
-
-export const zod = z;
-export type { z };
-
-// setTimeout(() => {
-//   examplePluginRegistration();
-// }, 15000);
