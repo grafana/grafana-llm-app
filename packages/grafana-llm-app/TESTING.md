@@ -210,6 +210,14 @@ Screenshots are stored in `tests/visual.spec.ts-snapshots/` with naming pattern:
    docker stop $(docker ps -q)
    ```
 
+1.1. **Port 5000 conflict with AirPlay Receiver**
+
+When starting the Playwright server, MacOS users can figure the following error: `Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:5000 -> 127.0.0.1:0: listen tcp 0.0.0.0:5000: bind: address already in use`, which can be a conflict with the AirPlay Receiver, to fix it:
+
+- Go to System Settings > AirDrop & Handoff
+- Turn off AirPlay Receiver
+- This will free up port 5000
+
 2. **Grafana not starting:**
    ```bash
    # Check Grafana logs
