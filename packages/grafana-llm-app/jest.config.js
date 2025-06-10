@@ -1,7 +1,8 @@
 const { grafanaESModules, nodeModulesToTransform } = require('./.config/jest/utils');
+const { grafanaLLMESModules } = require('@grafana/llm/jest');
 
 // Add our additional ES modules to the list
-const additionalESModules = ['pkce-challenge', '@modelcontextprotocol/sdk', ...grafanaESModules];
+const additionalESModules = [...grafanaLLMESModules, ...grafanaESModules];
 
 // force timezone to UTC to allow tests to work regardless of local timezone
 // generally used by snapshots, but can affect specific tests

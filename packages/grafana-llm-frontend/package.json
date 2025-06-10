@@ -7,6 +7,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/index.js"
+    },
+    "./jest": {
+      "types": "./dist/jest.d.ts",
+      "import": "./dist/esm/jest.js",
+      "require": "./dist/jest.js"
     }
   },
   "files": [
