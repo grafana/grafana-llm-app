@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAsync } from 'react-use';
 import { mcp } from '@grafana/llm';
+import { ErrorBoundary } from '@grafana/ui';
 import { testIds } from '../components/testIds';
 
 export function MCPToolsList() {
@@ -64,9 +65,22 @@ export function MCPToolsList() {
 export function MCPToolsWithProvider() {
   return (
     <React.Suspense fallback={<div data-testid={testIds.mcpTools.container}>Connecting to MCP server...</div>}>
-      <mcp.MCPClientProvider appName="grafana-llm-app" appVersion="0.21.1">
-        <MCPToolsList />
-      </mcp.MCPClientProvider>
+      <ErrorBoundary>
+        {({ error }) => {
+          if (error) {
+            return (
+              <div data-testid={testIds.mcpTools.container}>
+                <span data-testid={testIds.mcpTools.error}>Error loading MCP tools: {error.message}</span>
+              </div>
+            );
+          }
+          return (
+            <mcp.MCPClientProvider appName="grafana-llm-app" appVersion="0.21.1">
+              <MCPToolsList />;
+            </mcp.MCPClientProvider>
+          );
+        }}
+      </ErrorBoundary>
     </React.Suspense>
   );
 }
