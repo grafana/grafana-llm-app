@@ -10,8 +10,8 @@
  * Add these to your Jest transformIgnorePatterns configuration.
  */
 export const grafanaLLMESModules = [
-  '@modelcontextprotocol/sdk',
-  'pkce-challenge',
+  "@modelcontextprotocol/sdk",
+  "pkce-challenge",
 ];
 
 /**

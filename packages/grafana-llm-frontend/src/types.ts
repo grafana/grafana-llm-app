@@ -1,5 +1,5 @@
 export interface HealthCheckResponse {
-  status: 'ok' | 'error';
+  status: "ok" | "error";
   details?: HealthCheckDetails;
 }
 

@@ -30,6 +30,12 @@ e2e-results/
 **/cypress/videos
 **/cypress/report.json
 
+# Test artifacts
+test-results/
+playwright-report/
+**/test-results/
+**/playwright-report/
+
 # Editor
 .idea
 

@@ -1,8 +1,18 @@
-import React, { Suspense, useState } from "react";
-import { Button, FieldSet, Icon, LoadingPlaceholder, Modal, Spinner, Stack, TextArea, CollapsableSection } from "@grafana/ui";
-import { useAsync } from "react-use";
-import { finalize, lastValueFrom, partition, startWith } from "rxjs";
-import { llm, mcp } from "@grafana/llm";
+import React, { Suspense, useState } from 'react';
+import {
+  Button,
+  FieldSet,
+  Icon,
+  LoadingPlaceholder,
+  Modal,
+  Spinner,
+  Stack,
+  TextArea,
+  CollapsableSection,
+} from '@grafana/ui';
+import { useAsync } from 'react-use';
+import { finalize, lastValueFrom, partition, startWith } from 'rxjs';
+import { llm, mcp } from '@grafana/llm';
 import { CallToolResultSchema, Tool } from '@modelcontextprotocol/sdk/types';
 
 interface RenderedToolCall {
@@ -23,15 +33,18 @@ async function handleToolCall(
 ) {
   const { function: f, id } = fc;
   console.log('f', f);
-  
+
   setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: true })));
-  
+
   const args = JSON.parse(f.arguments);
 
-  try{
-  const response = await client.callTool({ name: f.name, arguments: args });
-  const toolResult = CallToolResultSchema.parse(response);
-    const textContent = toolResult.content.filter(c => c.type === 'text').map(c => c.text).join('');
+  try {
+    const response = await client.callTool({ name: f.name, arguments: args });
+    const toolResult = CallToolResultSchema.parse(response);
+    const textContent = toolResult.content
+      .filter((c) => c.type === 'text')
+      .map((c) => c.text)
+      .join('');
     messages.push({ role: 'tool', tool_call_id: id, content: textContent });
     setToolCalls(new Map(toolCalls.set(id, { name: f.name, arguments: f.arguments, running: false, response })));
   } catch (e: any) {
@@ -54,7 +67,11 @@ async function handleNonStreamingChat(
 ) {
   setToolCalls(new Map());
   const messages: llm.Message[] = [
-    { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
+    {
+      role: 'system',
+      content:
+        'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.',
+    },
     { role: 'user', content: message },
   ];
 
@@ -64,18 +81,18 @@ async function handleNonStreamingChat(
     tools: mcp.convertToolsToOpenAI(tools),
   });
 
-  let functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
-  
+  let functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
+
   while (functionCalls.length > 0) {
     messages.push(response.choices[0].message);
-    await Promise.all(functionCalls.map(fc => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
-    
+    await Promise.all(functionCalls.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
+
     response = await llm.chatCompletions({
       model: llm.Model.LARGE,
       messages,
       tools: mcp.convertToolsToOpenAI(tools),
     });
-    functionCalls = response.choices[0].message.tool_calls?.filter(tc => tc.type === 'function') ?? [];
+    functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
   }
 
   setReply(response.choices[0].message.content!);
@@ -95,7 +112,11 @@ async function handleStreamingChat(
   setFinished: (finished: boolean) => void
 ) {
   const messages: llm.Message[] = [
-    { role: 'system', content: 'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.' },
+    {
+      role: 'system',
+      content:
+        'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.',
+    },
     { role: 'user', content: message },
   ];
 
@@ -107,7 +128,7 @@ async function handleStreamingChat(
 
   let [toolCallsStream, otherMessages] = partition(
     stream,
-    (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
+    (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
   );
 
   let contentMessages = otherMessages.pipe(
@@ -122,15 +143,13 @@ async function handleStreamingChat(
   // Subscribe to content messages immediately
   contentMessages.subscribe(setReply);
 
-  let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
-    llm.accumulateToolCalls()
-  ));
+  let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
 
   while (toolCallMessages.tool_calls.length > 0) {
     messages.push(toolCallMessages);
-    
-    const tcs = toolCallMessages.tool_calls.filter(tc => tc.type === 'function');
-    await Promise.all(tcs.map(fc => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
+
+    const tcs = toolCallMessages.tool_calls.filter((tc) => tc.type === 'function');
+    await Promise.all(tcs.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
 
     // `messages` now contains all tool call request and responses so far.
     // Send it back to the LLM to get its response given those tool calls.
@@ -142,7 +161,7 @@ async function handleStreamingChat(
 
     [toolCallsStream, otherMessages] = partition(
       stream,
-      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta),
+      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
     );
 
     // Include a pretend 'first message' in the reply, in case the model chose to send anything before its tool calls.
@@ -161,9 +180,7 @@ async function handleStreamingChat(
 
     contentMessages.subscribe(setReply);
 
-    toolCallMessages = await lastValueFrom(toolCallsStream.pipe(
-      llm.accumulateToolCalls()
-    ));
+    toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
   }
 }
 
@@ -187,10 +204,20 @@ function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) 
       {toolCalls.size === 0 && <div>No tool calls yet</div>}
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {Array.from(toolCalls.values()).map((toolCall, i) => (
-          <li key={i} style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--background-color-secondary)', borderRadius: '4px' }}>
+          <li
+            key={i}
+            style={{
+              marginBottom: '16px',
+              padding: '12px',
+              backgroundColor: 'var(--background-color-secondary)',
+              borderRadius: '4px',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontWeight: 500 }}>{toolCall.name}</span>
-              <code style={{ backgroundColor: 'var(--background-color-primary)', padding: '2px 6px', borderRadius: '4px' }}>
+              <code
+                style={{ backgroundColor: 'var(--background-color-primary)', padding: '2px 6px', borderRadius: '4px' }}
+              >
                 {toolCall.arguments}
               </code>
               {toolCall.running ? (
@@ -200,32 +227,36 @@ function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) 
               )}
             </div>
             {toolCall.error && (
-              <div style={{ 
-                backgroundColor: 'var(--error-background)', 
-                color: 'var(--error-text-color)',
-                padding: '8px',
-                borderRadius: '4px',
-                marginTop: '4px',
-                fontSize: '0.9em'
-              }}>
+              <div
+                style={{
+                  backgroundColor: 'var(--error-background)',
+                  color: 'var(--error-text-color)',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  marginTop: '4px',
+                  fontSize: '0.9em',
+                }}
+              >
                 <Icon name="exclamation-triangle" size="sm" style={{ marginRight: '4px' }} />
                 {toolCall.error}
               </div>
             )}
             {!toolCall.error && toolCall.response && (
-              <CollapsableSection 
-                label={<span style={{ fontSize: '0.7em', fontWeight: 500 }}>Response</span>} 
+              <CollapsableSection
+                label={<span style={{ fontSize: '0.7em', fontWeight: 500 }}>Response</span>}
                 isOpen={false}
               >
-                <pre style={{ 
-                  backgroundColor: 'var(--background-color-primary)', 
-                  padding: '8px',
-                  borderRadius: '4px',
-                  marginTop: '8px',
-                  overflow: 'auto',
-                  maxHeight: '300px',
-                  fontSize: '0.9em'
-                }}>
+                <pre
+                  style={{
+                    backgroundColor: 'var(--background-color-primary)',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    marginTop: '8px',
+                    overflow: 'auto',
+                    maxHeight: '300px',
+                    fontSize: '0.9em',
+                  }}
+                >
                   {JSON.stringify(toolCall.response, null, 2)}
                 </pre>
               </CollapsableSection>
@@ -259,7 +290,7 @@ const BasicChatTest = () => {
       return { enabled, tools: [] };
     }
 
-    const { tools } = await client?.listTools() ?? { tools: [] };
+    const { tools } = (await client?.listTools()) ?? { tools: [] };
     if (message === '') {
       return { enabled, tools };
     }
@@ -269,7 +300,16 @@ const BasicChatTest = () => {
 
     try {
       if (!useStream) {
-        await handleNonStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
+        await handleNonStreamingChat(
+          message,
+          tools,
+          client,
+          toolCalls,
+          setToolCalls,
+          setReply,
+          setStarted,
+          setFinished
+        );
       } else {
         await handleStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
       }
@@ -290,15 +330,27 @@ const BasicChatTest = () => {
     <div>
       {value?.enabled ? (
         <Stack direction="column">
-          <TextArea
-            value={input}
-            onChange={(e) => setInput(e.currentTarget.value)}
-            placeholder="Enter a message"
-          />
+          <TextArea value={input} onChange={(e) => setInput(e.currentTarget.value)} placeholder="Enter a message" />
           <br />
           <Stack direction="row" justifyContent="space-evenly">
-            <Button type="submit" onClick={() => { setMessage(input); setUseStream(true); }}>Submit Stream</Button>
-            <Button type="submit" onClick={() => { setMessage(input); setUseStream(false); }}>Submit Request</Button>
+            <Button
+              type="submit"
+              onClick={() => {
+                setMessage(input);
+                setUseStream(true);
+              }}
+            >
+              Submit Stream
+            </Button>
+            <Button
+              type="submit"
+              onClick={() => {
+                setMessage(input);
+                setUseStream(false);
+              }}
+            >
+              Submit Request
+            </Button>
           </Stack>
           <br />
           {!useStream && (
@@ -309,8 +361,8 @@ const BasicChatTest = () => {
           )}
           {useStream && <div>{reply}</div>}
           <Stack direction="row" justifyContent="space-evenly">
-            <div>{started ? "Response is started" : "Response is not started"}</div>
-            <div>{finished ? "Response is finished" : "Response is not finished"}</div>
+            <div>{started ? 'Response is started' : 'Response is not started'}</div>
+            <div>{finished ? 'Response is finished' : 'Response is not finished'}</div>
           </Stack>
           <br />
           <br />
@@ -330,17 +382,14 @@ export const DevSandbox = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const closeModal = () => {
     setModalIsOpen(false);
-  }
+  };
 
   return (
     <FieldSet label="Development Sandbox">
       <Button onClick={() => setModalIsOpen(true)}>Open development sandbox</Button>
       <Modal title="Development Sandbox" isOpen={modalIsOpen} onDismiss={closeModal}>
         <Suspense fallback={<LoadingPlaceholder text="Loading MCP..." />}>
-          <mcp.MCPClientProvider
-            appName="Grafana App With Model Context Protocol"
-            appVersion="1.0.0"
-          >
+          <mcp.MCPClientProvider appName="Grafana App With Model Context Protocol" appVersion="1.0.0">
             <BasicChatTest />
           </mcp.MCPClientProvider>
         </Suspense>

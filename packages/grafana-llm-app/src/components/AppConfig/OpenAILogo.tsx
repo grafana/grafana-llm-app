@@ -3,7 +3,7 @@ import { useTheme2 } from '@grafana/ui';
 
 export function OpenAILogo({ width, height }: { width: number; height: number }) {
   const theme = useTheme2();
-  
+
   // This is the white OpenAI logo SVG from their logo pack.
 
   // If there's a better way to include an SVG inside a Grafana Plugin, let me know!!

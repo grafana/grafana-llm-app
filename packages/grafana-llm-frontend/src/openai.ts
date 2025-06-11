@@ -1,22 +1,22 @@
 /**
  * @deprecated This module is deprecated and will be removed in a future version.
  * Please use the vendor-neutral `llm.ts` module instead.
- * 
+ *
  * All exports from this file are re-exported from `llm.ts` for backward compatibility.
- * 
+ *
  * BREAKING CHANGE in v0.13.0: The health check response format has changed from
  * { details: { openAI: { configured: true, ok: true } } }
  * to
  * { details: { llmProvider: { configured: true, ok: true } } }
- * 
+ *
  * This module now handles both formats for backward compatibility, but will be removed in a future version.
  */
 
-import { getBackendSrv } from '@grafana/runtime';
-import { LLM_PLUGIN_ROUTE } from './constants';
+import { getBackendSrv } from "@grafana/runtime";
+import { LLM_PLUGIN_ROUTE } from "./constants";
 
 // Re-export everything from llm.ts except enabled
-export * from './llm';
+export * from "./llm";
 
 // Override enabled function to handle both old and new formats
 export const enabled = async (): Promise<boolean> => {

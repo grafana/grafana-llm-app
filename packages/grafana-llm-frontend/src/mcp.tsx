@@ -1,18 +1,33 @@
-import React from 'react';
+import React from "react";
 
-import { isLiveChannelMessageEvent, LiveChannelAddress, LiveChannelMessageEvent, LiveChannelScope } from '@grafana/data';
-import { config, getBackendSrv, getGrafanaLiveSrv, GrafanaLiveSrv, logDebug } from '@grafana/runtime';
-import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
-import { Client } from '@modelcontextprotocol/sdk/client/index';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
-import { JSONRPCMessage, JSONRPCMessageSchema, Tool as MCPTool } from '@modelcontextprotocol/sdk/types';
-import { Observable, filter } from 'rxjs';
-import { v4 as uuid } from 'uuid';
+import {
+  isLiveChannelMessageEvent,
+  LiveChannelAddress,
+  LiveChannelMessageEvent,
+  LiveChannelScope,
+} from "@grafana/data";
+import {
+  config,
+  getBackendSrv,
+  getGrafanaLiveSrv,
+  GrafanaLiveSrv,
+  logDebug,
+} from "@grafana/runtime";
+import { Transport } from "@modelcontextprotocol/sdk/shared/transport";
+import { Client } from "@modelcontextprotocol/sdk/client/index";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
+import {
+  JSONRPCMessage,
+  JSONRPCMessageSchema,
+  Tool as MCPTool,
+} from "@modelcontextprotocol/sdk/types";
+import { Observable, filter } from "rxjs";
+import { v4 as uuid } from "uuid";
 
-import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from './constants';
-import { Tool as OpenAITool } from './openai';
+import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from "./constants";
+import { Tool as OpenAITool } from "./openai";
 
-const MCP_GRAFANA_PATH = 'mcp/grafana'
+const MCP_GRAFANA_PATH = "mcp/grafana";
 
 /**
  * An MCP transport which uses the Grafana LLM plugin's built-in MCP server,
@@ -24,7 +39,7 @@ const MCP_GRAFANA_PATH = 'mcp/grafana'
  * @experimental
  */
 export class GrafanaLiveTransport implements Transport {
-  _grafanaLiveSrv: GrafanaLiveSrv = getGrafanaLiveSrv()
+  _grafanaLiveSrv: GrafanaLiveSrv = getGrafanaLiveSrv();
 
   /**
    * The Grafana Live channel used by this transport.
@@ -68,11 +83,12 @@ export class GrafanaLiveTransport implements Transport {
   async start(): Promise<void> {
     if (this._stream !== undefined) {
       throw new Error(
-        "GrafanaLiveTransport already started! If using Client class, note that connect() calls start() automatically."
+        "GrafanaLiveTransport already started! If using Client class, note that connect() calls start() automatically.",
       );
     }
 
-    const stream = this._grafanaLiveSrv.getStream(this._subscribeChannel)
+    const stream = this._grafanaLiveSrv
+      .getStream(this._subscribeChannel)
       .pipe(filter((event) => isLiveChannelMessageEvent(event)));
     this._stream = stream;
     stream.subscribe((event) => {
@@ -80,7 +96,7 @@ export class GrafanaLiveTransport implements Transport {
       try {
         message = JSONRPCMessageSchema.parse(event.message);
       } catch (error) {
-        this.onerror?.(error as Error)
+        this.onerror?.(error as Error);
         return;
       }
       this.onmessage?.(message);
@@ -114,8 +130,12 @@ export class GrafanaLiveTransport implements Transport {
       // comments once that happens.
       //@ts-expect-error
       const options: LivePublishOptions = { useSocket: true };
-      //@ts-expect-error
-      return this._grafanaLiveSrv.publish(this._publishChannel, message, options);
+      this._grafanaLiveSrv.publish(
+        this._publishChannel,
+        message,
+        //@ts-expect-error
+        options,
+      );
     }
 
     // If that option isn't available, we can first fall back to trying to
@@ -125,8 +145,7 @@ export class GrafanaLiveTransport implements Transport {
     // Realistically this should work in all versions of Grafana older than
     // 9, which is much further back than this plugin even supports, so should
     // always work.
-    const centrifugeSubscription =
-      // @ts-expect-error
+    const centrifugeSubscription = // @ts-expect-error
       this._grafanaLiveSrv.deps?.centrifugeSrv?.getChannel?.(
         this._publishChannel,
       )?.subscription;
@@ -139,8 +158,8 @@ export class GrafanaLiveTransport implements Transport {
     // setups but it's better than nothing.
     console.warn(
       "Websocket subscription not available, falling back to HTTP publish. " +
-      "This may fail in HA setups. If you see this, please create an issue at " +
-      "https://github.com/grafana/grafana-llm-app/issues/new."
+        "This may fail in HA setups. If you see this, please create an issue at " +
+        "https://github.com/grafana/grafana-llm-app/issues/new.",
     );
     await this._grafanaLiveSrv.publish(this._publishChannel, message);
   }
@@ -190,10 +209,15 @@ type ClientResource = {
  */
 export async function enabled(): Promise<boolean> {
   try {
-    const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
-      showSuccessAlert: false,
-      showErrorAlert: false,
-    });
+    const settings = await getBackendSrv().get(
+      `${LLM_PLUGIN_ROUTE}/settings`,
+      undefined,
+      undefined,
+      {
+        showSuccessAlert: false,
+        showErrorAlert: false,
+      },
+    );
     if (!settings.enabled) {
       return false;
     }
@@ -207,7 +231,7 @@ export async function enabled(): Promise<boolean> {
   } catch (e) {
     logDebug(String(e));
     logDebug(
-      'Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.'
+      "Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.",
     );
     return false;
   }
@@ -225,22 +249,30 @@ export async function enabled(): Promise<boolean> {
  *              Defaults to `/mcp/grafana`.
  * @returns A URL to use as the `url` argument of `StreamableHTTPClientTransport`.
  */
-export function streamableHTTPURL(appId: string = LLM_PLUGIN_ID, mcpPath = MCP_GRAFANA_PATH): URL {
-  let grafanaUrl = config.appUrl || 'http://localhost:3000/';
-  if (!grafanaUrl.endsWith('/')) {
+export function streamableHTTPURL(
+  appId: string = LLM_PLUGIN_ID,
+  mcpPath = MCP_GRAFANA_PATH,
+): URL {
+  let grafanaUrl = config.appUrl || "http://localhost:3000/";
+  if (!grafanaUrl.endsWith("/")) {
     grafanaUrl = `${grafanaUrl}/`;
   }
-  if (!mcpPath.startsWith('/')) {
+  if (!mcpPath.startsWith("/")) {
     mcpPath = `/${mcpPath}`;
   }
   return new URL(`${grafanaUrl}api/plugins/${appId}/resources${mcpPath}`);
 }
 
-type ClientResourceOptions = Required<Omit<MCPClientProviderProps, 'children'>>;
+type ClientResourceOptions = Required<Omit<MCPClientProviderProps, "children">>;
 
 // Create a resource that works with Suspense.
-function createClientResource({ appName, appVersion, mcpAppName, mcpAppPath }: ClientResourceOptions): ClientResource {
-  let status: 'pending' | 'success' | 'error' = 'pending';
+function createClientResource({
+  appName,
+  appVersion,
+  mcpAppName,
+  mcpAppPath,
+}: ClientResourceOptions): ClientResource {
+  let status: "pending" | "success" | "error" = "pending";
   let result: ClientResult | null = null;
   let error: Error | null = null;
 
@@ -248,14 +280,14 @@ function createClientResource({ appName, appVersion, mcpAppName, mcpAppPath }: C
   const promise = (async () => {
     if (clientMap.has(key)) {
       result = clientMap.get(key)!;
-      status = 'success';
+      status = "success";
       return result;
     }
 
     try {
       const isEnabled = await enabled();
       if (!isEnabled) {
-        status = 'success';
+        status = "success";
         result = { client: null, enabled: isEnabled };
         clientMap.set(key, result);
         return result;
@@ -264,21 +296,24 @@ function createClientResource({ appName, appVersion, mcpAppName, mcpAppPath }: C
         name: appName,
         version: appVersion,
       });
-      const transport = new StreamableHTTPClientTransport(streamableHTTPURL(mcpAppName, mcpAppPath), {
-        reconnectionOptions: {
-          maxRetries: 5,
-          initialReconnectionDelay: 1000,
-          maxReconnectionDelay: 5000,
-          reconnectionDelayGrowFactor: 1.5,
+      const transport = new StreamableHTTPClientTransport(
+        streamableHTTPURL(mcpAppName, mcpAppPath),
+        {
+          reconnectionOptions: {
+            maxRetries: 5,
+            initialReconnectionDelay: 1000,
+            maxReconnectionDelay: 5000,
+            reconnectionDelayGrowFactor: 1.5,
+          },
         },
-      });
+      );
       await client.connect(transport);
       result = { client, enabled: isEnabled };
       clientMap.set(key, result);
-      status = 'success';
+      status = "success";
       return result;
     } catch (e) {
-      status = 'error';
+      status = "error";
       error = e as Error;
       throw e;
     }
@@ -286,14 +321,14 @@ function createClientResource({ appName, appVersion, mcpAppName, mcpAppPath }: C
 
   return {
     read() {
-      if (status === 'pending') {
+      if (status === "pending") {
         throw promise;
-      } else if (status === 'error') {
+      } else if (status === "error") {
         throw error;
-      } else if (status === 'success' && result) {
+      } else if (status === "success" && result) {
         return result;
       }
-      throw new Error('Unexpected resource state');
+      throw new Error("Unexpected resource state");
     },
   };
 }
@@ -373,7 +408,12 @@ export function MCPClientProvider({
   mcpAppPath = MCP_GRAFANA_PATH,
   children,
 }: MCPClientProviderProps) {
-  const resource = createClientResource({ appName, appVersion, mcpAppName, mcpAppPath });
+  const resource = createClientResource({
+    appName,
+    appVersion,
+    mcpAppName,
+    mcpAppPath,
+  });
 
   // This will either return the client or throw a promise/error.
   // If it throws a promise, Suspense will suspend the component until it resolves.
@@ -407,7 +447,7 @@ export function MCPClientProvider({
 export function useMCPClient(): ClientResult {
   const client = React.useContext(MCPClientContext);
   if (client === null) {
-    throw new Error('useMCPClient must be used within an MCPClientProvider');
+    throw new Error("useMCPClient must be used within an MCPClientProvider");
   }
   return client;
 }
@@ -433,11 +473,14 @@ export function convertToolsToOpenAI(tools: MCPTool[]): OpenAITool[] {
 
 function convertToolToOpenAI(tool: MCPTool): OpenAITool {
   return {
-    type: 'function',
+    type: "function",
     function: {
       name: tool.name,
       description: tool.description,
-      parameters: tool.inputSchema.properties !== undefined ? tool.inputSchema : undefined,
+      parameters:
+        tool.inputSchema.properties !== undefined
+          ? tool.inputSchema
+          : undefined,
     },
   };
 }

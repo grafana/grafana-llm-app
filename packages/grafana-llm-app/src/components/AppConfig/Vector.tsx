@@ -167,7 +167,8 @@ export function EmbedderConfig({
               ]}
               value={settings?.grafanaVectorAPI?.authType ?? 'no-auth'}
               onChange={(e) =>
-                e.value !== undefined && onChange({ ...settings, grafanaVectorAPI: { ...settings.grafanaVectorAPI, authType: e.value } })
+                e.value !== undefined &&
+                onChange({ ...settings, grafanaVectorAPI: { ...settings.grafanaVectorAPI, authType: e.value } })
               }
               width={60}
             />
@@ -179,7 +180,12 @@ export function EmbedderConfig({
               width={s.inlineFieldInputWidth}
               data-testid={testIds.appConfig.grafanaVectorApiUrl}
               placeholder={'http://vectorapi:8889'}
-              onChange={(e) => onChange({ ...settings, grafanaVectorAPI: { ...settings.grafanaVectorAPI, url: e.currentTarget.value } })}
+              onChange={(e) =>
+                onChange({
+                  ...settings,
+                  grafanaVectorAPI: { ...settings.grafanaVectorAPI, url: e.currentTarget.value },
+                })
+              }
             />
           </InlineField>
           {settings?.grafanaVectorAPI?.authType === 'basic-auth' && (
@@ -198,7 +204,13 @@ export function EmbedderConfig({
   );
 }
 
-function QdrantConfig({ settings, secrets, secretsSet, onChange, onChangeSecrets }: Props<QdrantSettings> & SecretProps) {
+function QdrantConfig({
+  settings,
+  secrets,
+  secretsSet,
+  onChange,
+  onChangeSecrets,
+}: Props<QdrantSettings> & SecretProps) {
   const s = useStyles2(getStyles);
   return (
     <>
@@ -255,13 +267,7 @@ function GrafanaVectorAPIConfig({ settings, onChange }: Props<GrafanaVectorAPISe
   );
 }
 
-function StoreConfig({
-  settings,
-  secrets,
-  secretsSet,
-  onChange,
-  onChangeSecrets,
-}: Props<StoreSettings> & SecretProps) {
+function StoreConfig({ settings, secrets, secretsSet, onChange, onChangeSecrets }: Props<StoreSettings> & SecretProps) {
   return (
     <>
       <h4>Store</h4>
