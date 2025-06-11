@@ -48,7 +48,7 @@ export function MCPToolsList() {
   }
 
   return (
-    <div data-testid={testIds.mcpTools.container}>
+    <div data-testid={testIds.mcpTools.container} style={{ maxHeight: '400px', overflowY: 'auto' }}>
       <h2>Available MCP Tools</h2>
       <ul data-testid={testIds.mcpTools.list}>
         {value.map((tool: any) => (
@@ -76,7 +76,7 @@ export function MCPToolsWithProvider() {
           }
           return (
             <mcp.MCPClientProvider appName="grafana-llm-app" appVersion="0.21.1">
-              <MCPToolsList />;
+              <MCPToolsList />
             </mcp.MCPClientProvider>
           );
         }}
