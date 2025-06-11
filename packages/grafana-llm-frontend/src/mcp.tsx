@@ -202,6 +202,16 @@ type ClientResource = {
   read: () => ClientResult;
 };
 
+type LLMPluginSettings = {
+  enabled: boolean;
+  jsonData: {
+    mcp?: {
+      enabled?: boolean;
+      disabled?: boolean;
+    };
+  };
+};
+
 /**
  * Check if the Grafana LLM app is installed and the MCP server is enabled for the current Grafana instance.
  *
@@ -209,7 +219,7 @@ type ClientResource = {
  */
 export async function enabled(): Promise<boolean> {
   try {
-    const settings = await getBackendSrv().get(
+    const settings: LLMPluginSettings = await getBackendSrv().get(
       `${LLM_PLUGIN_ROUTE}/settings`,
       undefined,
       undefined,
@@ -223,11 +233,11 @@ export async function enabled(): Promise<boolean> {
     }
     // If the `enabled` property is present, it's an older version of the plugin;
     // use this field.
-    if (settings.jsonData.mcp.enabled !== undefined) {
-      return settings.jsonData.mcp.enabled;
+    if (settings.jsonData.mcp?.enabled !== undefined) {
+      return !!settings.jsonData.mcp?.enabled;
     }
     // Otherwise use the `disabled` property.
-    return !settings.jsonData.mcp.disabled;
+    return !settings.jsonData.mcp?.disabled;
   } catch (e) {
     logDebug(String(e));
     logDebug(
