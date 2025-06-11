@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Package files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Test artifacts
+test-results/
+playwright-report/
+coverage/
+
+# Go files (backend)
+*.go
+go.mod
+go.sum
+
+# Configuration files that shouldn't be formatted
+*.config.js
+*.config.ts
+webpack.config.*
+rollup.config.*
+jest.config.*
+playwright.config.*
+
+# Generated files
+*.generated.*

@@ -16,7 +16,7 @@ The Grafana LLM App is designed to be extensible, allowing you to add support fo
      type MyLLMSettings struct {
          // The URL to the provider's API
          URL string `json:"url"`
-         
+
          // apiKey is the provider-specific API key needed to authenticate requests
          // Stored securely.
          apiKey string
@@ -111,7 +111,7 @@ The Grafana LLM App is designed to be extensible, allowing you to add support fo
        onChangeSecrets: (secrets: Secrets) => void;
      }) {
        const s = useStyles2(getStyles);
-       
+
        const onChangeField = (event: ChangeEvent<HTMLInputElement>) => {
          onChange({
            ...settings,
@@ -234,7 +234,7 @@ The Grafana LLM App is designed to be extensible, allowing you to add support fo
      test('renders MyLLM configuration when provider is MyLLM', () => {
        const plugin = { meta: { ...props.plugin.meta, enabled: false, jsonData: { provider: 'myllm' } } };
        render(<AppConfig {...props} plugin={plugin as any} />);
-       
+
        expect(screen.queryByTestId(testIds.appConfig.myllmUrl)).toBeInTheDocument();
        expect(screen.queryByTestId(testIds.appConfig.myllmKey)).toBeInTheDocument();
      });
@@ -262,7 +262,7 @@ type myLLMProvider struct {
 func NewMyLLMProvider(settings MyLLMSettings, models *ModelSettings) (LLMProvider, error) {
     // Initialize your provider's client with the settings
     client := initializeYourProviderClient(settings)
-    
+
     // Define default model mappings if none are provided
     defaultModels := &ModelSettings{
         Default: ModelBase,
@@ -271,11 +271,11 @@ func NewMyLLMProvider(settings MyLLMSettings, models *ModelSettings) (LLMProvide
             ModelLarge: "your-large-model",
         },
     }
-    
+
     if models == nil {
         models = defaultModels
     }
-    
+
     return &myLLMProvider{
         settings: settings,
         models:   models,
@@ -307,6 +307,41 @@ func (p *myLLMProvider) ChatCompletionStream(ctx context.Context, req ChatComple
 3. Ensure all existing functionality works with your new provider
 
 ## Development and Testing
+
+### Code Formatting and Linting
+
+This project uses Prettier for code formatting and ESLint for linting. The formatting rules are enforced in CI to ensure consistent code style across the project.
+
+#### Available Scripts
+
+- `npm run format` - Format all TypeScript/JavaScript files using Prettier
+- `npm run format:check` - Check if files are properly formatted (used in CI)
+- `npm run lint` - Run ESLint and Prettier format checks
+- `npm run lint:fix` - Run ESLint with auto-fix and format files with Prettier
+
+#### Configuration
+
+- Files to ignore are listed in `.prettierignore`
+- ESLint ignores are defined in `.eslintignore`
+
+#### Pre-commit Requirements
+
+Before committing changes:
+
+1. **Format your code**: Run `npm run format` to ensure consistent formatting
+2. **Check for lint errors**: Run `npm run lint` to verify code passes all checks
+3. **Fix any issues**: Use `npm run lint:fix` to automatically fix most issues
+
+The CI pipeline will fail if code is not properly formatted or has linting errors, so it's important to run these checks locally before pushing changes.
+
+#### Formatting Rules
+
+The project follows these formatting conventions:
+- 2 spaces for indentation
+- Single quotes for strings
+- Semicolons required
+- 120 character line width
+- Trailing commas in ES5-compatible contexts
 
 ### End-to-End Testing
 

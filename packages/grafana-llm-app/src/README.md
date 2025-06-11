@@ -3,18 +3,20 @@
 This Grafana application plugin centralizes access to LLMs across Grafana.
 
 It is responsible for:
+
 - storing API keys for LLM providers
 - proxying requests to LLMs with auth, so that other Grafana components need not store API keys
 - providing Grafana Live streams of streaming responses from LLM providers (namely OpenAI)
 - providing LLM based extensions to Grafana's extension points (e.g. 'explain this panel')
-<br/><br/>
+  <br/><br/>
 
 Future functionality will include:
+
 - support for more LLM providers, including the ability to choose your own at runtime
 - rate limiting of requests to LLMs, for cost control
 - token and cost estimation
 - RBAC to only allow certain users to use LLM functionality
-<br/><br/>
+  <br/><br/>
 
 Note: The Grafana LLM App plugin is currently in [Public preview](https://grafana.com/docs/release-life-cycle/). Grafana Labs offers support on a best-effort basis, and there might be breaking changes before the feature is generally available.
 

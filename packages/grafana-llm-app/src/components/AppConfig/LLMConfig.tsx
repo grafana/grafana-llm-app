@@ -95,7 +95,6 @@ export function LLMConfig({
     }
   };
 
-
   const selectGrafanaManaged = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
     if (llmOption !== 'grafana-provided') {
       // Cache if OpenAI or Azure provider is used, so can restore
@@ -253,7 +252,7 @@ export function LLMConfig({
               )}
             </Card.Description>
             <Card.Figure>
-              <OpenAILogo width={20} height={20}/>
+              <OpenAILogo width={20} height={20} />
             </Card.Figure>
           </Card>
         </div>
@@ -281,7 +280,7 @@ export function LLMConfig({
           <Card isSelected={llmOption === 'custom'} className={s.cardWithoutBottomMargin}>
             <Card.Heading>Use a Custom API</Card.Heading>
             <Card.Description>
-              {"Enable LLM features in Grafana using a custom API (with \"OpenAI-like\" signature)"}
+              {'Enable LLM features in Grafana using a custom API (with "OpenAI-like" signature)'}
               {llmOption === 'custom' && (
                 <OpenAIConfig
                   settings={settings.openAI ?? {}}

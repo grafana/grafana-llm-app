@@ -73,7 +73,7 @@ export function ModelConfig({
             options={MODEL_MAPPING_CONFIG.map((entry) => ({ label: entry.label, value: entry.id }))}
             width={60}
             value={settings.default ?? DEFAULT_MODEL_ID}
-            onChange={(e) => setDefault(e.value ?? DEFAULT_MODEL_ID as openai.Model)}
+            onChange={(e) => setDefault(e.value ?? (DEFAULT_MODEL_ID as openai.Model))}
           />
         </Field>
       )}
@@ -108,22 +108,22 @@ export function ModelConfig({
             );
 
             return (
-                <Field key={i} label={FieldLabel} description={entry.description}>
-                  <Input
-                    width={60}
-                    type="text"
-                    name="model"
-                    value={modelSetting ?? entry.name}
-                    onChange={(e) => {
-                      const newModelName = e.currentTarget.value;
-                      const newMapping = {
-                        ...settings.mapping,
-                        [entry.id]: newModelName,
-                      };
-                      onChange({ ...settings, mapping: newMapping });
-                    }}
-                  />
-                </Field>
+              <Field key={i} label={FieldLabel} description={entry.description}>
+                <Input
+                  width={60}
+                  type="text"
+                  name="model"
+                  value={modelSetting ?? entry.name}
+                  onChange={(e) => {
+                    const newModelName = e.currentTarget.value;
+                    const newMapping = {
+                      ...settings.mapping,
+                      [entry.id]: newModelName,
+                    };
+                    onChange({ ...settings, mapping: newMapping });
+                  }}
+                />
+              </Field>
             );
           })}
         </>

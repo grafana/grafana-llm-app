@@ -13,22 +13,30 @@ import {
   LiveChannelAddress,
   LiveChannelMessageEvent,
   LiveChannelScope,
-} from '@grafana/data';
-import { getBackendSrv, getGrafanaLiveSrv, logDebug /* logError */ } from '@grafana/runtime';
+} from "@grafana/data";
+import {
+  getBackendSrv,
+  getGrafanaLiveSrv,
+  logDebug /* logError */,
+} from "@grafana/runtime";
 
-import React, { useEffect, useCallback, useState } from 'react';
-import { useAsync } from 'react-use';
-import { pipe, Observable, UnaryFunction, Subscription } from 'rxjs';
-import { filter, map, scan, takeWhile, tap, toArray } from 'rxjs/operators';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useEffect, useCallback, useState } from "react";
+import { useAsync } from "react-use";
+import { pipe, Observable, UnaryFunction, Subscription } from "rxjs";
+import { filter, map, scan, takeWhile, tap, toArray } from "rxjs/operators";
+import { v4 as uuidv4 } from "uuid";
 
-import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE, setLLMPluginVersion } from './constants';
-import { HealthCheckResponse, LLMProviderHealthDetails } from './types';
+import {
+  LLM_PLUGIN_ID,
+  LLM_PLUGIN_ROUTE,
+  setLLMPluginVersion,
+} from "./constants";
+import { HealthCheckResponse, LLMProviderHealthDetails } from "./types";
 
-const LLM_CHAT_COMPLETIONS_PATH = 'llm/v1/chat/completions';
+const LLM_CHAT_COMPLETIONS_PATH = "llm/v1/chat/completions";
 
 /** The role of a message's author. */
-export type Role = 'system' | 'user' | 'assistant' | 'function' | 'tool';
+export type Role = "system" | "user" | "assistant" | "function" | "tool";
 
 /** A message in a conversation. */
 export interface Message {
@@ -63,12 +71,11 @@ export interface Message {
   tool_calls?: ToolCall[];
 }
 
-
 /** A tool call the model may generate. */
 export interface ToolCall {
   id: string;
   index?: number;
-  type: 'function';
+  type: "function";
   function: FunctionCall;
 }
 
@@ -88,7 +95,6 @@ interface FunctionCall {
    */
   arguments: string;
 }
-
 
 /** A function the model may generate JSON inputs for. */
 export interface Function {
@@ -122,8 +128,8 @@ export interface Function {
  * @enum {string}
  */
 export enum Model {
-  BASE = 'base',
-  LARGE = 'large',
+  BASE = "base",
+  LARGE = "large",
 }
 
 /**
@@ -200,7 +206,7 @@ export interface ChatCompletionsRequest {
 
 /** A tool that the model may use. */
 export interface Tool {
-  type: 'function';
+  type: "function";
   /** The function that the model may use. */
   function: Function;
 }
@@ -291,7 +297,11 @@ export interface ToolCallsMessage {
  * In practice this will be either a content message or a function call;
  * done messages are filtered out by the `streamChatCompletions` function.
  */
-export type ChatCompletionsDelta = ContentMessage | FunctionCallMessage | DoneMessage | ToolCallsMessage;
+export type ChatCompletionsDelta =
+  | ContentMessage
+  | FunctionCallMessage
+  | DoneMessage
+  | ToolCallsMessage;
 
 /** A chunk included in a chat completion response. */
 export interface ChatCompletionsChunk {
@@ -300,30 +310,38 @@ export interface ChatCompletionsChunk {
 }
 
 /** Return true if the message is a 'content' message. */
-export function isContentMessage(message: ChatCompletionsDelta): message is ContentMessage {
-  return 'content' in message;
+export function isContentMessage(
+  message: ChatCompletionsDelta,
+): message is ContentMessage {
+  return "content" in message;
 }
 
 /** Return true if the message is a 'done' message. */
-export function isDoneMessage(message: ChatCompletionsDelta): message is DoneMessage {
-  return 'done' in message && message.done != null;
+export function isDoneMessage(
+  message: ChatCompletionsDelta,
+): message is DoneMessage {
+  return "done" in message && message.done != null;
 }
 
 /** Return true if the response is an error response. */
 export function isErrorResponse<T>(
-  response: ChatCompletionsResponse<T> | ChatCompletionsErrorResponse
+  response: ChatCompletionsResponse<T> | ChatCompletionsErrorResponse,
 ): response is ChatCompletionsErrorResponse {
-  return 'error' in response;
+  return "error" in response;
 }
 
 /** Return true if the message is a function call message. */
-export function isFunctionCallMessage(message: ChatCompletionsDelta): message is FunctionCallMessage {
-  return 'name' in message && 'arguments' in message;
+export function isFunctionCallMessage(
+  message: ChatCompletionsDelta,
+): message is FunctionCallMessage {
+  return "name" in message && "arguments" in message;
 }
 
 /** Return true if the message is a tool calls message. */
-export function isToolCallsMessage(message: ChatCompletionsDelta): message is ToolCallsMessage {
-  return 'tool_calls' in message && message.tool_calls != null;
+export function isToolCallsMessage(
+  message: ChatCompletionsDelta,
+): message is ToolCallsMessage {
+  return "tool_calls" in message && message.tool_calls != null;
 }
 
 /**
@@ -345,11 +363,14 @@ export function extractContent(): UnaryFunction<
   Observable<string>
 > {
   return pipe(
-    filter((response: ChatCompletionsResponse<ChatCompletionsChunk>) => isContentMessage(response.choices[0].delta)),
+    filter((response: ChatCompletionsResponse<ChatCompletionsChunk>) =>
+      isContentMessage(response.choices[0].delta),
+    ),
     // The type assertion is needed here because the type predicate above doesn't seem to propagate.
     map(
-      (response: ChatCompletionsResponse<ChatCompletionsChunk>) => (response.choices[0].delta as ContentMessage).content
-    )
+      (response: ChatCompletionsResponse<ChatCompletionsChunk>) =>
+        (response.choices[0].delta as ContentMessage).content,
+    ),
   );
 }
 
@@ -373,20 +394,22 @@ export function accumulateContent(): UnaryFunction<
 > {
   return pipe(
     extractContent(),
-    scan((acc, curr) => acc + curr, '')
+    scan((acc, curr) => acc + curr, ""),
   );
 }
 
 /**
  * Make a request to the chat-completions API via the Grafana LLM plugin proxy.
  */
-export async function chatCompletions(request: ChatCompletionsRequest): Promise<ChatCompletionsResponse> {
+export async function chatCompletions(
+  request: ChatCompletionsRequest,
+): Promise<ChatCompletionsResponse> {
   const response = await getBackendSrv().post<ChatCompletionsResponse>(
     `/api/plugins/grafana-llm-app/resources/${LLM_CHAT_COMPLETIONS_PATH}`,
     request,
     {
-      headers: { 'Content-Type': 'application/json' },
-    }
+      headers: { "Content-Type": "application/json" },
+    },
   );
   return response;
 }
@@ -419,19 +442,19 @@ export async function chatCompletions(request: ChatCompletionsRequest): Promise<
  * // ['Hello', 'Hello! ', 'Hello! How ', 'Hello! How are ', 'Hello! How are you', 'Hello! How are you?']
  */
 export function streamChatCompletions(
-  request: ChatCompletionsRequest
+  request: ChatCompletionsRequest,
 ): Observable<ChatCompletionsResponse<ChatCompletionsChunk>> {
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
     namespace: LLM_PLUGIN_ID,
-    path: LLM_CHAT_COMPLETIONS_PATH + '/' + uuidv4(),
+    path: LLM_CHAT_COMPLETIONS_PATH + "/" + uuidv4(),
     data: request,
   };
   const messages = getGrafanaLiveSrv()
     .getStream(channel)
     .pipe(filter((event) => isLiveChannelMessageEvent(event))) as Observable<
-      LiveChannelMessageEvent<ChatCompletionsResponse<ChatCompletionsChunk>>
-    >;
+    LiveChannelMessageEvent<ChatCompletionsResponse<ChatCompletionsChunk>>
+  >;
   return messages.pipe(
     // Filter out messages that don't have the expected structure
     filter((event) => {
@@ -452,22 +475,26 @@ export function streamChatCompletions(
       if (isErrorResponse(event.message)) {
         return true;
       }
-      
+
       // Check for the explicit done message
-      if (event.message.choices && 
-          event.message.choices[0].delta && 
-          'done' in event.message.choices[0].delta && 
-          event.message.choices[0].delta.done === true) {
+      if (
+        event.message.choices &&
+        event.message.choices[0].delta &&
+        "done" in event.message.choices[0].delta &&
+        event.message.choices[0].delta.done === true
+      ) {
         return false;
       }
-      
+
       // Check for finish_reason = "stop"
-      if (event.message.choices && 
-          'finish_reason' in event.message.choices[0] &&
-          event.message.choices[0].finish_reason === "stop") {
+      if (
+        event.message.choices &&
+        "finish_reason" in event.message.choices[0] &&
+        event.message.choices[0].finish_reason === "stop"
+      ) {
         return false;
       }
-      
+
       return true;
     }),
     map((event) => event.message),
@@ -480,38 +507,60 @@ let loggedWarning = false;
 export const health = async (): Promise<LLMProviderHealthDetails> => {
   // First check if the plugin is enabled.
   try {
-    const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
-      showSuccessAlert: false,
-      showErrorAlert: false,
-    });
+    const settings = await getBackendSrv().get(
+      `${LLM_PLUGIN_ROUTE}/settings`,
+      undefined,
+      undefined,
+      {
+        showSuccessAlert: false,
+        showErrorAlert: false,
+      },
+    );
     if (!settings.enabled) {
-      return { configured: false, ok: false, error: 'The Grafana LLM plugin is not enabled.' };
+      return {
+        configured: false,
+        ok: false,
+        error: "The Grafana LLM plugin is not enabled.",
+      };
     }
   } catch (e) {
     logDebug(String(e));
     logDebug(
-      'Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.'
+      "Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.",
     );
     loggedWarning = true;
-    return { configured: false, ok: false, error: 'The Grafana LLM plugin is not installed.' };
+    return {
+      configured: false,
+      ok: false,
+      error: "The Grafana LLM plugin is not installed.",
+    };
   }
 
   // Run a health check to see if the LLM provider is configured on the plugin.
   let response: HealthCheckResponse;
   try {
-    response = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/health`, undefined, undefined, {
-      showSuccessAlert: false,
-      showErrorAlert: false,
-    });
+    response = await getBackendSrv().get(
+      `${LLM_PLUGIN_ROUTE}/health`,
+      undefined,
+      undefined,
+      {
+        showSuccessAlert: false,
+        showErrorAlert: false,
+      },
+    );
   } catch (e) {
     if (!loggedWarning) {
       logDebug(String(e));
       logDebug(
-        'Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.'
+        "Failed to check if LLM provider is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.",
       );
       loggedWarning = true;
     }
-    return { configured: false, ok: false, error: 'The Grafana LLM plugin is not installed.' };
+    return {
+      configured: false,
+      ok: false,
+      error: "The Grafana LLM plugin is not installed.",
+    };
   }
 
   const { details } = response;
@@ -520,9 +569,15 @@ export const health = async (): Promise<LLMProviderHealthDetails> => {
     setLLMPluginVersion(details.version);
   }
   if (details?.llmProvider === undefined) {
-    return { configured: false, ok: false, error: 'The Grafana LLM plugin is outdated; please update it.' };
+    return {
+      configured: false,
+      ok: false,
+      error: "The Grafana LLM plugin is outdated; please update it.",
+    };
   }
-  return typeof details.llmProvider === 'boolean' ? { configured: details.llmProvider, ok: details.llmProvider } : details.llmProvider;
+  return typeof details.llmProvider === "boolean"
+    ? { configured: details.llmProvider, ok: details.llmProvider }
+    : details.llmProvider;
 };
 
 export const enabled = async (): Promise<boolean> => {
@@ -535,9 +590,9 @@ export const enabled = async (): Promise<boolean> => {
  * @enum {string}
  */
 export enum StreamStatus {
-  IDLE = 'idle',
-  GENERATING = 'generating',
-  COMPLETED = 'completed',
+  IDLE = "idle",
+  GENERATING = "generating",
+  COMPLETED = "completed",
 }
 
 /**
@@ -567,15 +622,15 @@ export type LLMStreamState = {
   streamStatus: StreamStatus;
   error: Error | undefined;
   value:
-  | {
-    enabled: boolean | undefined;
-    stream?: undefined;
-  }
-  | {
-    enabled: boolean | undefined;
-    stream: Subscription;
-  }
-  | undefined;
+    | {
+        enabled: boolean | undefined;
+        stream?: undefined;
+      }
+    | {
+        enabled: boolean | undefined;
+        stream: Subscription;
+      }
+    | undefined;
 };
 
 /**
@@ -597,13 +652,19 @@ export type LLMStreamState = {
 export function useLLMStream(
   model = Model.LARGE,
   temperature = 1,
-  notifyError: (title: string, text?: string, traceId?: string) => void = () => {}
+  notifyError: (
+    title: string,
+    text?: string,
+    traceId?: string,
+  ) => void = () => {},
 ): LLMStreamState {
   // The messages array to send to the LLM.
   const [messages, setMessages] = useState<Message[]>([]);
   // The latest reply from the LLM.
-  const [reply, setReply] = useState('');
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>(StreamStatus.IDLE);
+  const [reply, setReply] = useState("");
+  const [streamStatus, setStreamStatus] = useState<StreamStatus>(
+    StreamStatus.IDLE,
+  );
   const [error, setError] = useState<Error>();
 
   const onError = useCallback(
@@ -612,15 +673,18 @@ export function useLLMStream(
       setMessages([]);
       setError(e);
       notifyError(
-        'Failed to generate content using LLM provider',
-        `Please try again or if the problem persists, contact your organization admin.`
+        "Failed to generate content using LLM provider",
+        `Please try again or if the problem persists, contact your organization admin.`,
       );
       console.error(e);
     },
-    [notifyError]
+    [notifyError],
   );
 
-  const { error: enabledError, value: isEnabled } = useAsync(async () => await enabled(), [enabled]);
+  const { error: enabledError, value: isEnabled } = useAsync(
+    async () => await enabled(),
+    [enabled],
+  );
 
   const { error: asyncError, value } = useAsync(async () => {
     if (!isEnabled || !messages.length) {
@@ -637,7 +701,7 @@ export function useLLMStream(
     }).pipe(
       // Accumulate the stream content into a stream of strings, where each
       // element contains the accumulated message so far.
-      accumulateContent()
+      accumulateContent(),
       // The stream is just a regular Observable, so we can use standard rxjs
       // functionality to update state, e.g. recording when the stream
       // has completed.
@@ -674,7 +738,7 @@ export function useLLMStream(
   // If the stream is generating and we haven't received a reply, it times out.
   useEffect(() => {
     let timeout: NodeJS.Timeout | undefined;
-    if (streamStatus === StreamStatus.GENERATING && reply === '') {
+    if (streamStatus === StreamStatus.GENERATING && reply === "") {
       timeout = setTimeout(() => {
         onError(new Error(`LLM stream timed out after ${TIMEOUT}ms`));
       }, TIMEOUT);
@@ -699,7 +763,7 @@ export function useLLMStream(
 
 /**
  * An rxjs operator that accumulates tool call messages from a stream of chat completion responses into a complete tool call message.
- * 
+ *
  * @returns An observable that emits the accumulated tool call message when complete.
  * @example
  * const stream = streamChatCompletions({...}).pipe(
@@ -715,38 +779,45 @@ export function accumulateToolCalls(): UnaryFunction<
   Observable<ToolCallsMessage>
 > {
   return pipe(
-    filter((response: ChatCompletionsResponse<ChatCompletionsChunk>) => isToolCallsMessage(response.choices[0].delta)),
+    filter((response: ChatCompletionsResponse<ChatCompletionsChunk>) =>
+      isToolCallsMessage(response.choices[0].delta),
+    ),
     // Collect all tool call chunks
     toArray(),
     // Process the array to reconstruct the complete tool call message
     map((responses: Array<ChatCompletionsResponse<ChatCompletionsChunk>>) => {
-      const toolCallChunks = responses.map(r => r.choices[0].delta as ToolCallsMessage);
+      const toolCallChunks = responses.map(
+        (r) => r.choices[0].delta as ToolCallsMessage,
+      );
       return recoverToolCallMessage(toolCallChunks);
-    })
+    }),
   );
 }
 
 /**
  * Recovers a complete tool call message from individual chunks.
- * 
+ *
  * @param toolCallMessages - Array of tool call message chunks
  * @returns A complete tool call message with all chunks combined
  */
-export function recoverToolCallMessage(toolCallMessages: ToolCallsMessage[]): ToolCallsMessage {
+export function recoverToolCallMessage(
+  toolCallMessages: ToolCallsMessage[],
+): ToolCallsMessage {
   const recoveredToolCallMessage: ToolCallsMessage = {
-    role: 'assistant',
+    role: "assistant",
     tool_calls: [],
   };
 
   for (const msg of toolCallMessages) {
     for (const tc of msg.tool_calls) {
       if (tc.index! >= recoveredToolCallMessage.tool_calls.length) {
-        recoveredToolCallMessage.tool_calls.push({ 
-          ...tc, 
-          function: { ...tc.function, arguments: tc.function.arguments ?? '' } 
+        recoveredToolCallMessage.tool_calls.push({
+          ...tc,
+          function: { ...tc.function, arguments: tc.function.arguments ?? "" },
         });
       } else {
-        recoveredToolCallMessage.tool_calls[tc.index!].function.arguments += tc.function.arguments ?? '';
+        recoveredToolCallMessage.tool_calls[tc.index!].function.arguments +=
+          tc.function.arguments ?? "";
       }
     }
   }
@@ -754,7 +825,7 @@ export function recoverToolCallMessage(toolCallMessages: ToolCallsMessage[]): To
   // Ensure final arguments are never empty
   for (const tc of recoveredToolCallMessage.tool_calls) {
     if (!tc.function.arguments) {
-      tc.function.arguments = '{}';
+      tc.function.arguments = "{}";
     }
   }
 

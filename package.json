@@ -9,8 +9,10 @@
     "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
     "backend:restart": "npm run backend:restart --workspace=@grafana/llm-app",
     "frontend:build": "npm run build --workspace=@grafana/llm",
-    "lint": "npm run lint --workspaces",
-    "lint:fix": "npm run lint:fix --workspaces",
+    "lint": "npm run lint --workspaces && npm run format:check --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces && npm run format --workspaces",
+    "format": "npm run format --workspaces",
+    "format:check": "npm run format:check --workspaces",
     "server": "npm run server --workspace=@grafana/llm-app",
     "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "test:ci": "npm run test:ci --workspaces",
@@ -35,6 +37,7 @@
     "concurrently": "^9.1.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "prettier": "^3.4.2",
     "typescript": "5.6.2"
   },
   "engines": {

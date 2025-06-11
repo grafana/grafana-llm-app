@@ -53,9 +53,7 @@ export function MCPToolsList() {
         {value.map((tool: any) => (
           <li key={tool.name} data-testid={testIds.mcpTools.toolItem}>
             <strong data-testid={testIds.mcpTools.toolName}>{tool.name}</strong>
-            {tool.description && (
-              <span data-testid={testIds.mcpTools.toolDescription}> - {tool.description}</span>
-            )}
+            {tool.description && <span data-testid={testIds.mcpTools.toolDescription}> - {tool.description}</span>}
           </li>
         ))}
       </ul>

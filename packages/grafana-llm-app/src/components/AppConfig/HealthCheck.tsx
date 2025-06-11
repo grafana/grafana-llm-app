@@ -95,19 +95,19 @@ function ShowGrafanaHealth() {
     return null;
   }
   return (
-    <Alert
-      title="Grafana Live is disabled"
-      severity="warning"
-    >
+    <Alert title="Grafana Live is disabled" severity="warning">
       <div>
         Grafana Live is disabled. This plugin requires Grafana Live to be enabled in order to function correctly.
       </div>
       <div>
-        Set the <a href="https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#max_connections"><code>max_connections</code></a> setting to a non-zero value
-        in the Grafana configuration file to enable Grafana Live.
+        Set the{' '}
+        <a href="https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#max_connections">
+          <code>max_connections</code>
+        </a>{' '}
+        setting to a non-zero value in the Grafana configuration file to enable Grafana Live.
       </div>
     </Alert>
-  )
+  );
 }
 
 function ShowLLMProviderHealth({ provider }: { provider: LLMProviderHealthDetails | boolean }) {

@@ -80,22 +80,22 @@ export function OpenAIConfig({
 
   return (
     <FieldSet>
-      {settings.provider !== 'custom' && 
+      {settings.provider !== 'custom' && (
         <Field label="Provider">
-        <Select
-          data-testid={testIds.appConfig.provider}
-          options={
-            [
-              { label: 'OpenAI', value: 'openai' },
-              { label: 'Azure OpenAI', value: 'azure' },
-            ] as Array<SelectableValue<ProviderType>>
-          }
-          value={settings.provider ?? 'openai'}
-          onChange={(e) => onChangeProvider(e.value as ProviderType)}
-          width={60}
-        />
-      </Field>
-    }
+          <Select
+            data-testid={testIds.appConfig.provider}
+            options={
+              [
+                { label: 'OpenAI', value: 'openai' },
+                { label: 'Azure OpenAI', value: 'azure' },
+              ] as Array<SelectableValue<ProviderType>>
+            }
+            value={settings.provider ?? 'openai'}
+            onChange={(e) => onChangeProvider(e.value as ProviderType)}
+            width={60}
+          />
+        </Field>
+      )}
 
       <Field
         label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'API URL'}
@@ -107,7 +107,7 @@ export function OpenAIConfig({
           data-testid={testIds.appConfig.openAIUrl}
           value={settings.provider === 'openai' ? OPENAI_API_URL : settings.url}
           placeholder={
-            settings.provider === 'azure' 
+            settings.provider === 'azure'
               ? AZURE_OPENAI_URL_TEMPLATE
               : settings.provider === 'openai'
                 ? OPENAI_API_URL
@@ -172,10 +172,7 @@ export function OpenAIConfig({
       )}
 
       {settings.provider === 'azure' && (
-        <Field
-          label="Azure OpenAI Model Mapping"
-          description="Mapping from model name to Azure deployment name."
-        >
+        <Field label="Azure OpenAI Model Mapping" description="Mapping from model name to Azure deployment name.">
           <AzureModelDeploymentConfig
             modelMapping={settings.azureModelMapping ?? []}
             modelNames={Object.values(openai.Model)}

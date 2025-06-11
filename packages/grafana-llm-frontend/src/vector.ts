@@ -8,9 +8,9 @@
  * The {@link enabled} function can be used to check if the plugin is enabled and configured.
  */
 
-import { getBackendSrv, logDebug } from '@grafana/runtime';
-import { LLM_PLUGIN_ROUTE, setLLMPluginVersion } from './constants';
-import { HealthCheckResponse, VectorHealthDetails } from './types';
+import { getBackendSrv, logDebug } from "@grafana/runtime";
+import { LLM_PLUGIN_ROUTE, setLLMPluginVersion } from "./constants";
+import { HealthCheckResponse, VectorHealthDetails } from "./types";
 
 interface SearchResultPayload extends Record<string, any> {}
 
@@ -68,13 +68,15 @@ interface SearchResultResponse<T extends SearchResultPayload> {
 /**
  * Search for resources in the configured vector database.
  */
-export async function search<T extends SearchResultPayload>(request: SearchRequest): Promise<Array<SearchResult<T>>> {
+export async function search<T extends SearchResultPayload>(
+  request: SearchRequest,
+): Promise<Array<SearchResult<T>>> {
   const response = await getBackendSrv().post<SearchResultResponse<T>>(
-    '/api/plugins/grafana-llm-app/resources/vector/search',
+    "/api/plugins/grafana-llm-app/resources/vector/search",
     request,
     {
-      headers: { 'Content-Type': 'application/json' },
-    }
+      headers: { "Content-Type": "application/json" },
+    },
   );
   return response.results;
 }
@@ -85,40 +87,62 @@ let loggedWarning = false;
 export const health = async (): Promise<VectorHealthDetails> => {
   // First check if the plugin is enabled.
   try {
-    const settings = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/settings`, undefined, undefined, {
-      showSuccessAlert: false,
-      showErrorAlert: false,
-    });
+    const settings = await getBackendSrv().get(
+      `${LLM_PLUGIN_ROUTE}/settings`,
+      undefined,
+      undefined,
+      {
+        showSuccessAlert: false,
+        showErrorAlert: false,
+      },
+    );
     if (!settings.enabled) {
-      return { enabled: false, ok: false, error: 'The Grafana LLM plugin is not enabled.' };
+      return {
+        enabled: false,
+        ok: false,
+        error: "The Grafana LLM plugin is not enabled.",
+      };
     }
   } catch (e) {
     logDebug(String(e));
     logDebug(
-      'Failed to check if the vector service is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.'
+      "Failed to check if the vector service is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.",
     );
     loggedWarning = true;
-    return { enabled: false, ok: false, error: 'The Grafana LLM plugin is not installed.' };
+    return {
+      enabled: false,
+      ok: false,
+      error: "The Grafana LLM plugin is not installed.",
+    };
   }
 
   // Run a health check to see if the vector service is configured on the plugin.
   let response: HealthCheckResponse;
   try {
-    response = await getBackendSrv().get(`${LLM_PLUGIN_ROUTE}/health`, undefined, undefined, {
-      showSuccessAlert: false,
-      showErrorAlert: false,
-    });
+    response = await getBackendSrv().get(
+      `${LLM_PLUGIN_ROUTE}/health`,
+      undefined,
+      undefined,
+      {
+        showSuccessAlert: false,
+        showErrorAlert: false,
+      },
+    );
   } catch (e) {
     // We shouldn't really get here if we managed to get the plugin's settings above,
     // but catch this just in case.
     if (!loggedWarning) {
       logDebug(String(e));
       logDebug(
-        'Failed to check if vector service is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.'
+        "Failed to check if vector service is enabled. This is expected if the Grafana LLM plugin is not installed, and the above error can be ignored.",
       );
       loggedWarning = true;
     }
-    return { enabled: false, ok: false, error: 'The Grafana LLM plugin is not installed.' };
+    return {
+      enabled: false,
+      ok: false,
+      error: "The Grafana LLM plugin is not installed.",
+    };
   }
 
   const { details } = response;
@@ -127,9 +151,15 @@ export const health = async (): Promise<VectorHealthDetails> => {
     setLLMPluginVersion(details.version);
   }
   if (details?.vector === undefined) {
-    return { enabled: false, ok: false, error: 'The Grafana LLM plugin is outdated; please update it.' };
+    return {
+      enabled: false,
+      ok: false,
+      error: "The Grafana LLM plugin is outdated; please update it.",
+    };
   }
-  return typeof details.vector === 'boolean' ? { enabled: details.vector, ok: details.vector } : details.vector;
+  return typeof details.vector === "boolean"
+    ? { enabled: details.vector, ok: details.vector }
+    : details.vector;
 };
 
 export const enabled = async (): Promise<boolean> => {
