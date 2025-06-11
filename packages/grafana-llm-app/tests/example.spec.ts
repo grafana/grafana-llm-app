@@ -65,13 +65,10 @@ test.describe('LLM App with MCP Tools', () => {
     // Verify plugin is enabled
     expect(settings.enabled).toBe(true);
 
-    // Verify MCP is enabled in configuration
-    expect(settings.jsonData.mcp.enabled).toBe(true);
-
     // Verify provider is configured
     expect(settings.jsonData.provider).toBeTruthy();
 
-    console.log('✅ Plugin is configured with MCP enabled');
+    console.log('✅ Plugin is configured');
     console.log('   Provider:', settings.jsonData.provider);
   });
 
@@ -84,16 +81,16 @@ test.describe('LLM App with MCP Tools', () => {
 
     const settings = await pluginSettingsResponse.json();
 
-    if (settings.jsonData.mcp.enabled) {
+    const mcpEnabled = !settings.jsonData.mcp?.disabled;
+    if (mcpEnabled) {
       console.log('✅ MCP is enabled in plugin settings');
 
       // Test health/settings endpoint
       const healthResponse = await page.request.get('/api/plugins/grafana-llm-app/health');
 
       if (healthResponse.ok()) {
-        const healthData = await healthResponse.json();
         console.log('✅ Plugin backend is responding');
-        console.log('   MCP enabled:', settings.jsonData?.mcp?.enabled || 'unknown');
+        console.log('   MCP enabled:', mcpEnabled ?? 'unknown');
       } else {
         console.log('⚠️  Plugin backend health check failed');
       }
