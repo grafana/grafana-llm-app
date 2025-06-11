@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 import {
   isLiveChannelMessageEvent,
@@ -177,6 +177,8 @@ interface ClientResult {
   enabled: boolean;
   /* The client instance. */
   client: Client | null;
+  /* Error that occurred during client creation, if any. */
+  error?: Error;
 }
 
 // Create a map to store client instances. These will be keyed by the appName and appVersion.
@@ -202,6 +204,16 @@ type ClientResource = {
   read: () => ClientResult;
 };
 
+type LLMPluginSettings = {
+  enabled: boolean;
+  jsonData: {
+    mcp?: {
+      enabled?: boolean;
+      disabled?: boolean;
+    };
+  };
+};
+
 /**
  * Check if the Grafana LLM app is installed and the MCP server is enabled for the current Grafana instance.
  *
@@ -209,7 +221,7 @@ type ClientResource = {
  */
 export async function enabled(): Promise<boolean> {
   try {
-    const settings = await getBackendSrv().get(
+    const settings: LLMPluginSettings = await getBackendSrv().get(
       `${LLM_PLUGIN_ROUTE}/settings`,
       undefined,
       undefined,
@@ -223,11 +235,11 @@ export async function enabled(): Promise<boolean> {
     }
     // If the `enabled` property is present, it's an older version of the plugin;
     // use this field.
-    if (settings.jsonData.mcp.enabled !== undefined) {
-      return settings.jsonData.mcp.enabled;
+    if (settings.jsonData.mcp?.enabled !== undefined) {
+      return !!settings.jsonData.mcp?.enabled;
     }
     // Otherwise use the `disabled` property.
-    return !settings.jsonData.mcp.disabled;
+    return !settings.jsonData.mcp?.disabled;
   } catch (e) {
     logDebug(String(e));
     logDebug(
@@ -280,6 +292,11 @@ function createClientResource({
   const promise = (async () => {
     if (clientMap.has(key)) {
       result = clientMap.get(key)!;
+      if (result.error) {
+        status = "error";
+        error = result.error;
+        throw result.error;
+      }
       status = "success";
       return result;
     }
@@ -315,6 +332,8 @@ function createClientResource({
     } catch (e) {
       status = "error";
       error = e as Error;
+      result = { client: null, enabled: false, error };
+      clientMap.set(key, result);
       throw e;
     }
   })();
@@ -408,12 +427,16 @@ export function MCPClientProvider({
   mcpAppPath = MCP_GRAFANA_PATH,
   children,
 }: MCPClientProviderProps) {
-  const resource = createClientResource({
-    appName,
-    appVersion,
-    mcpAppName,
-    mcpAppPath,
-  });
+  const resource = useMemo(
+    () =>
+      createClientResource({
+        appName,
+        appVersion,
+        mcpAppName,
+        mcpAppPath,
+      }),
+    [appName, appVersion, mcpAppName, mcpAppPath],
+  );
 
   // This will either return the client or throw a promise/error.
   // If it throws a promise, Suspense will suspend the component until it resolves.
@@ -447,7 +470,7 @@ export function MCPClientProvider({
 export function useMCPClient(): ClientResult {
   const client = React.useContext(MCPClientContext);
   if (client === null) {
-    throw new Error("useMCPClient must be used within an MCPClientProvider");
+    throw new Error("MCP is not enabled in this Grafana instance.");
   }
   return client;
 }
