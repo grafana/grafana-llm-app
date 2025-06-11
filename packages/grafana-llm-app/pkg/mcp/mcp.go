@@ -3,6 +3,7 @@ package mcp
 import (
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/mcp-grafana/tools"
 	"github.com/mark3labs/mcp-go/server"
 )
@@ -49,6 +50,7 @@ type MCP struct {
 // It initializes the MCP server with all Grafana tools and sets up the Live server
 // for handling real-time MCP communication.
 func New(settings Settings, pluginVersion string) (*MCP, error) {
+	log.DefaultLogger.Debug("Initializing MCP server")
 	srv := server.NewMCPServer("grafana-llm-app", pluginVersion)
 	tools.AddSearchTools(srv)
 	tools.AddDatasourceTools(srv)
