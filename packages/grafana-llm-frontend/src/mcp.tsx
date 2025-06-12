@@ -13,14 +13,14 @@ import {
   GrafanaLiveSrv,
   logDebug,
 } from "@grafana/runtime";
-import { Transport } from "@modelcontextprotocol/sdk/shared/transport";
-import { Client } from "@modelcontextprotocol/sdk/client/index";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
+import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
-  JSONRPCMessage,
+  type JSONRPCMessage,
   JSONRPCMessageSchema,
-  Tool as MCPTool,
-} from "@modelcontextprotocol/sdk/types";
+  type Tool as MCPTool,
+} from "@modelcontextprotocol/sdk/types.js";
 import { Observable, filter } from "rxjs";
 import { v4 as uuid } from "uuid";
 
