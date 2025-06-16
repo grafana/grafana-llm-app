@@ -3,6 +3,61 @@
 ## Unreleased
 
 
+## 0.22.1
+
+- feat: relax minimum Grafana version requirement by @sd2k in #724
+
+## 0.22.0
+
+- feat: add MCP StreamableHTTP server to /mcp endpoint of LLM app by @sd2k in #691
+- fix: MCP isEnabled check and improve back-compatibility by @sd2k in #717
+
+## 0.21.2
+
+- fix: handle case when nested provider differs by @sd2k in #704
+- feat: add log line when MCP stream can't be found by @sd2k in #703
+
+## 0.21.1
+
+- fix: revert token timeout to 10 min by @annanay25 in #698
+
+## 0.21.0
+
+- feat: export 'enabled' function from mcp module of npm package by @sd2k in #689
+- feat: refresh Grafana access token before expiry in Cloud by @sd2k in #688
+- refactor: add MCP struct and simplify access token usage by @sd2k in #696
+
+## 0.20.1
+
+- feat: increase OBO user auth token TTL to 30 min by @annanay25 in #684
+
+## 0.20.0
+
+- feat: remove MCP feature flag and enable MCP by default by @annanay25 in #670
+
+## 0.19.3
+
+- feat: upgrade MCP Grafana integration to v0.4.0 by @sd2k in #673
+
+## 0.19.2
+
+- feat: remove OpenAI Assistant specific code by @csmarchbanks in #663
+- feat: enable LLM app to create access tokens on-behalf-of user by @annanay25 in #644
+
+## 0.19.1
+
+- feat: add Dashboard and Sift tools by @csmarchbanks in #661
+- feat: allow customizing the OpenAI API path in the app config page by @sd2k in #656
+
+## 0.19.0
+
+- feat: upgrade MCP Grafana integration to v0.3.0 by @csmarchbanks in #658
+- feat: add asserts tool by @xujiaxj in #657
+
+## 0.18.0
+
+- feat: add enabled flag to MCPProvider context value and fix infinite loop when MCP is not enabled by @sd2k in #648
+
 ## 0.17.0
 
 - bug: Make sure at least one message has the user role for Anthropic by @edwardcqian in #629
