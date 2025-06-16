@@ -25,20 +25,20 @@
     "packages/grafana-llm-app"
   ],
   "devDependencies": {
-    "@grafana/eslint-config": "^8.0.0",
-    "@grafana/plugin-e2e": "^1.14.6",
-    "@swc/core": "1.6.13",
+    "@grafana/eslint-config": "^8.1.0",
+    "@grafana/plugin-e2e": "^2.0.5",
+    "@swc/core": "1.12.1",
     "@swc/helpers": "^0.5.13",
-    "@swc/jest": "^0.2.37",
-    "@testing-library/jest-dom": "^6.1.4",
-    "@testing-library/react": "^16.1.0",
-    "@types/jest": "^29.5.14",
-    "@types/testing-library__jest-dom": "5.14.8",
+    "@swc/jest": "^0.2.38",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
+    "@types/testing-library__jest-dom": "5.14.9",
     "concurrently": "^9.1.2",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "prettier": "^3.4.2",
-    "typescript": "5.6.2"
+    "jest": "^30.0.0",
+    "jest-environment-jsdom": "^30.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "5.8.3"
   },
   "engines": {
     "node": ">=22"
