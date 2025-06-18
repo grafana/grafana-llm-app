@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Update Anthropic model defaults by @joe-elliott
+  - Base: `claude-sonnet-4-20250514`
+  - Large: `claude-opus-4-20250514`
 
 ## 0.22.1
 
