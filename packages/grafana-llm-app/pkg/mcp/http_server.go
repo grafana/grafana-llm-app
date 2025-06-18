@@ -40,27 +40,32 @@ func (m *MCP) extractGrafanaInfoFromHTTPRequest(ctx context.Context, req *http.R
 	if cfg == nil {
 		return ctx
 	}
-	url, err := cfg.AppURL()
+	appURL, err := cfg.AppURL()
 	if err != nil {
 		return ctx
 	}
 
+	grafanaConfig := mcpgrafana.GrafanaConfig{
+		URL: appURL,
+	}
+
 	accessToken, err := m.accessTokenClient.getAccessToken(ctx)
 	if err != nil {
-		return ctx
+		// Even if we can't get an access token, we can still proceed with an API key.
+		log.DefaultLogger.Warn("failed to get access token, falling back to API key if available", "error", err)
 	}
 	grafanaIDToken := req.Header.Get(backend.GrafanaUserSignInTokenHeaderName)
 
 	// If we have an access token and grafana id token, use on-behalf-of auth.
 	if accessToken != "" && grafanaIDToken != "" {
-		// MustWithOnBehalfOfAuth will panic if the access token or grafana id token
-		// are empty. That is why we check for empty strings above.
-		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaURL(ctx, url), accessToken, grafanaIDToken)
+		grafanaConfig.AccessToken = accessToken
+		grafanaConfig.IDToken = grafanaIDToken
+	} else {
+		// If we are not using Grafana Cloud, use the API key.
+		apiKey, _ := cfg.PluginAppClientSecret()
+		grafanaConfig.APIKey = apiKey
 	}
-
-	// If we are not using Grafana Cloud, use the API key.
-	apiKey, _ := cfg.PluginAppClientSecret()
-	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
+	return mcpgrafana.WithGrafanaConfig(ctx, grafanaConfig)
 }
 
 // extractGrafanaClientFromHTTPRequest extracts Grafana configuration from settings
@@ -69,15 +74,12 @@ func (m *MCP) extractGrafanaInfoFromHTTPRequest(ctx context.Context, req *http.R
 func (m *MCP) extractGrafanaClientFromHTTPRequest(ctx context.Context, req *http.Request) context.Context {
 	t := client.DefaultTransportConfig()
 
-	cfg := backend.GrafanaConfigFromContext(ctx)
-	if cfg == nil {
+	grafanaConfig := mcpgrafana.GrafanaConfigFromContext(ctx)
+	if grafanaConfig.URL == "" {
 		return ctx
 	}
-	urlS, err := cfg.AppURL()
-	if err != nil {
-		return ctx
-	}
-	url, err := url.Parse(urlS)
+
+	url, err := url.Parse(grafanaConfig.URL)
 	if err != nil {
 		return ctx
 	}
@@ -90,19 +92,15 @@ func (m *MCP) extractGrafanaClientFromHTTPRequest(ctx context.Context, req *http
 		t.Schemes = []string{"http"}
 	}
 
-	accessToken, grafanaIDToken := mcpgrafana.OnBehalfOfAuthFromContext(ctx)
-
 	// If we have an access token, set it in the HTTP headers.
-	if len(accessToken) > 0 {
-		log.DefaultLogger.Info("Setting access token in grafana client", "len_access_token", len(accessToken))
+	if grafanaConfig.AccessToken != "" {
+		log.DefaultLogger.Info("Setting access token in grafana client", "len_access_token", len(grafanaConfig.AccessToken))
 		t.HTTPHeaders = map[string]string{
-			accessTokenHeader:                        accessToken,
-			backend.GrafanaUserSignInTokenHeaderName: grafanaIDToken,
+			accessTokenHeader:                        grafanaConfig.AccessToken,
+			backend.GrafanaUserSignInTokenHeaderName: grafanaConfig.IDToken,
 		}
-	} else {
-		if apiKey, err := cfg.PluginAppClientSecret(); err == nil {
-			t.APIKey = apiKey
-		}
+	} else if grafanaConfig.APIKey != "" {
+		t.APIKey = grafanaConfig.APIKey
 	}
 
 	c := client.NewHTTPClientWithConfig(strfmt.Default, t)
@@ -112,19 +110,15 @@ func (m *MCP) extractGrafanaClientFromHTTPRequest(ctx context.Context, req *http
 // extractIncidentClientFromHTTPRequest creates an Incident client and adds it to the context.
 // Note: The incident client does not support access tokens, so it uses API key authentication only.
 func (m *MCP) extractIncidentClientFromHTTPRequest(ctx context.Context, req *http.Request) context.Context {
-	cfg := backend.GrafanaConfigFromContext(ctx)
-	if cfg == nil {
+	grafanaConfig := mcpgrafana.GrafanaConfigFromContext(ctx)
+	if grafanaConfig.URL == "" {
 		return ctx
 	}
-	grafanaURL, err := cfg.AppURL()
-	if err != nil {
-		return ctx
-	}
-	apiKey, _ := cfg.PluginAppClientSecret()
-	incidentUrl := fmt.Sprintf("%s/api/plugins/grafana-incident-app/resources/api/", strings.TrimSuffix(grafanaURL, "/"))
+
+	incidentUrl := fmt.Sprintf("%s/api/plugins/grafana-incident-app/resources/api/", strings.TrimSuffix(grafanaConfig.URL, "/"))
 	// TODO: incident client does not support access tokens. For this reason,
 	// we will not be enabling Incident tools in Grafana Cloud yet.
-	client := incident.NewClient(incidentUrl, apiKey)
+	client := incident.NewClient(incidentUrl, grafanaConfig.APIKey)
 	return mcpgrafana.WithIncidentClient(ctx, client)
 }
 
