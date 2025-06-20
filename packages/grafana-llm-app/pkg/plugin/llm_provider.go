@@ -70,7 +70,7 @@ func (m Model) toAnthropic(modelSettings *ModelSettings) string {
 		case ModelBase:
 			return string(anthropic.ModelClaude4Sonnet20250514)
 		case ModelLarge:
-			return string(anthropic.ModelClaude4Opus20250514)
+			return string(anthropic.ModelClaude4Sonnet20250514)
 		}
 		panic(fmt.Sprintf("unrecognized model: %s", m))
 	}
