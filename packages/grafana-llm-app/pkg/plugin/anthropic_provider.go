@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
 )
@@ -32,17 +31,9 @@ func NewAnthropicProvider(settings AnthropicSettings, models *ModelSettings) (LL
 	config.BaseURL = base
 	config.HTTPClient = client
 
-	defaultModels := &ModelSettings{
-		Default: ModelBase,
-		Mapping: map[Model]string{
-			ModelBase:  string(anthropic.ModelClaude3_5HaikuLatest),
-			ModelLarge: string(anthropic.ModelClaude3_5SonnetLatest),
-		},
-	}
-
 	return &anthropicProvider{
 		settings: settings,
-		models:   defaultModels,
+		models:   models,
 		client:   openai.NewClientWithConfig(config),
 	}, nil
 }

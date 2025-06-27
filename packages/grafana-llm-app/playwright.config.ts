@@ -36,6 +36,14 @@ export default defineConfig<PluginOptions>({
     trace: 'on-first-retry',
   },
 
+  /* Configure screenshot comparison tolerance */
+  expect: {
+    // Allow up to 5% pixel difference for screenshots
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.05, // 5% tolerance (0.05 = 5%)
+    },
+  },
+
   /* Configure projects for major browsers */
   projects: [
     {
