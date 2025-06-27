@@ -70,6 +70,8 @@ jobs:
         shell: bash
         run: |
           NEW_VERSION=$(npm version ${INPUT_VERSION} --no-git-tag-version)
+          # Remove the 'v' prefix from the version
+          NEW_VERSION=${NEW_VERSION#v}
           echo "new-version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         env:
           INPUT_VERSION: ${{ inputs.version }}
@@ -81,6 +83,8 @@ jobs:
         shell: bash
         run: |
           NEW_VERSION=$(npm version ${INPUT_VERSION} --no-git-tag-version)
+          # Remove the 'v' prefix from the version
+          NEW_VERSION=${NEW_VERSION#v}
           echo "new-version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         env:
           INPUT_VERSION: ${{ inputs.version }}
@@ -133,7 +137,7 @@ jobs:
       - name: Create git tag
         shell: bash
         run: |
-          git tag -a ${{ steps.bump-plugin.outputs.new-version }} -m "Release version ${{ steps.bump-plugin.outputs.new-version }}"
+          git tag -a v${{ steps.bump-plugin.outputs.new-version }} -m "Release version ${{ steps.bump-plugin.outputs.new-version }}"
 
       - name: Push tags
         shell: bash
