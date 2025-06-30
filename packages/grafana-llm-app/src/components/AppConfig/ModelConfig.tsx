@@ -19,31 +19,54 @@ export interface ModelMappingConfig {
   description: string;
 }
 const DEFAULT_MODEL_ID = openai.Model.BASE;
-const MODEL_MAPPING_CONFIG: ModelMappingConfig[] = [
-  {
-    id: openai.Model.BASE,
-    name: 'gpt-4.1-mini',
-    label: 'Base',
-    description: 'A fast and cost-effective model for efficient, high-throughput tasks.',
-  },
-  {
-    id: openai.Model.LARGE,
-    name: 'gpt-4.1',
-    label: 'Large',
-    description: 'A larger, higher cost model for more advanced tasks with longer context windows.',
-  },
-];
+function defaultModelMappingConfig(provider: ProviderType): ModelMappingConfig[] {
+  return provider === 'anthropic'
+    ? [
+        {
+          id: openai.Model.BASE,
+          name: 'claude-4-sonnet-20250514',
+          label: 'Base',
+          description: 'An effective, balanced model, suitable for most tasks.',
+        },
+        {
+          id: openai.Model.LARGE,
+          name: 'claude-4-sonnet-20250514',
+          label: 'Large',
+          description: 'An effective, balanced model, suitable for most tasks.',
+        },
+      ]
+    : [
+        {
+          id: openai.Model.BASE,
+          name: 'gpt-4.1-mini',
+          label: 'Base',
+          description: 'A fast and cost-effective model for efficient, high-throughput tasks.',
+        },
+        {
+          id: openai.Model.LARGE,
+          name: 'gpt-4.1',
+          label: 'Large',
+          description: 'A larger, higher cost model for more advanced tasks with longer context windows.',
+        },
+      ];
+}
 
-const initModelSettings = (settings: ModelSettings): ModelSettings => ({
-  default: settings.default ?? DEFAULT_MODEL_ID,
-  // If the settings are empty, set the default models
-  // If the settings are not empty, filter out any models that are not in the default list
-  mapping: settings.mapping
-    ? (Object.fromEntries(
-        Object.entries(settings.mapping).filter(([m, _]) => MODEL_MAPPING_CONFIG.find((d) => d.id === m))
-      ) as ModelMapping)
-    : (Object.fromEntries(MODEL_MAPPING_CONFIG.map((entry) => [entry.id, entry.name])) as ModelMapping),
-});
+const initModelSettings = (
+  provider: ProviderType,
+  settings: ModelSettings,
+  defaultModelMapping: ModelMappingConfig[]
+): ModelSettings => {
+  return {
+    default: settings.default ?? DEFAULT_MODEL_ID,
+    // If the settings are empty, set the default models
+    // If the settings are not empty, filter out any models that are not in the default list
+    mapping: settings.mapping
+      ? (Object.fromEntries(
+          Object.entries(settings.mapping).filter(([m, _]) => defaultModelMapping.find((d) => d.id === m))
+        ) as ModelMapping)
+      : (Object.fromEntries(defaultModelMapping.map((entry) => [entry.id, entry.name])) as ModelMapping),
+  };
+};
 
 export function ModelConfig({
   provider,
@@ -54,7 +77,8 @@ export function ModelConfig({
   settings: ModelSettings;
   onChange: (settings: ModelSettings) => void;
 }) {
-  settings = initModelSettings(settings);
+  const defaultModelMapping = defaultModelMappingConfig(provider);
+  settings = initModelSettings(provider, settings, defaultModelMapping);
   const setDefault = (model: openai.Model) => onChange({ ...settings, default: model });
 
   return (
@@ -70,7 +94,7 @@ export function ModelConfig({
           description="The default model is used when no model is specified in the chat request."
         >
           <Select
-            options={MODEL_MAPPING_CONFIG.map((entry) => ({ label: entry.label, value: entry.id }))}
+            options={defaultModelMapping.map((entry) => ({ label: entry.label, value: entry.id }))}
             width={60}
             value={settings.default ?? DEFAULT_MODEL_ID}
             onChange={(e) => setDefault(e.value ?? (DEFAULT_MODEL_ID as openai.Model))}
@@ -82,12 +106,8 @@ export function ModelConfig({
           <Label description="Map custom models used for LLM features. The default model is used when no model is specified in the chat request.">
             Model mappings
           </Label>
-          {MODEL_MAPPING_CONFIG.map((entry, i) => {
+          {defaultModelMapping.map((entry, i) => {
             const modelSetting = settings.mapping[entry.id];
-            // If the model is not in the settings, add it with the default name
-            if (!modelSetting) {
-              onChange({ ...settings, mapping: { ...settings.mapping, [entry.id]: entry.name } });
-            }
             const isDefault = settings.default === entry.id;
             const FieldLabel = (
               <>
@@ -113,12 +133,13 @@ export function ModelConfig({
                   width={60}
                   type="text"
                   name="model"
-                  value={modelSetting ?? entry.name}
+                  value={modelSetting}
+                  placeholder={entry.name}
                   onChange={(e) => {
                     const newModelName = e.currentTarget.value;
                     const newMapping = {
                       ...settings.mapping,
-                      [entry.id]: newModelName,
+                      [entry.id]: newModelName || undefined,
                     };
                     onChange({ ...settings, mapping: newMapping });
                   }}

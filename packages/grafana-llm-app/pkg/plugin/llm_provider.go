@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -52,27 +51,28 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 }
 
 func (m Model) toOpenAI(modelSettings *ModelSettings) string {
-	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
-		switch m {
-		case ModelBase:
-			return "gpt-4.1-mini"
-		case ModelLarge:
-			return "gpt-4.1"
-		}
-		panic(fmt.Sprintf("unrecognized model: %s", m))
-	}
-	return modelSettings.getModel(m)
+	return m.toProvider(ProviderTypeOpenAI, modelSettings)
 }
 
 func (m Model) toAnthropic(modelSettings *ModelSettings) string {
-	if modelSettings == nil || len(modelSettings.Mapping) == 0 {
-		switch m {
-		case ModelBase:
-			return string(anthropic.ModelClaude4Sonnet20250514)
-		case ModelLarge:
-			return string(anthropic.ModelClaude4Sonnet20250514)
+	return m.toProvider(ProviderTypeAnthropic, modelSettings)
+}
+
+func (m Model) toProvider(provider ProviderType, modelSettings *ModelSettings) string {
+	defaults := defaultModelSettings(provider)
+	// First check for nil settings, in which case we should use the defaults.
+	if modelSettings == nil {
+		modelSettings = defaults
+	}
+	// Next make sure that all of the model IDs have a corresponding name in the
+	// mapping, falling back to the default name if not.
+	for id, name := range defaults.Mapping {
+		if modelSettings.Mapping[id] == "" {
+			modelSettings.Mapping[id] = name
 		}
-		panic(fmt.Sprintf("unrecognized model: %s", m))
+	}
+	if modelSettings.Default == "" {
+		modelSettings.Default = defaults.Default
 	}
 	return modelSettings.getModel(m)
 }

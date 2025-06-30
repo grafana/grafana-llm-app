@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/sashabaranov/go-openai"
 	"github.com/stretchr/testify/assert"
 )
@@ -244,5 +245,128 @@ func TestChatCompletionStreamResponseMarshalJSON(t *testing.T) {
 	}
 	if got["id"] != "123" {
 		t.Errorf("id doesn't match")
+	}
+}
+
+func TestModelToAnthropic(t *testing.T) {
+	for _, tt := range []struct {
+		input    Model
+		settings *ModelSettings
+		expected string
+	}{
+		{
+			input:    ModelBase,
+			settings: nil,
+			expected: string(anthropic.ModelClaude4Sonnet20250514),
+		},
+		{
+			input:    ModelLarge,
+			settings: nil,
+			expected: string(anthropic.ModelClaude4Sonnet20250514),
+		},
+		{
+			input: ModelBase,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelBase:  string(anthropic.ModelClaude4Sonnet20250514),
+					ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+				},
+			},
+			expected: string(anthropic.ModelClaude4Sonnet20250514),
+		},
+		{
+			input: ModelLarge,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelBase:  string(anthropic.ModelClaude4Sonnet20250514),
+					ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+				},
+			},
+			expected: string(anthropic.ModelClaude4Sonnet20250514),
+		},
+		{
+			input: ModelLarge,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+				},
+			},
+			expected: string(anthropic.ModelClaude4Sonnet20250514),
+		},
+		{
+			input: ModelLarge,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelBase: string(anthropic.ModelClaude4Sonnet20250514),
+				},
+			},
+			expected: string(anthropic.ModelClaude4Sonnet20250514),
+		},
+	} {
+		t.Run(string(tt.input), func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.input.toAnthropic(tt.settings))
+		})
+	}
+}
+
+func TestModelToOpenAI(t *testing.T) {
+	for _, tt := range []struct {
+		input    Model
+		settings *ModelSettings
+		expected string
+	}{
+		{
+			input:    ModelBase,
+			settings: nil,
+			expected: openai.GPT4Dot1Mini,
+		},
+		{
+			input:    ModelLarge,
+			settings: nil,
+			expected: openai.GPT4Dot1,
+		},
+		{
+			input: ModelBase,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelBase:  openai.GPT4Dot1Mini,
+					ModelLarge: openai.GPT4Dot1,
+				},
+			},
+			expected: openai.GPT4Dot1Mini,
+		},
+		{
+			input: ModelLarge,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelBase:  openai.GPT4Dot1Mini,
+					ModelLarge: openai.GPT4Dot1,
+				},
+			},
+			expected: openai.GPT4Dot1,
+		},
+		{
+			input: ModelLarge,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelBase: openai.GPT4Dot1Mini,
+				},
+			},
+			// Note: partial mapping provided, so we use the default model.
+			expected: openai.GPT4Dot1,
+		},
+		{
+			input: ModelLarge,
+			settings: &ModelSettings{
+				Mapping: map[Model]string{
+					ModelLarge: openai.GPT4Dot1,
+				},
+			},
+			expected: openai.GPT4Dot1,
+		},
+	} {
+		t.Run(string(tt.input), func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.input.toOpenAI(tt.settings))
+		})
 	}
 }
