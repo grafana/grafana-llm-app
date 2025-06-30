@@ -123,8 +123,8 @@ jobs:
       - name: Commit changes
         shell: bash
         run: |
-          git add grafana-llm-app/package.json grafana-llm-frontend/package.json package-lock.json
-          git add grafana-llm-app/CHANGELOG.md || true  # No-op if changelog not generated
+          git add packages/grafana-llm-app/package.json packages/grafana-llm-frontend/package.json package-lock.json
+          git add packages/grafana-llm-app/CHANGELOG.md || true  # No-op if changelog not generated
           git commit -m "chore(version): bump version to ${{ steps.bump-plugin.outputs.new-version }}"
           git push origin main
         env:
