@@ -45,6 +45,9 @@ func (m *MCP) extractGrafanaInfoFromHTTPRequest(ctx context.Context, req *http.R
 		return ctx
 	}
 
+	gCfg := mcpgrafana.GrafanaConfigFromContext(ctx)
+	gCfg.URL = url
+
 	accessToken, err := m.accessTokenClient.getAccessToken(ctx)
 	if err != nil {
 		return ctx
@@ -55,12 +58,12 @@ func (m *MCP) extractGrafanaInfoFromHTTPRequest(ctx context.Context, req *http.R
 	if accessToken != "" && grafanaIDToken != "" {
 		// MustWithOnBehalfOfAuth will panic if the access token or grafana id token
 		// are empty. That is why we check for empty strings above.
-		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaURL(ctx, url), accessToken, grafanaIDToken)
+		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaConfig(ctx, gCfg), accessToken, grafanaIDToken)
 	}
 
 	// If we are not using Grafana Cloud, use the API key.
-	apiKey, _ := cfg.PluginAppClientSecret()
-	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
+	gCfg.APIKey, _ = cfg.PluginAppClientSecret()
+	return mcpgrafana.WithGrafanaConfig(ctx, gCfg)
 }
 
 // extractGrafanaClientFromHTTPRequest extracts Grafana configuration from settings
@@ -90,14 +93,14 @@ func (m *MCP) extractGrafanaClientFromHTTPRequest(ctx context.Context, req *http
 		t.Schemes = []string{"http"}
 	}
 
-	accessToken, grafanaIDToken := mcpgrafana.OnBehalfOfAuthFromContext(ctx)
+	gCfg := mcpgrafana.GrafanaConfigFromContext(ctx)
 
 	// If we have an access token, set it in the HTTP headers.
-	if len(accessToken) > 0 {
-		log.DefaultLogger.Info("Setting access token in grafana client", "len_access_token", len(accessToken))
+	if len(gCfg.AccessToken) > 0 {
+		log.DefaultLogger.Info("Setting access token in grafana client", "len_access_token", len(gCfg.AccessToken))
 		t.HTTPHeaders = map[string]string{
-			accessTokenHeader:                        accessToken,
-			backend.GrafanaUserSignInTokenHeaderName: grafanaIDToken,
+			accessTokenHeader:                        gCfg.AccessToken,
+			backend.GrafanaUserSignInTokenHeaderName: gCfg.IDToken,
 		}
 	} else {
 		if apiKey, err := cfg.PluginAppClientSecret(); err == nil {
