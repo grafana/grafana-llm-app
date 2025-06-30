@@ -69,7 +69,7 @@ jobs:
         id: bump-plugin
         shell: bash
         run: |
-          NEW_VERSION=$(npx npm@11 version ${INPUT_VERSION} --no-git-tag-version)
+          NEW_VERSION=$(npm version ${INPUT_VERSION} --no-git-tag-version | grep -m 1 '^v')
           echo "new-version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         env:
           INPUT_VERSION: ${{ inputs.version }}
@@ -80,7 +80,7 @@ jobs:
         id: bump-grafana-llm
         shell: bash
         run: |
-          NEW_VERSION=$(npx npm@11 version ${INPUT_VERSION} --no-git-tag-version)
+          NEW_VERSION=$(npm version ${INPUT_VERSION} --no-git-tag-version | grep -m 1 '^v')
           echo "new-version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         env:
           INPUT_VERSION: ${{ inputs.version }}
