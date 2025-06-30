@@ -194,16 +194,19 @@ func extractGrafanaInfoFromGrafanaLiveRequest(ctx context.Context, pCtx *backend
 		return ctx
 	}
 
+	gCfg := mcpgrafana.GrafanaConfigFromContext(ctx)
+	gCfg.URL = url
+
 	// If we have an access token and grafana id token, use on-behalf-of auth.
 	if accessToken != "" && grafanaIdToken != "" {
 		// MustWithOnBehalfOfAuth will panic if the access token or grafana id token
 		// are empty. That is why we check for empty strings above.
-		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaURL(ctx, url), accessToken, grafanaIdToken)
+		return mcpgrafana.MustWithOnBehalfOfAuth(mcpgrafana.WithGrafanaConfig(ctx, gCfg), accessToken, grafanaIdToken)
 	}
 
 	// If we are not using Grafana Cloud, use the API key.
-	apiKey, _ := cfg.PluginAppClientSecret()
-	return mcpgrafana.WithGrafanaAPIKey(mcpgrafana.WithGrafanaURL(ctx, url), apiKey)
+	gCfg.APIKey, _ = cfg.PluginAppClientSecret()
+	return mcpgrafana.WithGrafanaConfig(ctx, gCfg)
 }
 
 // extractGrafanaClientFromGrafanaLiveRequest extracts Grafana configuration from settings
