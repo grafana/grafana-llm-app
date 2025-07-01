@@ -6,10 +6,12 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/sashabaranov/go-openai"
 )
 
 const (
@@ -129,12 +131,25 @@ func (c ModelSettings) getModel(model Model) string {
 	return c.getModel(c.Default)
 }
 
-var DEFAULT_MODEL_SETTINGS = &ModelSettings{
-	Default: ModelBase,
-	Mapping: map[Model]string{
-		ModelBase:  "gpt-4.1-mini",
-		ModelLarge: "gpt-4.1",
-	},
+func defaultModelSettings(provider ProviderType) *ModelSettings {
+	switch provider {
+	case ProviderTypeAnthropic:
+		return &ModelSettings{
+			Default: ModelBase,
+			Mapping: map[Model]string{
+				ModelBase:  string(anthropic.ModelClaude4Sonnet20250514),
+				ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+			},
+		}
+	default:
+		return &ModelSettings{
+			Default: ModelBase,
+			Mapping: map[Model]string{
+				ModelBase:  openai.GPT4Dot1Mini,
+				ModelLarge: openai.GPT4Dot1,
+			},
+		}
+	}
 }
 
 // LLMGatewaySettings contains the configuration for the Grafana Managed Key LLM solution.

@@ -65,8 +65,8 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	}
 
 	if app.settings.Models == nil {
-		// backwards-compat: if Model settings is nil, use the default one
-		app.settings.Models = DEFAULT_MODEL_SETTINGS
+		// backwards-compat: if Model settings is nil, use the default one for the provider.
+		app.settings.Models = defaultModelSettings(app.settings.Provider)
 	}
 
 	// Getting the service account token that has been shared with the plugin

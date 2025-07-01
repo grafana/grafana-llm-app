@@ -59,7 +59,7 @@ func (p *grafanaProvider) Models(ctx context.Context) (ModelResponse, error) {
 
 func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
-	r.Model = req.Model.toOpenAI(DEFAULT_MODEL_SETTINGS)
+	r.Model = req.Model.toOpenAI(defaultModelSettings(ProviderTypeGrafana))
 
 	ForceUserMessage(&r)
 
@@ -73,7 +73,7 @@ func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletion
 
 func (p *grafanaProvider) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
-	r.Model = req.Model.toOpenAI(DEFAULT_MODEL_SETTINGS)
+	r.Model = req.Model.toOpenAI(defaultModelSettings(ProviderTypeGrafana))
 
 	ForceUserMessage(&r)
 

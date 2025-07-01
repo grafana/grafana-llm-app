@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/sashabaranov/go-openai"
 	"github.com/stretchr/testify/require"
 )
 
@@ -174,14 +177,16 @@ func TestMergeSecureJSONData(t *testing.T) {
 }
 
 type mockServer struct {
-	server  *httptest.Server
-	request *http.Request
+	server      *httptest.Server
+	request     *http.Request
+	requestBody []byte
 }
 
 func newMockOpenAIServer() *mockServer {
 	server := &mockServer{}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		server.request = r
+		server.requestBody, _ = io.ReadAll(r.Body)
 		streaming := r.Header.Get("Accept") == "text/event-stream"
 		if streaming {
 			w.Header().Set("Content-Type", "text/event-stream")
@@ -594,4 +599,242 @@ func TestCallOpenAIProxy(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChatCompletionsFinalModel(t *testing.T) {
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name string
+
+		model    Model
+		settings backend.AppInstanceSettings
+
+		expectedModel string
+	}{
+		{
+			name: "anthropic-no-mapping-base",
+
+			model: ModelBase,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "anthropic"
+				}`),
+			},
+
+			expectedModel: defaultModelSettings(ProviderTypeAnthropic).Mapping[ModelBase],
+		},
+		{
+			name: "anthropic-no-mapping-large",
+
+			model: ModelLarge,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "anthropic"
+				}`),
+			},
+			expectedModel: defaultModelSettings(ProviderTypeAnthropic).Mapping[ModelLarge],
+		},
+		{
+			name: "anthropic-partial-mapping-base",
+
+			model: ModelBase,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "anthropic",
+					"models": {
+						"mapping": {
+							"base": "claude-4-sonnet"
+						}
+					}
+				}`),
+			},
+			expectedModel: "claude-4-sonnet",
+		},
+		{
+			name: "anthropic-partial-mapping-large",
+
+			model: ModelLarge,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "anthropic",
+					"models": {
+						"mapping": {
+							"base": "claude-4-sonnet"
+						}
+					}
+				}`),
+			},
+			expectedModel: defaultModelSettings(ProviderTypeAnthropic).Mapping[ModelLarge],
+		},
+		{
+			name: "anthropic-full-mapping-base",
+
+			model: ModelBase,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "anthropic",
+					"models": {
+						"mapping": {
+							"base": "claude-4-sonnet",
+							"large": "claude-4-sonnet"
+						}
+					}
+				}`),
+			},
+			expectedModel: "claude-4-sonnet",
+		},
+		{
+			name: "anthropic-full-mapping-large",
+
+			model: ModelLarge,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "anthropic",
+					"models": {
+						"mapping": {
+							"base": "claude-4-sonnet",
+							"large": "claude-4-sonnet"
+						}
+					}
+				}`),
+			},
+			expectedModel: "claude-4-sonnet",
+		},
+		{
+			name: "openai-no-mapping-base",
+
+			model: ModelBase,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "openai"
+				}`),
+			},
+			expectedModel: defaultModelSettings(ProviderTypeOpenAI).Mapping[ModelBase],
+		},
+		{
+			name: "openai-no-mapping-large",
+
+			model: ModelLarge,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "openai"
+				}`),
+			},
+			expectedModel: defaultModelSettings(ProviderTypeOpenAI).Mapping[ModelLarge],
+		},
+		{
+			name: "openai-partial-mapping-base",
+
+			model: ModelBase,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "openai",
+					"models": {
+						"mapping": {
+							"base": "gpt-4"
+						}
+					}
+				}`),
+			},
+			expectedModel: "gpt-4",
+		},
+		{
+			name: "openai-partial-mapping-large",
+
+			model: ModelLarge,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "openai",
+					"models": {
+						"mapping": {
+							"base": "gpt-4"
+						}
+					}
+				}`),
+			},
+			expectedModel: defaultModelSettings(ProviderTypeOpenAI).Mapping[ModelLarge],
+		},
+		{
+			name: "openai-full-mapping-base",
+
+			model: ModelBase,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "openai",
+					"models": {
+						"mapping": {
+							"base": "gpt-4",
+							"large": "gpt-4"
+						}
+					}
+				}`),
+			},
+			expectedModel: "gpt-4",
+		},
+		{
+			name: "openai-full-mapping-large",
+
+			model: ModelLarge,
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{
+					"provider": "openai",
+					"models": {
+						"mapping": {
+							"base": "gpt-4",
+							"large": "gpt-4"
+						}
+					}
+				}`),
+			},
+			expectedModel: "gpt-4",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := newMockOpenAIServer()
+			settings := withProviderURL(t, tc.settings, server.server.URL)
+			inst, err := NewApp(ctx, settings)
+			require.NoError(t, err)
+			require.NotNil(t, inst)
+			app, ok := inst.(*App)
+			require.True(t, ok)
+
+			var r mockCallResourceResponseSender
+			req := &backend.CallResourceRequest{
+				PluginContext: backend.PluginContext{
+					AppInstanceSettings: &tc.settings,
+				},
+				Method: http.MethodPost,
+				Path:   "/openai/v1/chat/completions",
+				Body:   []byte(fmt.Sprintf(`{"model": "%s", "messages": [{"content":"some stuff"}]}`, tc.model)),
+			}
+			err = app.CallResource(ctx, req, &r)
+			require.NoError(t, err)
+			require.NotNil(t, r.response)
+
+			oReq := &openai.ChatCompletionRequest{}
+			err = json.Unmarshal(server.requestBody, oReq)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedModel, oReq.Model)
+		})
+	}
+}
+
+func withProviderURL(t *testing.T, s backend.AppInstanceSettings, url string) backend.AppInstanceSettings {
+	t.Helper()
+	var jd map[string]any
+	err := json.Unmarshal(s.JSONData, &jd)
+	if err != nil {
+		panic(err)
+	}
+	if jd["provider"] == string(ProviderTypeOpenAI) {
+		jd["openAI"] = map[string]any{"url": url}
+	} else if jd["provider"] == string(ProviderTypeAnthropic) {
+		jd["anthropic"] = map[string]any{"url": url}
+	}
+	s.JSONData, err = json.Marshal(jd)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
