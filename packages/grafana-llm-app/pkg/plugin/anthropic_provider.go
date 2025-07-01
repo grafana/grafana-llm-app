@@ -11,6 +11,10 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+const (
+	DefaultMaxCompletionTokens = 4000
+)
+
 // anthropicProvider implements the LLMProvider interface using Anthropic's OpenAI-compatible API.
 // See: https://docs.anthropic.com/en/api/openai-sdk
 type anthropicProvider struct {
@@ -54,7 +58,7 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 
 	// Anthropic requires a max tokens value
 	if r.MaxTokens == 0 {
-		r.MaxTokens = 1000
+		r.MaxTokens = DefaultMaxCompletionTokens
 	}
 
 	ForceUserMessage(&r)
@@ -75,7 +79,7 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 
 	// Anthropic requires a max tokens value
 	if r.MaxTokens == 0 {
-		r.MaxTokens = 1000
+		r.MaxTokens = DefaultMaxCompletionTokens
 	}
 
 	ForceUserMessage(&r)
