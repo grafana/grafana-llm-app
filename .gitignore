@@ -38,9 +38,11 @@ playwright-report/
 
 # Editor
 .idea
-
 .eslintcache
 .DS_Store
 
 # CI directory
 __to-upload__
+
+# Dev environment
+.envrc
