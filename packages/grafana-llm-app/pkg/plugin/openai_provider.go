@@ -60,7 +60,6 @@ func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) 
 
 	ForceUserMessage(&r)
 
-	log.DefaultLogger.Info("CCCCCCCCCChat completion request", "req", fmt.Sprintf("%+v", r))
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
 	if err != nil {
 		log.DefaultLogger.Error("error creating openai chat completion", "err", err)
