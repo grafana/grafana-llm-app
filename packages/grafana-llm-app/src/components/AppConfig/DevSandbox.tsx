@@ -54,135 +54,7 @@ async function handleToolCall(
   }
 }
 
-// Helper function to handle non-streaming chat completions
-async function handleNonStreamingChat(
-  message: string,
-  tools: Tool[],
-  client: any,
-  toolCalls: Map<string, RenderedToolCall>,
-  setToolCalls: (calls: Map<string, RenderedToolCall>) => void,
-  setReply: (reply: string) => void,
-  setStarted: (started: boolean) => void,
-  setFinished: (finished: boolean) => void
-) {
-  setToolCalls(new Map());
-  const messages: llm.Message[] = [
-    {
-      role: 'system',
-      content:
-        'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.',
-    },
-    { role: 'user', content: message },
-  ];
 
-  let response = await llm.chatCompletions({
-    model: llm.Model.BASE,
-    messages,
-    tools: mcp.convertToolsToOpenAI(tools),
-  });
-
-  let functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
-
-  while (functionCalls.length > 0) {
-    messages.push(response.choices[0].message);
-    await Promise.all(functionCalls.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
-
-    response = await llm.chatCompletions({
-      model: llm.Model.LARGE,
-      messages,
-      tools: mcp.convertToolsToOpenAI(tools),
-    });
-    functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
-  }
-
-  setReply(response.choices[0].message.content!);
-  setStarted(false);
-  setFinished(true);
-}
-
-// Helper function to handle streaming chat completions
-async function handleStreamingChat(
-  message: string,
-  tools: Tool[],
-  client: any,
-  toolCalls: Map<string, RenderedToolCall>,
-  setToolCalls: (calls: Map<string, RenderedToolCall>) => void,
-  setReply: (reply: string) => void,
-  setStarted: (started: boolean) => void,
-  setFinished: (finished: boolean) => void
-) {
-  const messages: llm.Message[] = [
-    {
-      role: 'system',
-      content:
-        'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.',
-    },
-    { role: 'user', content: message },
-  ];
-
-  let stream = llm.streamChatCompletions({
-    model: llm.Model.LARGE,
-    messages,
-    tools: mcp.convertToolsToOpenAI(tools),
-  });
-
-  let [toolCallsStream, otherMessages] = partition(
-    stream,
-    (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
-  );
-
-  let contentMessages = otherMessages.pipe(
-    llm.accumulateContent(),
-    finalize(() => {
-      console.log('stream finalized');
-      setStarted(false);
-      setFinished(true);
-    })
-  );
-
-  // Subscribe to content messages immediately
-  contentMessages.subscribe(setReply);
-
-  let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
-
-  while (toolCallMessages.tool_calls.length > 0) {
-    messages.push(toolCallMessages);
-
-    const tcs = toolCallMessages.tool_calls.filter((tc) => tc.type === 'function');
-    await Promise.all(tcs.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
-
-    // `messages` now contains all tool call request and responses so far.
-    // Send it back to the LLM to get its response given those tool calls.
-    stream = llm.streamChatCompletions({
-      model: llm.Model.LARGE,
-      messages,
-      tools: mcp.convertToolsToOpenAI(tools),
-    });
-
-    [toolCallsStream, otherMessages] = partition(
-      stream,
-      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
-    );
-
-    // Include a pretend 'first message' in the reply, in case the model chose to send anything before its tool calls.
-    const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
-      choices: [{ delta: { role: 'assistant', content: '' } }],
-    };
-
-    contentMessages = otherMessages.pipe(
-      //@ts-expect-error
-      startWith(firstMessage),
-      llm.accumulateContent(),
-      finalize(() => {
-        console.log('stream finalized');
-      })
-    );
-
-    contentMessages.subscribe(setReply);
-
-    toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
-  }
-}
 
 function AvailableTools({ tools }: { tools: Tool[] }) {
   return (
@@ -268,112 +140,321 @@ function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) 
   );
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
 const BasicChatTest = () => {
   const { client } = mcp.useMCPClient();
-  // The current input value.
-  const [input, setInput] = useState('');
-  // The final message to send to the LLM, updated when the button is clicked.
-  const [message, setMessage] = useState('');
-  // The latest reply from the LLM.
-  const [reply, setReply] = useState('');
-
+  // Chat state
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [currentInput, setCurrentInput] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [useStream, setUseStream] = useState(true);
+  
+  // Tool state
   const [toolCalls, setToolCalls] = useState<Map<string, RenderedToolCall>>(new Map());
+  
+  // Ref for auto-scrolling
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const [useStream, setUseStream] = useState(false);
+  // Auto-scroll to bottom when new messages are added
+  React.useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatHistory]);
 
-  const [started, setStarted] = useState(false);
-  const [finished, setFinished] = useState(true);
-
-  const { loading, error, value } = useAsync(async () => {
+  // Get available tools
+  const { loading: toolsLoading, error: toolsError, value: toolsData } = useAsync(async () => {
     const enabled = await llm.enabled();
     if (!enabled) {
-      return { enabled, tools: [] };
+      return { enabled: false, tools: [] };
     }
-
     const { tools } = (await client?.listTools()) ?? { tools: [] };
-    if (message === '') {
-      return { enabled, tools };
+    return { enabled: true, tools };
+  }, [client]);
+
+  const sendMessage = async () => {
+    if (!currentInput.trim() || isGenerating || !toolsData?.enabled) {
+      return;
     }
 
-    setStarted(true);
-    setFinished(false);
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: currentInput.trim(),
+      timestamp: new Date(),
+    };
+
+    // Add user message to history
+    setChatHistory(prev => [...prev, userMessage]);
+    setCurrentInput('');
+    setIsGenerating(true);
+    setToolCalls(new Map());
+
+    // Create assistant message placeholder
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    };
+
+    setChatHistory(prev => [...prev, assistantMessage]);
+
+    const messages: llm.Message[] = [
+      {
+        role: 'system',
+        content:
+          'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.',
+      },
+      ...chatHistory.map(msg => ({ role: msg.role, content: msg.content })),
+      { role: 'user', content: userMessage.content },
+    ];
 
     try {
-      if (!useStream) {
-        await handleNonStreamingChat(
-          message,
-          tools,
-          client,
-          toolCalls,
-          setToolCalls,
-          setReply,
-          setStarted,
-          setFinished
-        );
+      if (useStream) {
+        await handleStreamingChatWithHistory(messages, toolsData.tools, assistantMessage);
       } else {
-        await handleStreamingChat(message, tools, client, toolCalls, setToolCalls, setReply, setStarted, setFinished);
+        await handleNonStreamingChatWithHistory(messages, toolsData.tools, assistantMessage);
       }
-    } catch (e) {
-      console.error('Error in chat completion:', e);
-      setFinished(true);
-      setStarted(false);
+    } catch (error) {
+      console.error('Error in chat completion:', error);
+      // Update the assistant message with error
+      setChatHistory(prev => prev.map((msg, idx) => 
+        idx === prev.length - 1 && msg.role === 'assistant' 
+          ? { ...msg, content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` }
+          : msg
+      ));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleStreamingChatWithHistory = async (
+    messages: llm.Message[],
+    tools: any[],
+    assistantMessage: ChatMessage
+  ) => {
+    let stream = llm.streamChatCompletions({
+      model: llm.Model.LARGE,
+      messages,
+      tools: mcp.convertToolsToOpenAI(tools),
+    });
+
+    let [toolCallsStream, otherMessages] = partition(
+      stream,
+      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
+    );
+
+    let contentMessages = otherMessages.pipe(
+      llm.accumulateContent(),
+      finalize(() => {
+        console.log('stream finalized');
+      })
+    );
+
+    // Subscribe to content updates
+    contentMessages.subscribe(content => {
+      setChatHistory(prev => prev.map((msg, idx) => 
+        idx === prev.length - 1 && msg.role === 'assistant' 
+          ? { ...msg, content }
+          : msg
+      ));
+    });
+
+    let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
+
+    while (toolCallMessages.tool_calls.length > 0) {
+      messages.push(toolCallMessages);
+
+      const tcs = toolCallMessages.tool_calls.filter((tc) => tc.type === 'function');
+      await Promise.all(tcs.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
+
+      stream = llm.streamChatCompletions({
+        model: llm.Model.LARGE,
+        messages,
+        tools: mcp.convertToolsToOpenAI(tools),
+      });
+
+      [toolCallsStream, otherMessages] = partition(
+        stream,
+        (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
+      );
+
+      const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
+        choices: [{ delta: { role: 'assistant', content: '' } }],
+      };
+
+      contentMessages = otherMessages.pipe(
+        //@ts-expect-error
+        startWith(firstMessage),
+        llm.accumulateContent(),
+        finalize(() => {
+          console.log('stream finalized');
+        })
+      );
+
+      contentMessages.subscribe(content => {
+        setChatHistory(prev => prev.map((msg, idx) => 
+          idx === prev.length - 1 && msg.role === 'assistant' 
+            ? { ...msg, content }
+            : msg
+        ));
+      });
+
+      toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
+    }
+  };
+
+  const handleNonStreamingChatWithHistory = async (
+    messages: llm.Message[],
+    tools: any[],
+    assistantMessage: ChatMessage
+  ) => {
+    let response = await llm.chatCompletions({
+      model: llm.Model.BASE,
+      messages,
+      tools: mcp.convertToolsToOpenAI(tools),
+    });
+
+    let functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
+
+    while (functionCalls.length > 0) {
+      messages.push(response.choices[0].message);
+      await Promise.all(functionCalls.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
+
+      response = await llm.chatCompletions({
+        model: llm.Model.LARGE,
+        messages,
+        tools: mcp.convertToolsToOpenAI(tools),
+      });
+      functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
     }
 
-    return { enabled: true, tools };
-  }, [message]);
+    // Update the assistant message in history
+    setChatHistory(prev => prev.map((msg, idx) => 
+      idx === prev.length - 1 && msg.role === 'assistant' 
+        ? { ...msg, content: response.choices[0].message.content || '' }
+        : msg
+    ));
+  };
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  if (toolsError) {
+    return <div>Error: {toolsError.message}</div>;
+  }
+
+  if (!toolsData?.enabled) {
+    return <div>LLM plugin not enabled.</div>;
   }
 
   return (
     <div>
-      {value?.enabled ? (
-        <Stack direction="column">
-          <TextArea value={input} onChange={(e) => setInput(e.currentTarget.value)} placeholder="Enter a message" />
-          <br />
-          <Stack direction="row" justifyContent="space-evenly">
-            <Button
-              type="submit"
-              onClick={() => {
-                setMessage(input);
-                setUseStream(true);
-              }}
-            >
-              Submit Stream
-            </Button>
-            <Button
-              type="submit"
-              onClick={() => {
-                setMessage(input);
-                setUseStream(false);
-              }}
-            >
-              Submit Request
-            </Button>
-          </Stack>
-          <br />
-          {!useStream && (
-            <div>
-              {loading && <Spinner />}
-              <p style={{ whiteSpace: 'pre-wrap' }}>{reply}</p>
-            </div>
-          )}
-          {useStream && <div>{reply}</div>}
-          <Stack direction="row" justifyContent="space-evenly">
-            <div>{started ? 'Response is started' : 'Response is not started'}</div>
-            <div>{finished ? 'Response is finished' : 'Response is not finished'}</div>
-          </Stack>
-          <br />
-          <br />
-          <Stack direction="row" justifyContent="space-evenly">
-            <AvailableTools tools={value.tools!} />
-            <ToolCalls toolCalls={toolCalls} />
+      <Stack direction="column" gap={3}>
+        {/* Stream toggle */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <h3>Chat</h3>
+          <Stack direction="row" alignItems="center" gap={1}>
+            <label htmlFor="stream-toggle">Streaming:</label>
+            <input
+              id="stream-toggle"
+              type="checkbox"
+              checked={useStream}
+              onChange={(e) => setUseStream(e.target.checked)}
+            />
           </Stack>
         </Stack>
-      ) : (
-        <div>LLM plugin not enabled.</div>
-      )}
+
+        {/* Chat history */}
+        <div 
+          ref={chatContainerRef}
+          style={{ 
+            height: '400px', 
+            overflowY: 'auto', 
+            border: '1px solid var(--border-color)', 
+            borderRadius: '8px',
+            padding: '16px',
+            backgroundColor: 'var(--background-color-secondary)',
+          }}
+        >
+          {chatHistory.length === 0 ? (
+            <div style={{ color: 'var(--text-color-secondary)', fontStyle: 'italic' }}>
+              Start a conversation by typing a message below...
+            </div>
+          ) : (
+            <Stack direction="column" gap={1}>
+              {chatHistory.map((message, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    marginBottom: '12px',
+                    width: '100%'
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: '90%',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      backgroundColor: message.role === 'user' 
+                        ? '#007acc' 
+                        : 'var(--background-color-primary)',
+                      color: message.role === 'user' 
+                        ? 'white' 
+                        : 'var(--text-color-primary)',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                      border: message.role === 'assistant' ? '1px solid var(--border-color)' : 'none',
+                      fontSize: '14px',
+                      lineHeight: '1.4'
+                    }}
+                  >
+                    {message.content || (message.role === 'assistant' && isGenerating && index === chatHistory.length - 1 ? 
+                      <span style={{ opacity: 0.7 }}>...</span> : '')}
+                  </div>
+                </div>
+              ))}
+            </Stack>
+          )}
+        </div>
+
+        {/* Input area */}
+        <Stack direction="row" gap={2}>
+          <TextArea
+            value={currentInput}
+            onChange={(e) => setCurrentInput(e.currentTarget.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+            disabled={isGenerating}
+            style={{ flex: 1 }}
+            rows={3}
+          />
+          <Button
+            onClick={sendMessage}
+            disabled={!currentInput.trim() || isGenerating || toolsLoading}
+            variant="primary"
+          >
+            {isGenerating ? <Spinner size="sm" /> : 'Send'}
+          </Button>
+        </Stack>
+
+        {/* Tool information */}
+        <Stack direction="row" justifyContent="space-evenly" gap={4}>
+          <AvailableTools tools={toolsData?.tools || []} />
+          <ToolCalls toolCalls={toolCalls} />
+        </Stack>
+      </Stack>
     </div>
   );
 };
