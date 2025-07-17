@@ -58,84 +58,103 @@ async function handleToolCall(
 
 function AvailableTools({ tools }: { tools: Tool[] }) {
   return (
-    <Stack direction="column">
-      <h4>Available MCP Tools</h4>
-      <ul>
+    <div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {tools.map((tool, i) => (
-          <li key={i}>{tool.annotations?.title ?? tool.name}</li>
+          <li key={i} style={{ 
+            padding: '4px 0', 
+            fontSize: '13px',
+            borderBottom: '1px solid var(--border-color)',
+            marginBottom: '4px'
+          }}>
+            {tool.annotations?.title ?? tool.name}
+          </li>
         ))}
       </ul>
-    </Stack>
+    </div>
   );
 }
 
 function ToolCalls({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) {
   return (
     <div>
-      <h4>Tool Calls</h4>
-      {toolCalls.size === 0 && <div>No tool calls yet</div>}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {Array.from(toolCalls.values()).map((toolCall, i) => (
-          <li
-            key={i}
-            style={{
-              marginBottom: '16px',
-              padding: '12px',
-              backgroundColor: 'var(--background-color-secondary)',
-              borderRadius: '4px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontWeight: 500 }}>{toolCall.name}</span>
-              <code
-                style={{ backgroundColor: 'var(--background-color-primary)', padding: '2px 6px', borderRadius: '4px' }}
-              >
-                {toolCall.arguments}
-              </code>
-              {toolCall.running ? (
-                <Spinner size="sm" />
-              ) : (
-                <Icon name="check" size="sm" style={{ color: 'var(--success-color)' }} />
-              )}
-            </div>
-            {toolCall.error && (
-              <div
-                style={{
-                  backgroundColor: 'var(--error-background)',
-                  color: 'var(--error-text-color)',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  marginTop: '4px',
-                  fontSize: '0.9em',
-                }}
-              >
-                <Icon name="exclamation-triangle" size="sm" style={{ marginRight: '4px' }} />
-                {toolCall.error}
+      {toolCalls.size === 0 ? (
+        <div style={{ 
+          color: 'var(--text-color-secondary)', 
+          fontStyle: 'italic'
+        }}>
+          No tool calls yet
+        </div>
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {Array.from(toolCalls.values()).map((toolCall, i) => (
+            <li
+              key={i}
+              style={{
+                marginBottom: '16px',
+                padding: '12px',
+                backgroundColor: 'var(--background-color-primary)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 500 }}>{toolCall.name}</span>
+                <code
+                  style={{ 
+                    backgroundColor: 'var(--background-color-secondary)', 
+                    padding: '4px 8px', 
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                  }}
+                >
+                  {toolCall.arguments}
+                </code>
+                {toolCall.running ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Icon name="check" size="sm" style={{ color: 'var(--success-color)' }} />
+                )}
               </div>
-            )}
-            {!toolCall.error && toolCall.response && (
-              <CollapsableSection
-                label={<span style={{ fontSize: '0.7em', fontWeight: 500 }}>Response</span>}
-                isOpen={false}
-              >
-                <pre
+              {toolCall.error && (
+                <div
                   style={{
-                    backgroundColor: 'var(--background-color-primary)',
+                    backgroundColor: 'var(--error-background)',
+                    color: 'var(--error-text-color)',
                     padding: '8px',
                     borderRadius: '4px',
                     marginTop: '8px',
-                    overflow: 'auto',
-                    maxHeight: '300px',
-                    fontSize: '0.9em',
+                    fontSize: '14px',
                   }}
                 >
-                  {JSON.stringify(toolCall.response, null, 2)}
-                </pre>
-              </CollapsableSection>
-            )}
-          </li>
-        ))}
-      </ul>
+                  <Icon name="exclamation-triangle" size="sm" style={{ marginRight: '4px' }} />
+                  {toolCall.error}
+                </div>
+              )}
+              {!toolCall.error && toolCall.response && (
+                <CollapsableSection
+                  label={<span style={{ fontSize: '14px', fontWeight: 500 }}>Response</span>}
+                  isOpen={false}
+                >
+                  <pre
+                    style={{
+                      backgroundColor: 'var(--background-color-secondary)',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      marginTop: '8px',
+                      overflow: 'auto',
+                      maxHeight: '200px',
+                      fontSize: '12px',
+                    }}
+                  >
+                    {JSON.stringify(toolCall.response, null, 2)}
+                  </pre>
+                </CollapsableSection>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -146,13 +165,26 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-const BasicChatTest = () => {
+const BasicChatTest = ({
+  showAvailableTools,
+  setShowAvailableTools,
+  showToolCalls,
+  setShowToolCalls,
+  useStream,
+  setUseStream,
+}: {
+  showAvailableTools: boolean;
+  setShowAvailableTools: (show: boolean) => void;
+  showToolCalls: boolean;
+  setShowToolCalls: (show: boolean) => void;
+  useStream: boolean;
+  setUseStream: (useStream: boolean) => void;
+}) => {
   const { client } = mcp.useMCPClient();
   // Chat state
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [useStream, setUseStream] = useState(true);
   
   // Tool state
   const [toolCalls, setToolCalls] = useState<Map<string, RenderedToolCall>>(new Map());
@@ -359,20 +391,6 @@ const BasicChatTest = () => {
   return (
     <div>
       <Stack direction="column" gap={3}>
-        {/* Stream toggle */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <h3>Chat</h3>
-          <Stack direction="row" alignItems="center" gap={1}>
-            <label htmlFor="stream-toggle">Streaming:</label>
-            <input
-              id="stream-toggle"
-              type="checkbox"
-              checked={useStream}
-              onChange={(e) => setUseStream(e.target.checked)}
-            />
-          </Stack>
-        </Stack>
-
         {/* Chat history */}
         <div 
           ref={chatContainerRef}
@@ -449,11 +467,49 @@ const BasicChatTest = () => {
           </Button>
         </Stack>
 
-        {/* Tool information */}
-        <Stack direction="row" justifyContent="space-evenly" gap={4}>
-          <AvailableTools tools={toolsData?.tools || []} />
-          <ToolCalls toolCalls={toolCalls} />
-        </Stack>
+        {/* Collapsible Available Tools */}
+        {showAvailableTools && (
+          <div style={{ 
+            border: '1px solid var(--border-color)', 
+            borderRadius: '8px',
+            backgroundColor: 'var(--background-color-secondary)',
+            maxHeight: '200px',
+            overflowY: 'auto'
+          }}>
+            <div style={{ 
+              padding: '12px', 
+              borderBottom: '1px solid var(--border-color)',
+              backgroundColor: 'var(--background-color-primary)'
+            }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Available MCP Tools</h4>
+            </div>
+            <div style={{ padding: '12px' }}>
+              <AvailableTools tools={toolsData?.tools || []} />
+            </div>
+          </div>
+        )}
+
+        {/* Collapsible Tool Calls */}
+        {showToolCalls && (
+          <div style={{ 
+            border: '1px solid var(--border-color)', 
+            borderRadius: '8px',
+            backgroundColor: 'var(--background-color-secondary)',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}>
+            <div style={{ 
+              padding: '12px', 
+              borderBottom: '1px solid var(--border-color)',
+              backgroundColor: 'var(--background-color-primary)'
+            }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Tool Calls</h4>
+            </div>
+            <div style={{ padding: '12px' }}>
+              <ToolCalls toolCalls={toolCalls} />
+            </div>
+          </div>
+        )}
       </Stack>
     </div>
   );
@@ -461,6 +517,12 @@ const BasicChatTest = () => {
 
 export const DevSandbox = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  
+  // Move toggle states up to this level
+  const [showAvailableTools, setShowAvailableTools] = useState(false);
+  const [showToolCalls, setShowToolCalls] = useState(false);
+  const [useStream, setUseStream] = useState(true);
+  
   const closeModal = () => {
     setModalIsOpen(false);
   };
@@ -468,15 +530,61 @@ export const DevSandbox = () => {
   return (
     <FieldSet label="Development Sandbox">
       <Button onClick={() => setModalIsOpen(true)}>Open development sandbox</Button>
-      <Modal title="Development Sandbox" isOpen={modalIsOpen} onDismiss={closeModal}>
+      <Modal 
+        title="Development Sandbox" 
+        isOpen={modalIsOpen} 
+        onDismiss={closeModal}
+      >
         <Suspense fallback={<LoadingPlaceholder text="Loading MCP..." />}>
           <mcp.MCPClientProvider appName="Grafana App With Model Context Protocol" appVersion="1.0.0">
-            <BasicChatTest />
+            <BasicChatTest 
+              showAvailableTools={showAvailableTools}
+              setShowAvailableTools={setShowAvailableTools}
+              showToolCalls={showToolCalls}
+              setShowToolCalls={setShowToolCalls}
+              useStream={useStream}
+              setUseStream={setUseStream}
+            />
           </mcp.MCPClientProvider>
         </Suspense>
-        <Button variant="primary" onClick={closeModal}>
-          Close
-        </Button>
+        
+        {/* Bottom controls row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Streaming toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label htmlFor="stream-toggle" style={{ fontSize: '14px' }}>Streaming:</label>
+              <input
+                id="stream-toggle"
+                type="checkbox"
+                checked={useStream}
+                onChange={(e) => setUseStream(e.target.checked)}
+              />
+            </div>
+            
+            {/* Tool toggle buttons */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowAvailableTools(!showAvailableTools)}
+              icon={showAvailableTools ? 'angle-up' : 'angle-down'}
+            >
+              Available Tools
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowToolCalls(!showToolCalls)}
+              icon={showToolCalls ? 'angle-up' : 'angle-down'}
+            >
+              Tool Calls
+            </Button>
+          </div>
+          
+          <Button variant="primary" onClick={closeModal}>
+            Close
+          </Button>
+        </div>
       </Modal>
     </FieldSet>
   );
