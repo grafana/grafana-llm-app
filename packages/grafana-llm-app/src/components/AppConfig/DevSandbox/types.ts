@@ -4,4 +4,4 @@ export interface RenderedToolCall {
   running: boolean;
   error?: string;
   response?: any;
-} 
+}

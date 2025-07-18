@@ -17,7 +17,7 @@ function DevSandboxContent() {
   const [useStream, setUseStream] = useState(true);
   const [toolCalls, setToolCalls] = useState<Map<string, RenderedToolCall>>(new Map());
 
-  // Get available tools for the modals
+  // Get available tools
   const {
     loading: _,
     error: toolsError,

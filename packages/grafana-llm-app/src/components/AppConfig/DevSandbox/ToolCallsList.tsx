@@ -88,4 +88,4 @@ export function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedTo
       )}
     </div>
   );
-} 
+}

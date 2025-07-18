@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button, Field, Input, TextArea, Switch, Select } from '@grafana/ui';
 
 interface ToolParameterFormProps {
-  schema: any;
-  onParametersChange: (parameters: any) => void;
+  schema: any; // JSON Schema object
+  onParametersChange: (parameters: Record<string, any>) => void;
   onSubmit: () => void;
   isLoading?: boolean;
 }
@@ -18,6 +18,9 @@ interface FormField {
   default?: any;
 }
 
+/**
+ * Parses a JSON schema and extracts form field definitions
+ */
 function parseSchema(schema: any): FormField[] {
   if (!schema?.properties) {
     return [];
@@ -35,13 +38,13 @@ function parseSchema(schema: any): FormField[] {
   }));
 }
 
-function FormFieldComponent({ 
-  field, 
-  value, 
-  onChange 
-}: { 
-  field: FormField; 
-  value: any; 
+function FormFieldComponent({
+  field,
+  value,
+  onChange,
+}: {
+  field: FormField;
+  value: any;
   onChange: (value: any) => void;
 }) {
   const handleChange = (newValue: any) => {
@@ -56,7 +59,7 @@ function FormFieldComponent({
 
   // Handle enum/select fields
   if (field.enum && field.enum.length > 0) {
-    const options = field.enum.map(option => ({ label: option, value: option }));
+    const options = field.enum.map((option) => ({ label: option, value: option }));
     return (
       <Field {...fieldProps}>
         <Select
@@ -75,10 +78,7 @@ function FormFieldComponent({
     case 'boolean':
       return (
         <Field {...fieldProps}>
-          <Switch
-            value={Boolean(value)}
-            onChange={(e) => handleChange(e.currentTarget.checked)}
-          />
+          <Switch value={Boolean(value)} onChange={(e) => handleChange(e.currentTarget.checked)} />
         </Field>
       );
 
@@ -90,9 +90,8 @@ function FormFieldComponent({
             type="number"
             value={value || ''}
             onChange={(e) => {
-              const numValue = field.type === 'integer' 
-                ? parseInt(e.currentTarget.value, 10)
-                : parseFloat(e.currentTarget.value);
+              const numValue =
+                field.type === 'integer' ? parseInt(e.currentTarget.value, 10) : parseFloat(e.currentTarget.value);
               handleChange(isNaN(numValue) ? undefined : numValue);
             }}
             placeholder={field.example ? `e.g., ${field.example}` : undefined}
@@ -106,10 +105,14 @@ function FormFieldComponent({
           <TextArea
             value={Array.isArray(value) ? value.join('\n') : ''}
             onChange={(e) => {
-              const lines = e.currentTarget.value.split('\n').filter(line => line.trim());
+              const lines = e.currentTarget.value.split('\n').filter((line) => line.trim());
               handleChange(lines.length > 0 ? lines : undefined);
             }}
-            placeholder={field.example ? `e.g.,\n${Array.isArray(field.example) ? field.example.join('\n') : field.example}` : 'Enter items, one per line'}
+            placeholder={
+              field.example
+                ? `e.g.,\n${Array.isArray(field.example) ? field.example.join('\n') : field.example}`
+                : 'Enter items, one per line'
+            }
             rows={3}
           />
         </Field>
@@ -138,11 +141,12 @@ function FormFieldComponent({
     case 'string':
     default:
       // For long descriptions or if it looks like it might be multi-line, use TextArea
-      const isLongField = field.description && field.description.length > 100 || 
-                         field.name.toLowerCase().includes('description') ||
-                         field.name.toLowerCase().includes('query') ||
-                         field.name.toLowerCase().includes('message');
-      
+      const isLongField =
+        (field.description && field.description.length > 100) ||
+        field.name.toLowerCase().includes('description') ||
+        field.name.toLowerCase().includes('query') ||
+        field.name.toLowerCase().includes('message');
+
       if (isLongField) {
         return (
           <Field {...fieldProps}>
@@ -168,6 +172,10 @@ function FormFieldComponent({
   }
 }
 
+/**
+ * A dynamic form component that generates input fields based on a JSON schema.
+ * Provides a user-friendly interface for entering tool parameters.
+ */
 export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoading }: ToolParameterFormProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const fields = parseSchema(schema);
@@ -175,7 +183,7 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
   // Initialize form data with defaults
   useEffect(() => {
     const initialData: Record<string, any> = {};
-    fields.forEach(field => {
+    fields.forEach((field) => {
       if (field.default !== undefined) {
         initialData[field.name] = field.default;
       }
@@ -186,25 +194,28 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
   // Update parent when form data changes
   useEffect(() => {
     // Only include fields that have values
-    const cleanedData = Object.entries(formData).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as Record<string, any>);
-    
+    const cleanedData = Object.entries(formData).reduce(
+      (acc, [key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
     onParametersChange(cleanedData);
   }, [formData, onParametersChange]);
 
   const handleFieldChange = (fieldName: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: value,
     }));
   };
 
   const isFormValid = () => {
-    return fields.every(field => {
+    return fields.every((field) => {
       if (!field.required) {
         return true;
       }
@@ -216,9 +227,7 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
   if (fields.length === 0) {
     return (
       <div style={{ padding: '16px', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-color-secondary)', marginBottom: '16px' }}>
-          This tool requires no parameters.
-        </p>
+        <p style={{ color: 'var(--text-color-secondary)', marginBottom: '16px' }}>This tool requires no parameters.</p>
         <Button variant="primary" onClick={onSubmit} disabled={isLoading}>
           {isLoading ? 'Running...' : 'Run Tool'}
         </Button>
@@ -229,7 +238,7 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
   return (
     <div style={{ padding: '16px' }}>
       <div style={{ marginBottom: '20px' }}>
-        {fields.map(field => (
+        {fields.map((field) => (
           <div key={field.name} style={{ marginBottom: '16px' }}>
             <FormFieldComponent
               field={field}
@@ -239,26 +248,23 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
           </div>
         ))}
       </div>
-      
-      <Button 
-        variant="primary" 
-        onClick={onSubmit} 
-        disabled={isLoading || !isFormValid()}
-        style={{ width: '100%' }}
-      >
+
+      <Button variant="primary" onClick={onSubmit} disabled={isLoading || !isFormValid()} style={{ width: '100%' }}>
         {isLoading ? 'Running...' : 'Run Tool'}
       </Button>
-      
+
       {!isFormValid() && (
-        <div style={{ 
-          marginTop: '8px', 
-          fontSize: '12px', 
-          color: 'var(--error-color)',
-          textAlign: 'center'
-        }}>
+        <div
+          style={{
+            marginTop: '8px',
+            fontSize: '12px',
+            color: 'var(--error-color)',
+            textAlign: 'center',
+          }}
+        >
           Please fill in all required fields
         </div>
       )}
     </div>
   );
-} 
+}

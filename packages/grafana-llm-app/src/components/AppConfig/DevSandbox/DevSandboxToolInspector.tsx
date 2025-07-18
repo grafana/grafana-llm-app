@@ -7,57 +7,57 @@ import { ToolParameterForm } from './ToolParameterForm';
 // Tool category mapping
 const TOOL_CATEGORIES: Record<string, string> = {
   // Admin
-  'list_teams': 'Admin',
-  'list_users_by_org': 'Admin',
+  list_teams: 'Admin',
+  list_users_by_org: 'Admin',
   // Search
-  'search_dashboards': 'Search',
+  search_dashboards: 'Search',
   // Dashboard
-  'get_dashboard_by_uid': 'Dashboard',
-  'update_dashboard': 'Dashboard',
-  'get_dashboard_panel_queries': 'Dashboard',
+  get_dashboard_by_uid: 'Dashboard',
+  update_dashboard: 'Dashboard',
+  get_dashboard_panel_queries: 'Dashboard',
   // Datasources
-  'list_datasources': 'Datasources',
-  'get_datasource_by_uid': 'Datasources',
-  'get_datasource_by_name': 'Datasources',
+  list_datasources: 'Datasources',
+  get_datasource_by_uid: 'Datasources',
+  get_datasource_by_name: 'Datasources',
   // Prometheus
-  'query_prometheus': 'Prometheus',
-  'list_prometheus_metric_metadata': 'Prometheus',
-  'list_prometheus_metric_names': 'Prometheus',
-  'list_prometheus_label_names': 'Prometheus',
-  'list_prometheus_label_values': 'Prometheus',
+  query_prometheus: 'Prometheus',
+  list_prometheus_metric_metadata: 'Prometheus',
+  list_prometheus_metric_names: 'Prometheus',
+  list_prometheus_label_names: 'Prometheus',
+  list_prometheus_label_values: 'Prometheus',
   // Incident
-  'list_incidents': 'Incident',
-  'create_incident': 'Incident',
-  'add_activity_to_incident': 'Incident',
-  'get_incident': 'Incident',
+  list_incidents: 'Incident',
+  create_incident: 'Incident',
+  add_activity_to_incident: 'Incident',
+  get_incident: 'Incident',
   // Loki
-  'query_loki_logs': 'Loki',
-  'list_loki_label_names': 'Loki',
-  'list_loki_label_values': 'Loki',
-  'query_loki_stats': 'Loki',
+  query_loki_logs: 'Loki',
+  list_loki_label_names: 'Loki',
+  list_loki_label_values: 'Loki',
+  query_loki_stats: 'Loki',
   // Alerting
-  'list_alert_rules': 'Alerting',
-  'get_alert_rule_by_uid': 'Alerting',
-  'list_contact_points': 'Alerting',
+  list_alert_rules: 'Alerting',
+  get_alert_rule_by_uid: 'Alerting',
+  list_contact_points: 'Alerting',
   // OnCall
-  'list_oncall_schedules': 'OnCall',
-  'get_oncall_shift': 'OnCall',
-  'get_current_oncall_users': 'OnCall',
-  'list_oncall_teams': 'OnCall',
-  'list_oncall_users': 'OnCall',
+  list_oncall_schedules: 'OnCall',
+  get_oncall_shift: 'OnCall',
+  get_current_oncall_users: 'OnCall',
+  list_oncall_teams: 'OnCall',
+  list_oncall_users: 'OnCall',
   // Sift
-  'get_sift_investigation': 'Sift',
-  'get_sift_analysis': 'Sift',
-  'list_sift_investigations': 'Sift',
-  'find_error_pattern_logs': 'Sift',
-  'find_slow_requests': 'Sift',
+  get_sift_investigation: 'Sift',
+  get_sift_analysis: 'Sift',
+  list_sift_investigations: 'Sift',
+  find_error_pattern_logs: 'Sift',
+  find_slow_requests: 'Sift',
   // Pyroscope
-  'list_pyroscope_label_names': 'Pyroscope',
-  'list_pyroscope_label_values': 'Pyroscope',
-  'list_pyroscope_profile_types': 'Pyroscope',
-  'fetch_pyroscope_profile': 'Pyroscope',
+  list_pyroscope_label_names: 'Pyroscope',
+  list_pyroscope_label_values: 'Pyroscope',
+  list_pyroscope_profile_types: 'Pyroscope',
+  fetch_pyroscope_profile: 'Pyroscope',
   // Asserts
-  'get_assertions': 'Asserts',
+  get_assertions: 'Asserts',
 };
 
 interface ToolInspectorProps {
@@ -89,7 +89,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
     try {
       // Use parameters from form or JSON based on current mode
       let parameters = {};
-      
+
       if (inputMode === 'form') {
         parameters = formParameters;
       } else {
@@ -209,9 +209,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
               {tool.name}
             </code>
             {tool.annotations?.title && tool.annotations.title !== tool.name && (
-              <span style={{ fontSize: '14px', color: 'var(--text-color-secondary)' }}>
-                ({tool.annotations.title})
-              </span>
+              <span style={{ fontSize: '14px', color: 'var(--text-color-secondary)' }}>({tool.annotations.title})</span>
             )}
           </div>
           {tool.description && (
@@ -230,9 +228,10 @@ function ToolInspector({ tool }: ToolInspectorProps) {
           <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-color-secondary)' }}>
             {(() => {
               const properties = tool.inputSchema?.properties;
-              const paramCount = properties && typeof properties === 'object' && properties !== null 
-                ? Object.keys(properties).length 
-                : 0;
+              const paramCount =
+                properties && typeof properties === 'object' && properties !== null
+                  ? Object.keys(properties).length
+                  : 0;
               return paramCount > 0 ? <span>Parameters: {paramCount}</span> : null;
             })()}
             {(() => {
@@ -272,16 +271,8 @@ function ToolInspector({ tool }: ToolInspectorProps) {
             <div style={{ marginBottom: '12px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Test Parameters</h4>
               <TabsBar>
-                <Tab
-                  label="Form"
-                  active={inputMode === 'form'}
-                  onChangeTab={() => setInputMode('form')}
-                />
-                <Tab
-                  label="JSON"
-                  active={inputMode === 'json'}
-                  onChangeTab={() => setInputMode('json')}
-                />
+                <Tab label="Form" active={inputMode === 'form'} onChangeTab={() => setInputMode('form')} />
+                <Tab label="JSON" active={inputMode === 'json'} onChangeTab={() => setInputMode('json')} />
               </TabsBar>
             </div>
 
@@ -302,9 +293,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
                     marginBottom: '8px',
                   }}
                 >
-                  <span style={{ fontSize: '12px', color: 'var(--text-color-secondary)' }}>
-                    JSON Mode
-                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-color-secondary)' }}>JSON Mode</span>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -322,7 +311,12 @@ function ToolInspector({ tool }: ToolInspectorProps) {
                   style={{ fontFamily: 'monospace', fontSize: '12px' }}
                 />
                 <div style={{ marginTop: '12px' }}>
-                  <Button variant="primary" size="sm" onClick={handleTestTool} disabled={callResult?.loading || !client}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleTestTool}
+                    disabled={callResult?.loading || !client}
+                  >
                     {callResult?.loading ? <Spinner size="sm" /> : 'Test Tool'}
                   </Button>
                 </div>
@@ -393,20 +387,17 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
   });
 
   // Group tools by category
-  const groupedTools = filteredTools.reduce((groups, tool) => {
-    const category = TOOL_CATEGORIES[tool.name] || 'Ungrouped';
-    
-    // Debug logging for ungrouped tools
-    if (category === 'Ungrouped') {
-      console.log(`Ungrouped tool found: "${tool.name}"`);
-    }
-    
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-    groups[category].push(tool);
-    return groups;
-  }, {} as Record<string, Tool[]>);
+  const groupedTools = filteredTools.reduce(
+    (groups, tool) => {
+      const category = TOOL_CATEGORIES[tool.name] || 'Ungrouped';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(tool);
+      return groups;
+    },
+    {} as Record<string, Tool[]>
+  );
 
   // Sort categories with Ungrouped at the end
   const sortedCategories = Object.keys(groupedTools).sort((a, b) => {
@@ -469,11 +460,7 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
           </div>
         ) : (
           sortedCategories.map((category) => (
-            <CollapsableSection
-              key={category}
-              label={`${category} (${groupedTools[category].length})`}
-              isOpen={true}
-            >
+            <CollapsableSection key={category} label={`${category} (${groupedTools[category].length})`} isOpen={true}>
               <div style={{ marginTop: '8px' }}>
                 {groupedTools[category].map((tool, i) => (
                   <ToolInspector key={i} tool={tool} />
