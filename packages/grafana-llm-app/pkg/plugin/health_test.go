@@ -179,6 +179,31 @@ func TestCheckHealth(t *testing.T) {
 				Version: "unknown",
 			},
 		},
+		{
+			name: "anthropic unconfigured shows specific error",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{},
+				JSONData: json.RawMessage(`{
+					"provider": "anthropic",
+					"anthropic": {
+						"url": "%s"
+					}
+				}`),
+			},
+			expDetails: healthCheckDetails{
+				LLMProvider: llmProviderHealthDetails{
+					Configured: false,
+					OK:         false,
+					Error:      "No functioning models are available",
+					Models: map[Model]modelHealth{
+						ModelBase:  {OK: false, Error: "Anthropic API key is not configured"},
+						ModelLarge: {OK: false, Error: "Anthropic API key is not configured"},
+					},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
