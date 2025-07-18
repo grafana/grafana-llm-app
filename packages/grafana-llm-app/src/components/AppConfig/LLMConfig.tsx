@@ -6,7 +6,7 @@ import { Button, Card, Checkbox, FieldSet, Icon, useStyles2 } from '@grafana/ui'
 
 import { AppPluginSettings, Secrets, SecretsSet, ProviderType, getEffectiveProvider } from './AppConfig';
 import { ModelConfig } from './ModelConfig';
-import { DevSandbox } from './DevSandbox';
+import { DevSandbox } from './DevSandbox/DevSandbox';
 import { OpenAIConfig } from './OpenAI';
 import { OpenAILogo } from './OpenAILogo';
 import { AnthropicConfig } from './AnthropicConfig';
