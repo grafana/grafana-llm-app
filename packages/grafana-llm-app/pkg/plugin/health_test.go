@@ -204,6 +204,118 @@ func TestCheckHealth(t *testing.T) {
 				Version: "unknown",
 			},
 		},
+		{
+			name: "azure unconfigured - no API key and no model mappings",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{},
+				JSONData: json.RawMessage(`{
+					"provider": "azure",
+					"openAI": {
+						"url": "%s"
+					}
+				}`),
+			},
+			expDetails: healthCheckDetails{
+				LLMProvider: llmProviderHealthDetails{
+					Configured: false,
+					OK:         false,
+					Error:      "No functioning models are available",
+					Models: map[Model]modelHealth{
+						ModelBase:  {OK: false, Error: "Azure OpenAI API key and model mappings are not configured"},
+						ModelLarge: {OK: false, Error: "Azure OpenAI API key and model mappings are not configured"},
+					},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
+		{
+			name: "azure unconfigured - has API key but no model mappings",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				JSONData: json.RawMessage(`{
+					"provider": "azure",
+					"openAI": {
+						"url": "%s"
+					}
+				}`),
+			},
+			expDetails: healthCheckDetails{
+				LLMProvider: llmProviderHealthDetails{
+					Configured: false,
+					OK:         false,
+					Error:      "No functioning models are available",
+					Models: map[Model]modelHealth{
+						ModelBase:  {OK: false, Error: "Azure model mappings are not configured"},
+						ModelLarge: {OK: false, Error: "Azure model mappings are not configured"},
+					},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
+		{
+			name: "azure unconfigured - has model mappings but no API key",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{},
+				JSONData: json.RawMessage(`{
+					"provider": "azure",
+					"openAI": {
+						"url": "%s",
+						"azureModelMapping": [
+							["base", "gpt-35-turbo"],
+							["large", "gpt-4"]
+						]
+					}
+				}`),
+			},
+			expDetails: healthCheckDetails{
+				LLMProvider: llmProviderHealthDetails{
+					Configured: false,
+					OK:         false,
+					Error:      "No functioning models are available",
+					Models: map[Model]modelHealth{
+						ModelBase:  {OK: false, Error: "Azure OpenAI API key is not configured"},
+						ModelLarge: {OK: false, Error: "Azure OpenAI API key is not configured"},
+					},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
+		{
+			name: "azure configured - has both API key and model mappings",
+			settings: backend.AppInstanceSettings{
+				DecryptedSecureJSONData: map[string]string{openAIKey: "abcd1234"},
+				JSONData: json.RawMessage(`{
+					"provider": "azure",
+					"openAI": {
+						"url": "%s",
+						"azureModelMapping": [
+							["base", "gpt-35-turbo"],
+							["large", "gpt-4"]
+						]
+					}
+				}`),
+			},
+			responses: []mockProviderHealthResponse{
+				{code: http.StatusOK, body: "{}"},
+				{code: http.StatusOK, body: "{}"},
+			},
+			expDetails: healthCheckDetails{
+				LLMProvider: llmProviderHealthDetails{
+					Configured: true,
+					OK:         true,
+					Error:      "",
+					Models: map[Model]modelHealth{
+						ModelBase:  {OK: true, Error: ""},
+						ModelLarge: {OK: true, Error: ""},
+					},
+				},
+				Vector:  vectorHealthDetails{},
+				Version: "unknown",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()

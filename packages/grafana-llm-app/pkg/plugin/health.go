@@ -56,10 +56,19 @@ func (a *App) getUnconfiguredError() string {
 	case ProviderTypeOpenAI:
 		return "OpenAI API key is not configured"
 	case ProviderTypeAzure:
-		if len(a.settings.OpenAI.AzureMapping) == 0 {
+		hasAPIKey := a.settings.OpenAI.apiKey != ""
+		hasMappings := len(a.settings.OpenAI.AzureMapping) > 0
+
+		if !hasAPIKey && !hasMappings {
+			return "Azure OpenAI API key and model mappings are not configured"
+		}
+		if !hasAPIKey {
+			return "Azure OpenAI API key is not configured"
+		}
+		if !hasMappings {
 			return "Azure model mappings are not configured"
 		}
-		return "Azure OpenAI API key is not configured"
+		return "Azure OpenAI configuration is incomplete"
 	default:
 		return "LLM provider not configured"
 	}
