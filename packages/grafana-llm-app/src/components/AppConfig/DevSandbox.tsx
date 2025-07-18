@@ -63,7 +63,7 @@ function DevSandboxContent() {
             size="sm"
             onClick={() => setShowToolsModal(true)}
           >
-            Available Tools ({toolsData?.tools?.length || 0})
+            Tool Inspector ({toolsData?.tools?.length || 0})
           </Button>
           <Button
             variant="secondary"
