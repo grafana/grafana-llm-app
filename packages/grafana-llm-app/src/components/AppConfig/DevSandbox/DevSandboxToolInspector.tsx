@@ -37,7 +37,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
           setCallResult({
             loading: false,
             success: false,
-            error: `Invalid JSON parameters: ${e instanceof Error ? e.message : 'Unknown error'}`
+            error: `Invalid JSON parameters: ${e instanceof Error ? e.message : 'Unknown error'}`,
           });
           return;
         }
@@ -46,19 +46,19 @@ function ToolInspector({ tool }: ToolInspectorProps) {
       // Call the tool
       const response = await client.callTool({
         name: tool.name,
-        arguments: parameters
+        arguments: parameters,
       });
 
       setCallResult({
         loading: false,
         success: true,
-        response
+        response,
       });
     } catch (error) {
       setCallResult({
         loading: false,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -67,7 +67,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
     if (!schema) {
       return 'No schema available';
     }
-    
+
     try {
       return JSON.stringify(schema, null, 2);
     } catch {
@@ -83,7 +83,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
     const example: any = {};
     const properties = tool.inputSchema.properties;
 
-    Object.keys(properties).forEach(key => {
+    Object.keys(properties).forEach((key) => {
       const prop = properties[key] as any;
       if (prop && typeof prop === 'object') {
         if (prop.type === 'string') {
@@ -110,21 +110,23 @@ function ToolInspector({ tool }: ToolInspectorProps) {
   };
 
   return (
-    <div style={{
-      border: '1px solid var(--border-color)',
-      borderRadius: '8px',
-      marginBottom: '12px',
-      backgroundColor: 'var(--background-color-primary)'
-    }}>
+    <div
+      style={{
+        border: '1px solid var(--border-color)',
+        borderRadius: '8px',
+        marginBottom: '12px',
+        backgroundColor: 'var(--background-color-primary)',
+      }}
+    >
       {/* Tool Header */}
-      <div 
+      <div
         style={{
           padding: '12px 16px',
           borderBottom: expanded ? '1px solid var(--border-color)' : 'none',
           cursor: 'pointer',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
         }}
         onClick={() => setExpanded(!expanded)}
       >
@@ -133,11 +135,13 @@ function ToolInspector({ tool }: ToolInspectorProps) {
             {tool.annotations?.title ?? tool.name}
           </div>
           {tool.description && (
-            <div style={{ 
-              fontSize: '13px', 
-              color: 'var(--text-color-secondary)',
-              lineHeight: '1.4'
-            }}>
+            <div
+              style={{
+                fontSize: '13px',
+                color: 'var(--text-color-secondary)',
+                lineHeight: '1.4',
+              }}
+            >
               {tool.description}
             </div>
           )}
@@ -151,28 +155,32 @@ function ToolInspector({ tool }: ToolInspectorProps) {
           {/* Tool Schema */}
           <div style={{ marginBottom: '20px' }}>
             <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Input Schema</h4>
-            <pre style={{
-              backgroundColor: 'var(--background-color-secondary)',
-              padding: '12px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              lineHeight: '1.4',
-              overflow: 'auto',
-              maxHeight: '200px',
-              border: '1px solid var(--border-color)'
-            }}>
+            <pre
+              style={{
+                backgroundColor: 'var(--background-color-secondary)',
+                padding: '12px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                lineHeight: '1.4',
+                overflow: 'auto',
+                maxHeight: '200px',
+                border: '1px solid var(--border-color)',
+              }}
+            >
               {formatSchema(tool.inputSchema)}
             </pre>
           </div>
 
           {/* Parameter Input */}
           <div style={{ marginBottom: '16px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: '8px'
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px',
+              }}
+            >
               <h4 style={{ margin: 0, fontSize: '14px' }}>Test Parameters</h4>
               <Button
                 variant="secondary"
@@ -194,12 +202,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
 
           {/* Test Button */}
           <div style={{ marginBottom: '16px' }}>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleTestTool}
-              disabled={callResult?.loading || !client}
-            >
+            <Button variant="primary" size="sm" onClick={handleTestTool} disabled={callResult?.loading || !client}>
               {callResult?.loading ? <Spinner size="sm" /> : 'Test Tool'}
             </Button>
           </div>
@@ -208,33 +211,39 @@ function ToolInspector({ tool }: ToolInspectorProps) {
           {callResult && !callResult.loading && (
             <div style={{ marginTop: '16px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>
-                Result {callResult.success ? 
-                  <Icon name="check" style={{ color: 'var(--success-color)', marginLeft: '8px' }} /> :
+                Result{' '}
+                {callResult.success ? (
+                  <Icon name="check" style={{ color: 'var(--success-color)', marginLeft: '8px' }} />
+                ) : (
                   <Icon name="exclamation-triangle" style={{ color: 'var(--error-color)', marginLeft: '8px' }} />
-                }
+                )}
               </h4>
-              
+
               {callResult.error ? (
-                <div style={{
-                  backgroundColor: 'var(--error-background)',
-                  color: 'var(--error-text-color)',
-                  padding: '12px',
-                  borderRadius: '4px',
-                  fontSize: '13px'
-                }}>
+                <div
+                  style={{
+                    backgroundColor: 'var(--error-background)',
+                    color: 'var(--error-text-color)',
+                    padding: '12px',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                  }}
+                >
                   {callResult.error}
                 </div>
               ) : (
-                <pre style={{
-                  backgroundColor: 'var(--background-color-secondary)',
-                  padding: '12px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  lineHeight: '1.4',
-                  overflow: 'auto',
-                  maxHeight: '300px',
-                  border: '1px solid var(--border-color)'
-                }}>
+                <pre
+                  style={{
+                    backgroundColor: 'var(--background-color-secondary)',
+                    padding: '12px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    lineHeight: '1.4',
+                    overflow: 'auto',
+                    maxHeight: '300px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
                   {JSON.stringify(callResult.response, null, 2)}
                 </pre>
               )}
@@ -253,7 +262,7 @@ interface DevSandboxToolInspectorProps {
 export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps) {
   const [searchFilter, setSearchFilter] = useState('');
 
-  const filteredTools = tools.filter(tool => {
+  const filteredTools = tools.filter((tool) => {
     const searchLower = searchFilter.toLowerCase();
     const name = (tool.annotations?.title ?? tool.name).toLowerCase();
     const description = (tool.description || '').toLowerCase();
@@ -262,12 +271,14 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
 
   if (tools.length === 0) {
     return (
-      <div style={{ 
-        color: 'var(--text-color-secondary)', 
-        fontStyle: 'italic',
-        textAlign: 'center',
-        padding: '24px'
-      }}>
+      <div
+        style={{
+          color: 'var(--text-color-secondary)',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          padding: '24px',
+        }}
+      >
         No MCP tools available
       </div>
     );
@@ -288,7 +299,7 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
             border: '1px solid var(--border-color)',
             borderRadius: '4px',
             backgroundColor: 'var(--background-color-primary)',
-            fontSize: '14px'
+            fontSize: '14px',
           }}
         />
       </div>
@@ -296,20 +307,20 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
       {/* Tools List */}
       <div>
         {filteredTools.length === 0 ? (
-          <div style={{ 
-            color: 'var(--text-color-secondary)', 
-            fontStyle: 'italic',
-            textAlign: 'center',
-            padding: '24px'
-          }}>
+          <div
+            style={{
+              color: 'var(--text-color-secondary)',
+              fontStyle: 'italic',
+              textAlign: 'center',
+              padding: '24px',
+            }}
+          >
             No tools match your search
           </div>
         ) : (
-          filteredTools.map((tool, i) => (
-            <ToolInspector key={i} tool={tool} />
-          ))
+          filteredTools.map((tool, i) => <ToolInspector key={i} tool={tool} />)
         )}
       </div>
     </div>
   );
-} 
+}

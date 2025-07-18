@@ -12,11 +12,13 @@ interface DevSandboxToolsModalProps {
 export function DevSandboxToolsModal({ isOpen, onClose, tools }: DevSandboxToolsModalProps) {
   return (
     <Modal title={`MCP Tool Inspector (${tools.length} tools)`} isOpen={isOpen} onDismiss={onClose}>
-      <div style={{ 
-        maxHeight: '600px', 
-        overflowY: 'auto',
-        padding: '8px 0'
-      }}>
+      <div
+        style={{
+          maxHeight: '600px',
+          overflowY: 'auto',
+          padding: '8px 0',
+        }}
+      >
         <DevSandboxToolInspector tools={tools} />
       </div>
       <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
@@ -26,4 +28,4 @@ export function DevSandboxToolsModal({ isOpen, onClose, tools }: DevSandboxTools
       </div>
     </Modal>
   );
-} 
+}

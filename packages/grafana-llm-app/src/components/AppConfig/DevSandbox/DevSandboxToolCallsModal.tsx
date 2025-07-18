@@ -19,12 +19,14 @@ function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedToolCall>
   return (
     <div>
       {toolCalls.size === 0 ? (
-        <div style={{ 
-          color: 'var(--text-color-secondary)', 
-          fontStyle: 'italic',
-          textAlign: 'center',
-          padding: '24px'
-        }}>
+        <div
+          style={{
+            color: 'var(--text-color-secondary)',
+            fontStyle: 'italic',
+            textAlign: 'center',
+            padding: '24px',
+          }}
+        >
           No tool calls yet
         </div>
       ) : (
@@ -37,17 +39,17 @@ function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedToolCall>
                 padding: '12px',
                 backgroundColor: 'var(--background-color-primary)',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color)'
+                border: '1px solid var(--border-color)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <span style={{ fontWeight: 500 }}>{toolCall.name}</span>
                 <code
-                  style={{ 
-                    backgroundColor: 'var(--background-color-secondary)', 
-                    padding: '4px 8px', 
+                  style={{
+                    backgroundColor: 'var(--background-color-secondary)',
+                    padding: '4px 8px',
                     borderRadius: '4px',
-                    fontSize: '12px'
+                    fontSize: '12px',
                   }}
                 >
                   {toolCall.arguments}
@@ -104,11 +106,13 @@ function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedToolCall>
 export function DevSandboxToolCallsModal({ isOpen, onClose, toolCalls }: DevSandboxToolCallsModalProps) {
   return (
     <Modal title={`Tool Calls (${toolCalls.size})`} isOpen={isOpen} onDismiss={onClose}>
-      <div style={{ 
-        maxHeight: '500px', 
-        overflowY: 'auto',
-        padding: '8px 0'
-      }}>
+      <div
+        style={{
+          maxHeight: '500px',
+          overflowY: 'auto',
+          padding: '8px 0',
+        }}
+      >
         <ToolCallsList toolCalls={toolCalls} />
       </div>
       <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
@@ -118,4 +122,4 @@ export function DevSandboxToolCallsModal({ isOpen, onClose, toolCalls }: DevSand
       </div>
     </Modal>
   );
-} 
+}

@@ -51,12 +51,12 @@ async function handleToolCall(
 
 export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandboxChatProps) {
   const { client } = mcp.useMCPClient();
-  
+
   // Chat state
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   // Ref for auto-scrolling
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +68,11 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
   }, [chatHistory]);
 
   // Get available tools
-  const { loading: toolsLoading, error: toolsError, value: toolsData } = useAsync(async () => {
+  const {
+    loading: toolsLoading,
+    error: toolsError,
+    value: toolsData,
+  } = useAsync(async () => {
     const enabled = await llm.enabled();
     if (!enabled) {
       return { enabled: false, tools: [] };
@@ -77,10 +81,7 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
     return { enabled: true, tools };
   }, [client]);
 
-  const handleStreamingChatWithHistory = async (
-    messages: llm.Message[],
-    tools: any[]
-  ) => {
+  const handleStreamingChatWithHistory = async (messages: llm.Message[], tools: any[]) => {
     let stream = llm.streamChatCompletions({
       model: llm.Model.LARGE,
       messages,
@@ -100,12 +101,10 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
     );
 
     // Subscribe to content updates
-    contentMessages.subscribe(content => {
-      setChatHistory(prev => prev.map((msg, idx) => 
-        idx === prev.length - 1 && msg.role === 'assistant' 
-          ? { ...msg, content }
-          : msg
-      ));
+    contentMessages.subscribe((content) => {
+      setChatHistory((prev) =>
+        prev.map((msg, idx) => (idx === prev.length - 1 && msg.role === 'assistant' ? { ...msg, content } : msg))
+      );
     });
 
     let toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
@@ -140,22 +139,17 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
         })
       );
 
-      contentMessages.subscribe(content => {
-        setChatHistory(prev => prev.map((msg, idx) => 
-          idx === prev.length - 1 && msg.role === 'assistant' 
-            ? { ...msg, content }
-            : msg
-        ));
+      contentMessages.subscribe((content) => {
+        setChatHistory((prev) =>
+          prev.map((msg, idx) => (idx === prev.length - 1 && msg.role === 'assistant' ? { ...msg, content } : msg))
+        );
       });
 
       toolCallMessages = await lastValueFrom(toolCallsStream.pipe(llm.accumulateToolCalls()));
     }
   };
 
-  const handleNonStreamingChatWithHistory = async (
-    messages: llm.Message[],
-    tools: any[]
-  ) => {
+  const handleNonStreamingChatWithHistory = async (messages: llm.Message[], tools: any[]) => {
     let response = await llm.chatCompletions({
       model: llm.Model.BASE,
       messages,
@@ -177,11 +171,13 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
     }
 
     // Update the assistant message in history
-    setChatHistory(prev => prev.map((msg, idx) => 
-      idx === prev.length - 1 && msg.role === 'assistant' 
-        ? { ...msg, content: response.choices[0].message.content || '' }
-        : msg
-    ));
+    setChatHistory((prev) =>
+      prev.map((msg, idx) =>
+        idx === prev.length - 1 && msg.role === 'assistant'
+          ? { ...msg, content: response.choices[0].message.content || '' }
+          : msg
+      )
+    );
   };
 
   const sendMessage = async () => {
@@ -196,7 +192,7 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
     };
 
     // Add user message to history
-    setChatHistory(prev => [...prev, userMessage]);
+    setChatHistory((prev) => [...prev, userMessage]);
     setCurrentInput('');
     setIsGenerating(true);
     setToolCalls(new Map());
@@ -208,7 +204,7 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
       timestamp: new Date(),
     };
 
-    setChatHistory(prev => [...prev, assistantMessage]);
+    setChatHistory((prev) => [...prev, assistantMessage]);
 
     const messages: llm.Message[] = [
       {
@@ -216,7 +212,7 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
         content:
           'You are a helpful assistant with deep knowledge of the Grafana, Prometheus and general observability ecosystem.',
       },
-      ...chatHistory.map(msg => ({ role: msg.role, content: msg.content })),
+      ...chatHistory.map((msg) => ({ role: msg.role, content: msg.content })),
       { role: 'user', content: userMessage.content },
     ];
 
@@ -229,11 +225,13 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
     } catch (error) {
       console.error('Error in chat completion:', error);
       // Update the assistant message with error
-      setChatHistory(prev => prev.map((msg, idx) => 
-        idx === prev.length - 1 && msg.role === 'assistant' 
-          ? { ...msg, content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` }
-          : msg
-      ));
+      setChatHistory((prev) =>
+        prev.map((msg, idx) =>
+          idx === prev.length - 1 && msg.role === 'assistant'
+            ? { ...msg, content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` }
+            : msg
+        )
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -257,12 +255,12 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
   return (
     <Stack direction="column" gap={3}>
       {/* Chat history */}
-      <div 
+      <div
         ref={chatContainerRef}
-        style={{ 
-          height: '400px', 
-          overflowY: 'auto', 
-          border: '1px solid var(--border-color)', 
+        style={{
+          height: '400px',
+          overflowY: 'auto',
+          border: '1px solid var(--border-color)',
           borderRadius: '8px',
           padding: '16px',
           backgroundColor: 'var(--background-color-secondary)',
@@ -281,7 +279,7 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
                   display: 'flex',
                   flexDirection: 'row',
                   marginBottom: '12px',
-                  width: '100%'
+                  width: '100%',
                 }}
               >
                 <div
@@ -289,22 +287,22 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
                     maxWidth: '90%',
                     padding: '10px 14px',
                     borderRadius: '12px',
-                    backgroundColor: message.role === 'user' 
-                      ? '#007acc' 
-                      : 'var(--background-color-primary)',
-                    color: message.role === 'user' 
-                      ? 'white' 
-                      : 'var(--text-color-primary)',
+                    backgroundColor: message.role === 'user' ? '#007acc' : 'var(--background-color-primary)',
+                    color: message.role === 'user' ? 'white' : 'var(--text-color-primary)',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
                     boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
                     border: message.role === 'assistant' ? '1px solid var(--border-color)' : 'none',
                     fontSize: '14px',
-                    lineHeight: '1.4'
+                    lineHeight: '1.4',
                   }}
                 >
-                  {message.content || (message.role === 'assistant' && isGenerating && index === chatHistory.length - 1 ? 
-                    <span style={{ opacity: 0.7 }}>...</span> : '')}
+                  {message.content ||
+                    (message.role === 'assistant' && isGenerating && index === chatHistory.length - 1 ? (
+                      <span style={{ opacity: 0.7 }}>...</span>
+                    ) : (
+                      ''
+                    ))}
                 </div>
               </div>
             ))}
@@ -323,14 +321,10 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
           style={{ flex: 1 }}
           rows={3}
         />
-        <Button
-          onClick={sendMessage}
-          disabled={!currentInput.trim() || isGenerating || toolsLoading}
-          variant="primary"
-        >
+        <Button onClick={sendMessage} disabled={!currentInput.trim() || isGenerating || toolsLoading} variant="primary">
           {isGenerating ? <Spinner size="sm" /> : 'Send'}
         </Button>
       </Stack>
     </Stack>
   );
-} 
+}
