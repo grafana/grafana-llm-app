@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Spinner, Icon, TextArea, CollapsableSection } from '@grafana/ui';
+import { Button, Spinner, Icon, TextArea, CollapsableSection, Tab, TabsBar } from '@grafana/ui';
 import { Tool } from '@modelcontextprotocol/sdk/types';
 import { mcp } from '@grafana/llm';
+import { ToolParameterForm } from './ToolParameterForm';
 
 // Tool category mapping
 const TOOL_CATEGORIES: Record<string, string> = {
@@ -74,6 +75,8 @@ function ToolInspector({ tool }: ToolInspectorProps) {
   const { client } = mcp.useMCPClient();
   const [expanded, setExpanded] = useState(false);
   const [parametersInput, setParametersInput] = useState('{}');
+  const [formParameters, setFormParameters] = useState<any>({});
+  const [inputMode, setInputMode] = useState<'form' | 'json'>('form');
   const [callResult, setCallResult] = useState<ToolCallResult | null>(null);
 
   const handleTestTool = async () => {
@@ -84,18 +87,23 @@ function ToolInspector({ tool }: ToolInspectorProps) {
     setCallResult({ loading: true });
 
     try {
-      // Parse the parameters input
+      // Use parameters from form or JSON based on current mode
       let parameters = {};
-      if (parametersInput.trim()) {
-        try {
-          parameters = JSON.parse(parametersInput);
-        } catch (e) {
-          setCallResult({
-            loading: false,
-            success: false,
-            error: `Invalid JSON parameters: ${e instanceof Error ? e.message : 'Unknown error'}`,
-          });
-          return;
+      
+      if (inputMode === 'form') {
+        parameters = formParameters;
+      } else {
+        if (parametersInput.trim()) {
+          try {
+            parameters = JSON.parse(parametersInput);
+          } catch (e) {
+            setCallResult({
+              loading: false,
+              success: false,
+              error: `Invalid JSON parameters: ${e instanceof Error ? e.message : 'Unknown error'}`,
+            });
+            return;
+          }
         }
       }
 
@@ -261,38 +269,65 @@ function ToolInspector({ tool }: ToolInspectorProps) {
 
           {/* Parameter Input */}
           <div style={{ marginBottom: '16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px',
-              }}
-            >
-              <h4 style={{ margin: 0, fontSize: '14px' }}>Test Parameters</h4>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={fillExampleParameters}
-                disabled={!tool.inputSchema?.properties}
-              >
-                Fill Example
-              </Button>
+            <div style={{ marginBottom: '12px' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Test Parameters</h4>
+              <TabsBar>
+                <Tab
+                  label="Form"
+                  active={inputMode === 'form'}
+                  onChangeTab={() => setInputMode('form')}
+                />
+                <Tab
+                  label="JSON"
+                  active={inputMode === 'json'}
+                  onChangeTab={() => setInputMode('json')}
+                />
+              </TabsBar>
             </div>
-            <TextArea
-              value={parametersInput}
-              onChange={(e) => setParametersInput(e.currentTarget.value)}
-              placeholder="Enter JSON parameters for testing..."
-              rows={4}
-              style={{ fontFamily: 'monospace', fontSize: '12px' }}
-            />
-          </div>
 
-          {/* Test Button */}
-          <div style={{ marginBottom: '16px' }}>
-            <Button variant="primary" size="sm" onClick={handleTestTool} disabled={callResult?.loading || !client}>
-              {callResult?.loading ? <Spinner size="sm" /> : 'Test Tool'}
-            </Button>
+            {inputMode === 'form' ? (
+              <ToolParameterForm
+                schema={tool.inputSchema}
+                onParametersChange={setFormParameters}
+                onSubmit={handleTestTool}
+                isLoading={callResult?.loading}
+              />
+            ) : (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <span style={{ fontSize: '12px', color: 'var(--text-color-secondary)' }}>
+                    JSON Mode
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={fillExampleParameters}
+                    disabled={!tool.inputSchema?.properties}
+                  >
+                    Fill Example
+                  </Button>
+                </div>
+                <TextArea
+                  value={parametersInput}
+                  onChange={(e) => setParametersInput(e.currentTarget.value)}
+                  placeholder="Enter JSON parameters for testing..."
+                  rows={4}
+                  style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                />
+                <div style={{ marginTop: '12px' }}>
+                  <Button variant="primary" size="sm" onClick={handleTestTool} disabled={callResult?.loading || !client}>
+                    {callResult?.loading ? <Spinner size="sm" /> : 'Test Tool'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Call Result */}
