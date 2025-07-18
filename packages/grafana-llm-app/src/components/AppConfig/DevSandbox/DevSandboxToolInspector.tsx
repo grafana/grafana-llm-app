@@ -45,9 +45,9 @@ const TOOL_CATEGORIES: Record<string, string> = {
   'list_oncall_teams': 'OnCall',
   'list_oncall_users': 'OnCall',
   // Sift
-  'get_investigation': 'Sift',
-  'get_analysis': 'Sift',
-  'list_investigations': 'Sift',
+  'get_sift_investigation': 'Sift',
+  'get_sift_analysis': 'Sift',
+  'list_sift_investigations': 'Sift',
   'find_error_pattern_logs': 'Sift',
   'find_slow_requests': 'Sift',
   // Pyroscope
@@ -360,6 +360,12 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
   // Group tools by category
   const groupedTools = filteredTools.reduce((groups, tool) => {
     const category = TOOL_CATEGORIES[tool.name] || 'Ungrouped';
+    
+    // Debug logging for ungrouped tools
+    if (category === 'Ungrouped') {
+      console.log(`Ungrouped tool found: "${tool.name}"`);
+    }
+    
     if (!groups[category]) {
       groups[category] = [];
     }
