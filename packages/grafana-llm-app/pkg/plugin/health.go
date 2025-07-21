@@ -46,6 +46,34 @@ func getVersion() string {
 	return buildInfo.Version
 }
 
+// getUnconfiguredError returns a specific error message based on the provider type
+func (a *App) getUnconfiguredError() string {
+	provider := a.settings.getEffectiveProvider()
+
+	switch provider {
+	case ProviderTypeAnthropic:
+		return "Anthropic API key is not configured"
+	case ProviderTypeOpenAI:
+		return "OpenAI API key is not configured"
+	case ProviderTypeAzure:
+		hasAPIKey := a.settings.OpenAI.apiKey != ""
+		hasMappings := len(a.settings.OpenAI.AzureMapping) > 0
+
+		if !hasAPIKey && !hasMappings {
+			return "Azure OpenAI API key and model mappings are not configured"
+		}
+		if !hasAPIKey {
+			return "Azure OpenAI API key is not configured"
+		}
+		if !hasMappings {
+			return "Azure model mappings are not configured"
+		}
+		return "Azure OpenAI configuration is incomplete"
+	default:
+		return "LLM provider not configured"
+	}
+}
+
 func (a *App) testProviderModel(ctx context.Context, model Model) error {
 	llmProvider, err := createProvider(a.settings)
 	if err != nil {
@@ -91,7 +119,7 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 	}
 
 	for _, model := range supportedModels {
-		health := modelHealth{OK: false, Error: "LLM provider not configured"}
+		health := modelHealth{OK: false, Error: a.getUnconfiguredError()}
 		if d.Configured {
 			health.OK = true
 			health.Error = ""
