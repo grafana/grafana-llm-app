@@ -37,6 +37,14 @@
         "action": "orgs:read"
       },
       {
+        "action": "teams:read",
+        "scope": "teams:*"
+      },
+      {
+        "action": "users:read",
+        "scope": "global.users:*"
+      },
+      {
         "action": "datasources:read",
         "scope": "datasources:*"
       },
@@ -49,8 +57,35 @@
         "scope": "dashboards:uid:*"
       },
       {
+        "action": "dashboards:create",
+        "scope": "dashboards:*"
+      },
+      {
+        "action": "dashboards:write",
+        "scope": "dashboards:uid:*"
+      },
+      {
         "action": "folders:read",
         "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.notifications:read"
+      },
+      {
+        "action": "grafana-oncall-app.schedules:read"
+      },
+      {
+        "action": "grafana-oncall-app.user-settings:read"
+      },
+      {
+        "action": "grafana-irm-app.schedules:read"
+      },
+      {
+        "action": "grafana-irm-app.user-settings:read"
       },
       {
         "action": "plugins.app:access",
