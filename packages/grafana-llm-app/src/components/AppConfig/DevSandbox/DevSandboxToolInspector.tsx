@@ -1,7 +1,64 @@
 import React, { useState } from 'react';
-import { Button, Spinner, Icon, TextArea } from '@grafana/ui';
+import { Button, Spinner, Icon, TextArea, CollapsableSection, Tab, TabsBar } from '@grafana/ui';
 import { Tool } from '@modelcontextprotocol/sdk/types';
 import { mcp } from '@grafana/llm';
+import { ToolParameterForm } from './ToolParameterForm';
+
+// Tool category mapping
+const TOOL_CATEGORIES: Record<string, string> = {
+  // Admin
+  list_teams: 'Admin',
+  list_users_by_org: 'Admin',
+  // Search
+  search_dashboards: 'Search',
+  // Dashboard
+  get_dashboard_by_uid: 'Dashboard',
+  update_dashboard: 'Dashboard',
+  get_dashboard_panel_queries: 'Dashboard',
+  // Datasources
+  list_datasources: 'Datasources',
+  get_datasource_by_uid: 'Datasources',
+  get_datasource_by_name: 'Datasources',
+  // Prometheus
+  query_prometheus: 'Prometheus',
+  list_prometheus_metric_metadata: 'Prometheus',
+  list_prometheus_metric_names: 'Prometheus',
+  list_prometheus_label_names: 'Prometheus',
+  list_prometheus_label_values: 'Prometheus',
+  // Incident
+  list_incidents: 'Incident',
+  create_incident: 'Incident',
+  add_activity_to_incident: 'Incident',
+  get_incident: 'Incident',
+  // Loki
+  query_loki_logs: 'Loki',
+  list_loki_label_names: 'Loki',
+  list_loki_label_values: 'Loki',
+  query_loki_stats: 'Loki',
+  // Alerting
+  list_alert_rules: 'Alerting',
+  get_alert_rule_by_uid: 'Alerting',
+  list_contact_points: 'Alerting',
+  // OnCall
+  list_oncall_schedules: 'OnCall',
+  get_oncall_shift: 'OnCall',
+  get_current_oncall_users: 'OnCall',
+  list_oncall_teams: 'OnCall',
+  list_oncall_users: 'OnCall',
+  // Sift
+  get_sift_investigation: 'Sift',
+  get_sift_analysis: 'Sift',
+  list_sift_investigations: 'Sift',
+  find_error_pattern_logs: 'Sift',
+  find_slow_requests: 'Sift',
+  // Pyroscope
+  list_pyroscope_label_names: 'Pyroscope',
+  list_pyroscope_label_values: 'Pyroscope',
+  list_pyroscope_profile_types: 'Pyroscope',
+  fetch_pyroscope_profile: 'Pyroscope',
+  // Asserts
+  get_assertions: 'Asserts',
+};
 
 interface ToolInspectorProps {
   tool: Tool;
@@ -18,6 +75,8 @@ function ToolInspector({ tool }: ToolInspectorProps) {
   const { client } = mcp.useMCPClient();
   const [expanded, setExpanded] = useState(false);
   const [parametersInput, setParametersInput] = useState('{}');
+  const [formParameters, setFormParameters] = useState<any>({});
+  const [inputMode, setInputMode] = useState<'form' | 'json'>('form');
   const [callResult, setCallResult] = useState<ToolCallResult | null>(null);
 
   const handleTestTool = async () => {
@@ -28,18 +87,23 @@ function ToolInspector({ tool }: ToolInspectorProps) {
     setCallResult({ loading: true });
 
     try {
-      // Parse the parameters input
+      // Use parameters from form or JSON based on current mode
       let parameters = {};
-      if (parametersInput.trim()) {
-        try {
-          parameters = JSON.parse(parametersInput);
-        } catch (e) {
-          setCallResult({
-            loading: false,
-            success: false,
-            error: `Invalid JSON parameters: ${e instanceof Error ? e.message : 'Unknown error'}`,
-          });
-          return;
+
+      if (inputMode === 'form') {
+        parameters = formParameters;
+      } else {
+        if (parametersInput.trim()) {
+          try {
+            parameters = JSON.parse(parametersInput);
+          } catch (e) {
+            setCallResult({
+              loading: false,
+              success: false,
+              error: `Invalid JSON parameters: ${e instanceof Error ? e.message : 'Unknown error'}`,
+            });
+            return;
+          }
         }
       }
 
@@ -130,9 +194,23 @@ function ToolInspector({ tool }: ToolInspectorProps) {
         }}
         onClick={() => setExpanded(!expanded)}
       >
-        <div>
-          <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '4px' }}>
-            {tool.annotations?.title ?? tool.name}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <code
+              style={{
+                fontWeight: 500,
+                fontSize: '15px',
+                backgroundColor: 'var(--background-color-secondary)',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              {tool.name}
+            </code>
+            {tool.annotations?.title && tool.annotations.title !== tool.name && (
+              <span style={{ fontSize: '14px', color: 'var(--text-color-secondary)' }}>({tool.annotations.title})</span>
+            )}
           </div>
           {tool.description && (
             <div
@@ -140,11 +218,28 @@ function ToolInspector({ tool }: ToolInspectorProps) {
                 fontSize: '13px',
                 color: 'var(--text-color-secondary)',
                 lineHeight: '1.4',
+                marginBottom: '4px',
               }}
             >
               {tool.description}
             </div>
           )}
+          {/* Additional metadata */}
+          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-color-secondary)' }}>
+            {(() => {
+              const properties = tool.inputSchema?.properties;
+              const paramCount =
+                properties && typeof properties === 'object' && properties !== null
+                  ? Object.keys(properties).length
+                  : 0;
+              return paramCount > 0 ? <span>Parameters: {paramCount}</span> : null;
+            })()}
+            {(() => {
+              const required = tool.inputSchema?.required;
+              const requiredCount = Array.isArray(required) ? required.length : 0;
+              return requiredCount > 0 ? <span>Required: {requiredCount}</span> : null;
+            })()}
+          </div>
         </div>
         <Icon name={expanded ? 'angle-up' : 'angle-down'} />
       </div>
@@ -173,38 +268,60 @@ function ToolInspector({ tool }: ToolInspectorProps) {
 
           {/* Parameter Input */}
           <div style={{ marginBottom: '16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px',
-              }}
-            >
-              <h4 style={{ margin: 0, fontSize: '14px' }}>Test Parameters</h4>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={fillExampleParameters}
-                disabled={!tool.inputSchema?.properties}
-              >
-                Fill Example
-              </Button>
+            <div style={{ marginBottom: '12px' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Test Parameters</h4>
+              <TabsBar>
+                <Tab label="Form" active={inputMode === 'form'} onChangeTab={() => setInputMode('form')} />
+                <Tab label="JSON" active={inputMode === 'json'} onChangeTab={() => setInputMode('json')} />
+              </TabsBar>
             </div>
-            <TextArea
-              value={parametersInput}
-              onChange={(e) => setParametersInput(e.currentTarget.value)}
-              placeholder="Enter JSON parameters for testing..."
-              rows={4}
-              style={{ fontFamily: 'monospace', fontSize: '12px' }}
-            />
-          </div>
 
-          {/* Test Button */}
-          <div style={{ marginBottom: '16px' }}>
-            <Button variant="primary" size="sm" onClick={handleTestTool} disabled={callResult?.loading || !client}>
-              {callResult?.loading ? <Spinner size="sm" /> : 'Test Tool'}
-            </Button>
+            {inputMode === 'form' ? (
+              <ToolParameterForm
+                schema={tool.inputSchema}
+                onParametersChange={setFormParameters}
+                onSubmit={handleTestTool}
+                isLoading={callResult?.loading}
+              />
+            ) : (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <span style={{ fontSize: '12px', color: 'var(--text-color-secondary)' }}>JSON Mode</span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={fillExampleParameters}
+                    disabled={!tool.inputSchema?.properties}
+                  >
+                    Fill Example
+                  </Button>
+                </div>
+                <TextArea
+                  value={parametersInput}
+                  onChange={(e) => setParametersInput(e.currentTarget.value)}
+                  placeholder="Enter JSON parameters for testing..."
+                  rows={4}
+                  style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                />
+                <div style={{ marginTop: '12px' }}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleTestTool}
+                    disabled={callResult?.loading || !client}
+                  >
+                    {callResult?.loading ? <Spinner size="sm" /> : 'Test Tool'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Call Result */}
@@ -269,6 +386,30 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
     return name.includes(searchLower) || description.includes(searchLower);
   });
 
+  // Group tools by category
+  const groupedTools = filteredTools.reduce(
+    (groups, tool) => {
+      const category = TOOL_CATEGORIES[tool.name] || 'Ungrouped';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(tool);
+      return groups;
+    },
+    {} as Record<string, Tool[]>
+  );
+
+  // Sort categories with Ungrouped at the end
+  const sortedCategories = Object.keys(groupedTools).sort((a, b) => {
+    if (a === 'Ungrouped') {
+      return 1;
+    }
+    if (b === 'Ungrouped') {
+      return -1;
+    }
+    return a.localeCompare(b);
+  });
+
   if (tools.length === 0) {
     return (
       <div
@@ -318,7 +459,15 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
             No tools match your search
           </div>
         ) : (
-          filteredTools.map((tool, i) => <ToolInspector key={i} tool={tool} />)
+          sortedCategories.map((category) => (
+            <CollapsableSection key={category} label={`${category} (${groupedTools[category].length})`} isOpen={true}>
+              <div style={{ marginTop: '8px' }}>
+                {groupedTools[category].map((tool, i) => (
+                  <ToolInspector key={i} tool={tool} />
+                ))}
+              </div>
+            </CollapsableSection>
+          ))
         )}
       </div>
     </div>

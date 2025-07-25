@@ -4,7 +4,7 @@ import { useAsync } from 'react-use';
 import { finalize, lastValueFrom, partition, startWith } from 'rxjs';
 import { llm, mcp } from '@grafana/llm';
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types';
-import { RenderedToolCall } from './DevSandboxToolCallsModal';
+import { RenderedToolCall } from './types';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
