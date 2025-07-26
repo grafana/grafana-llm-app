@@ -113,6 +113,9 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     }
     setIsUpdating(true);
     setHealthCheck(undefined);
+
+    const originalSettings = { ...plugin.meta.jsonData };
+
     let key: keyof SecretsSet;
     const secureJsonData: Secrets = {};
     for (key in configuredSecrets) {
@@ -136,35 +139,60 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         jsonData: settingsToSave,
         secureJsonData,
       });
+
+      // Note: health-check uses the state saved in the plugin settings.
+      let healthCheckResult: HealthCheckResult | undefined = undefined;
+      const effectiveProvider = getEffectiveProvider(settings);
+      if (effectiveProvider !== undefined) {
+        const result = await checkPluginHealth(plugin.meta.id);
+        healthCheckResult = result.data;
+
+        if (healthCheckResult.status?.toLowerCase() !== 'ok') {
+          await updateAndSavePluginSettings(plugin.meta.id, settings.enableGrafanaManagedLLM, {
+            enabled,
+            pinned,
+            jsonData: originalSettings,
+            secureJsonData: {},
+          });
+          plugin.meta.jsonData = originalSettings;
+          setHealthCheck(healthCheckResult);
+          setIsUpdating(false);
+          return;
+        }
+      }
+      setHealthCheck(healthCheckResult);
+
+      // If moving away from Grafana-managed LLM, opt-out of the feature automatically
+      // This logic should only be triggered if the Grafana-managed LLM feature is enabled (Grafana Cloud Only)
+      if (settings.enableGrafanaManagedLLM === true) {
+        if (managedLLMOptIn && effectiveProvider !== 'grafana') {
+          await saveLLMOptInState(false);
+        } else {
+          await saveLLMOptInState(managedLLMOptIn);
+        }
+      }
+
+      // Update the frontend settings explicitly, it is otherwise not updated until page reload
+      plugin.meta.jsonData = settingsToSave;
+
+      setIsUpdating(false);
+      setUpdated(false);
     } catch (e) {
+      // Rolllback to original settings on any error
+      try {
+        await updateAndSavePluginSettings(plugin.meta.id, settings.enableGrafanaManagedLLM, {
+          enabled,
+          pinned,
+          jsonData: originalSettings,
+          secureJsonData: {},
+        });
+        plugin.meta.jsonData = originalSettings;
+      } catch (rollbackError) {
+        console.error('Failed to rollback settings:', rollbackError);
+      }
       setIsUpdating(false);
       throw e;
     }
-
-    // Note: health-check uses the state saved in the plugin settings.
-    let healthCheckResult: HealthCheckResult | undefined = undefined;
-    const effectiveProvider = getEffectiveProvider(settings);
-    if (effectiveProvider !== undefined) {
-      const result = await checkPluginHealth(plugin.meta.id);
-      healthCheckResult = result.data;
-    }
-    setHealthCheck(healthCheckResult);
-
-    // If moving away from Grafana-managed LLM, opt-out of the feature automatically
-    // This logic should only be triggered if the Grafana-managed LLM feature is enabled (Grafana Cloud Only)
-    if (settings.enableGrafanaManagedLLM === true) {
-      if (managedLLMOptIn && effectiveProvider !== 'grafana') {
-        await saveLLMOptInState(false);
-      } else {
-        await saveLLMOptInState(managedLLMOptIn);
-      }
-    }
-
-    // Update the frontend settings explicitly, it is otherwise not updated until page reload
-    plugin.meta.jsonData = settingsToSave;
-
-    setIsUpdating(false);
-    setUpdated(false);
   };
 
   return (
