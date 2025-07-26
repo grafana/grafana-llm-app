@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import React, { useState } from 'react';
 
 import { GrafanaTheme2 } from '@grafana/data';
-import { Button, Card, Checkbox, FieldSet, Icon, useStyles2 } from '@grafana/ui';
+import { Badge, Button, Card, Checkbox, ConfirmModal, FieldSet, Icon, useStyles2 } from '@grafana/ui';
 
 import { AppPluginSettings, Secrets, SecretsSet, ProviderType, getEffectiveProvider } from './AppConfig';
 import { ModelConfig } from './ModelConfig';
@@ -68,8 +68,52 @@ export function LLMConfig({
   // previousOpenAIProvider caches the value of the openAI provider, as it is overwritten by the grafana option
   const [previousOpenAIProvider, setPreviousOpenAIProvider] = useState<ProviderType>();
 
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  } | null>(null);
+
   const optInChange = () => {
     setOptIn(!optIn);
+  };
+
+  const hasExistingModelConfigurations = () => {
+    const modelMapping = settings.models?.mapping;
+    return modelMapping && Object.keys(modelMapping).some(key => modelMapping[key as keyof typeof modelMapping]);
+  };
+
+  const showProviderSwitchConfirmation = (newProvider: ProviderType, switchAction: () => void) => {
+    if (hasExistingModelConfigurations() && getEffectiveProvider(settings) !== newProvider) {
+      setConfirmationDialog({
+        isOpen: true,
+        title: 'Switch LLM Provider?',
+        message: `You have existing model configurations that may not be compatible with the new provider. Your current model mappings will be preserved, but you may need to update the model names to work with ${getProviderDisplayName(newProvider)}.`,
+        onConfirm: () => {
+          switchAction();
+          setConfirmationDialog(null);
+        },
+        onCancel: () => {
+          setConfirmationDialog(null);
+        }
+      });
+    } else {
+      switchAction();
+    }
+  };
+
+  const getProviderDisplayName = (provider: ProviderType): string => {
+    switch (provider) {
+      case 'openai': return 'OpenAI';
+      case 'anthropic': return 'Anthropic';
+      case 'azure': return 'Azure OpenAI';
+      case 'custom': return 'Custom API';
+      case 'grafana': return 'Grafana-provided OpenAI';
+      case 'test': return 'Test Provider';
+      default: return 'the selected provider';
+    }
   };
 
   // Handlers for when different LLM options are chosen in the UI
@@ -95,7 +139,7 @@ export function LLMConfig({
     }
   };
 
-  const selectGrafanaManaged = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+  const selectGrafanaManaged = () => {
     if (llmOption !== 'grafana-provided') {
       // Cache if OpenAI or Azure provider is used, so can restore
       if (previousOpenAIProvider === undefined) {
@@ -108,43 +152,56 @@ export function LLMConfig({
 
   const selectOpenAI = () => {
     if (llmOption !== 'openai') {
-      // Restore the provider (OpenAI or Azure) & clear the cache
-      // If the previous provider was not a valid openAI vendor, default to openai
-      // Otherwise the state would revert to the incorrect previous provider
-      if (previousOpenAIProvider === 'openai' || previousOpenAIProvider === 'azure') {
-        onChange({ ...settings, provider: previousOpenAIProvider, disabled: false, openAI: { disabled: false } });
-        setPreviousOpenAIProvider(undefined);
-      } else {
-        onChange({ ...settings, provider: 'openai', disabled: false, openAI: { disabled: false } });
-        setPreviousOpenAIProvider(undefined);
-      }
+      const switchToOpenAI = () => {
+        // Restore the provider (OpenAI or Azure) & clear the cache
+        // If the previous provider was not a valid openAI vendor, default to openai
+        // Otherwise the state would revert to the incorrect previous provider
+        if (previousOpenAIProvider === 'openai' || previousOpenAIProvider === 'azure') {
+          onChange({ ...settings, provider: previousOpenAIProvider, disabled: false, openAI: { disabled: false } });
+          setPreviousOpenAIProvider(undefined);
+        } else {
+          onChange({ ...settings, provider: 'openai', disabled: false, openAI: { disabled: false } });
+          setPreviousOpenAIProvider(undefined);
+        }
+      };
+      showProviderSwitchConfirmation('openai', switchToOpenAI);
     }
   };
 
   const selectAnthropicProvider = () => {
     if (llmOption !== 'anthropic') {
-      onChange({ ...settings, provider: 'anthropic', disabled: false });
+      const switchToAnthropic = () => {
+        onChange({ ...settings, provider: 'anthropic', disabled: false });
+      };
+      showProviderSwitchConfirmation('anthropic', switchToAnthropic);
     }
   };
 
   const selectCustom = () => {
     if (llmOption !== 'custom') {
-      onChange({ ...settings, provider: 'custom', disabled: false, openAI: { disabled: false } });
+      const switchToCustom = () => {
+        onChange({ ...settings, provider: 'custom', disabled: false, openAI: { disabled: false } });
+      };
+      showProviderSwitchConfirmation('custom', switchToCustom);
     }
   };
 
   return (
     <>
       {settings.enableDevSandbox && <DevSandbox />}
-      <FieldSet label="OpenAI Settings" className={s.sidePadding}>
+      <FieldSet label="LLM Provider Configuration" className={s.sidePadding}>
         {allowGrafanaManagedLLM && (
-          <div onClick={selectGrafanaManaged}>
-            <Card
-              isSelected={llmOption === 'grafana-provided'}
-              // onClick={selectGrafanaManaged} // prevents events passing to children, use parent div instead!
-              className={s.cardWithoutBottomMargin}
-            >
-              <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
+          <div className={s.providerSection}>
+            <div className={s.sectionHeader}>
+              <h4>Grafana-Provided Service {llmOption === 'grafana-provided' && <Badge text="Currently Active" color="green" />}</h4>
+            </div>
+            <div onClick={selectGrafanaManaged}>
+              <Card
+                isSelected={llmOption === 'grafana-provided'}
+                // onClick={selectGrafanaManaged} // prevents events passing to children, use parent div instead!
+                className={s.cardWithoutBottomMargin}
+              >
+                <Card.Heading>Use OpenAI provided by Grafana</Card.Heading>
               <Card.Description>
                 <div>Enable LLM features in Grafana by using a connection to OpenAI that is provided by Grafana</div>
                 {llmOption === 'grafana-provided' && (
@@ -199,7 +256,7 @@ export function LLMConfig({
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={(e) => {
+                            onClick={(e: React.MouseEvent) => {
                               window.open('https://trust.openai.com/', '_blank');
                               e.stopPropagation();
                             }}
@@ -234,21 +291,33 @@ export function LLMConfig({
               </Card.Figure>
             </Card>
           </div>
+          </div>
         )}
+        <div className={s.providerSection}>
+          <div className={s.sectionHeader}>
+            <h4>Bring Your Own Service {(llmOption === 'openai' || llmOption === 'anthropic' || llmOption === 'custom') && <Badge text="Currently Active" color="green" />}</h4>
+          </div>
         <div onClick={selectOpenAI}>
           <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
             <Card.Heading>Use OpenAI-compatible API</Card.Heading>
             <Card.Description>
               Enable LLM features in Grafana using OpenAI-compatible API
               {llmOption === 'openai' && (
-                <OpenAIConfig
-                  settings={settings.openAI ?? {}}
-                  onChange={(openAI) => onChange({ ...settings, openAI })}
-                  secrets={secrets}
-                  secretsSet={secretsSet}
-                  onChangeSecrets={onChangeSecrets}
-                  allowCustomPath={false}
-                />
+                <>
+                  <OpenAIConfig
+                    settings={settings.openAI ?? {}}
+                    onChange={(openAI) => onChange({ ...settings, openAI })}
+                    secrets={secrets}
+                    secretsSet={secretsSet}
+                    onChangeSecrets={onChangeSecrets}
+                    allowCustomPath={false}
+                  />
+                  <ModelConfig
+                    provider={settings.provider ?? 'openai'}
+                    settings={settings.models ?? { mapping: {} }}
+                    onChange={(models) => onChange({ ...settings, models })}
+                  />
+                </>
               )}
             </Card.Description>
             <Card.Figure>
@@ -262,13 +331,20 @@ export function LLMConfig({
             <Card.Description>
               Enable LLM features in Grafana using Anthropic&apos;s Claude models
               {llmOption === 'anthropic' && (
-                <AnthropicConfig
-                  settings={settings.anthropic ?? {}}
-                  onChange={(anthropic) => onChange({ ...settings, anthropic })}
-                  secrets={secrets}
-                  secretsSet={secretsSet}
-                  onChangeSecrets={onChangeSecrets}
-                />
+                <>
+                  <AnthropicConfig
+                    settings={settings.anthropic ?? {}}
+                    onChange={(anthropic) => onChange({ ...settings, anthropic })}
+                    secrets={secrets}
+                    secretsSet={secretsSet}
+                    onChangeSecrets={onChangeSecrets}
+                  />
+                  <ModelConfig
+                    provider={settings.provider ?? 'anthropic'}
+                    settings={settings.models ?? { mapping: {} }}
+                    onChange={(models) => onChange({ ...settings, models })}
+                  />
+                </>
               )}
             </Card.Description>
             <Card.Figure>
@@ -282,14 +358,21 @@ export function LLMConfig({
             <Card.Description>
               {'Enable LLM features in Grafana using a custom API (with "OpenAI-like" signature)'}
               {llmOption === 'custom' && (
-                <OpenAIConfig
-                  settings={settings.openAI ?? {}}
-                  onChange={(openAI) => onChange({ ...settings, openAI })}
-                  secrets={secrets}
-                  secretsSet={secretsSet}
-                  onChangeSecrets={onChangeSecrets}
-                  allowCustomPath={true}
-                />
+                <>
+                  <OpenAIConfig
+                    settings={settings.openAI ?? {}}
+                    onChange={(openAI) => onChange({ ...settings, openAI })}
+                    secrets={secrets}
+                    secretsSet={secretsSet}
+                    onChangeSecrets={onChangeSecrets}
+                    allowCustomPath={true}
+                  />
+                  <ModelConfig
+                    provider={settings.provider ?? 'custom'}
+                    settings={settings.models ?? { mapping: {} }}
+                    onChange={(models) => onChange({ ...settings, models })}
+                  />
+                </>
               )}
             </Card.Description>
             <Card.Figure>
@@ -312,15 +395,18 @@ export function LLMConfig({
             <Icon name="times" size="lg" />
           </Card.Figure>
         </Card>
+        </div>
       </FieldSet>
-      {(llmOption === 'openai' || llmOption === 'custom' || llmOption === 'anthropic') && (
-        <FieldSet label="Models" className={s.sidePadding}>
-          <ModelConfig
-            provider={settings.provider ?? 'openai'}
-            settings={settings.models ?? { mapping: {} }}
-            onChange={(models) => onChange({ ...settings, models })}
-          />
-        </FieldSet>
+      {confirmationDialog && (
+        <ConfirmModal
+          isOpen={confirmationDialog.isOpen}
+          title={confirmationDialog.title}
+          body={confirmationDialog.message}
+          confirmText="Switch Provider"
+          dismissText="Cancel"
+          onConfirm={confirmationDialog.onConfirm}
+          onDismiss={confirmationDialog.onCancel}
+        />
       )}
     </>
   );
@@ -356,5 +442,32 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   cardWithoutBottomMargin: css`
     margin-bottom: 0;
     margin-top: ${theme.spacing(1)};
+  `,
+  sectionHeader: css`
+    margin-top: ${theme.spacing(3)};
+    margin-bottom: ${theme.spacing(2)};
+    display: flex;
+    align-items: center;
+    gap: ${theme.spacing(1)};
+
+    h4 {
+      margin: 0;
+      color: ${theme.colors.text.primary};
+      font-weight: ${theme.typography.fontWeightMedium};
+      display: flex;
+      align-items: center;
+      gap: ${theme.spacing(1)};
+    }
+  `,
+  providerSection: css`
+    background: ${theme.colors.background.secondary};
+    border: 1px solid ${theme.colors.border.weak};
+    border-radius: ${theme.shape.borderRadius()};
+    padding: ${theme.spacing(2)};
+    margin-bottom: ${theme.spacing(2)};
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   `,
 });
