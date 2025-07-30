@@ -295,7 +295,7 @@ export function LLMConfig({
         )}
         <div className={s.providerSection}>
           <div className={s.sectionHeader}>
-            <h4>Bring Your Own Service {(llmOption === 'openai' || llmOption === 'anthropic' || llmOption === 'custom') && <Badge text="Currently Active" color="green" />}</h4>
+            <h4>Bring Your Own Service {allowGrafanaManagedLLM && (llmOption === 'openai' || llmOption === 'anthropic' || llmOption === 'custom') && <Badge text="Currently Active" color="green" />}</h4>
           </div>
         <div onClick={selectOpenAI}>
           <Card isSelected={llmOption === 'openai'} className={s.cardWithoutBottomMargin}>
