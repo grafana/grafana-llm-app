@@ -38,7 +38,7 @@ describe('Components/AppConfig', () => {
     // @ts-ignore - We don't need to provide `addConfigPage()` and `setChannelSupport()` for these tests
     render(<AppConfig plugin={plugin} query={props.query} />);
 
-    expect(screen.queryByRole('group', { name: /openai settings/i })).toBeInTheDocument();
+    expect(screen.queryByText('Use OpenAI-compatible API')).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.provider)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save & test/i })).toBeInTheDocument();
   });
@@ -49,7 +49,7 @@ describe('Components/AppConfig', () => {
     // @ts-ignore - We don't need to provide `addConfigPage()` and `setChannelSupport()` for these tests
     render(<AppConfig plugin={plugin} query={props.query} />);
 
-    expect(screen.queryByRole('group', { name: /openai settings/i })).toBeInTheDocument();
+    expect(screen.queryByText('Use Anthropic API')).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.anthropicUrl)).toBeInTheDocument();
     expect(screen.queryByTestId(testIds.appConfig.anthropicKey)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /save & test/i })).toBeInTheDocument();
