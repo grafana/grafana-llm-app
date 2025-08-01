@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button, Field, Input, TextArea, Switch, Select } from '@grafana/ui';
 
 interface ToolParameterFormProps {
@@ -38,7 +38,7 @@ function parseSchema(schema: any): FormField[] {
   }));
 }
 
-function FormFieldComponent({
+const FormFieldComponent = React.memo(({
   field,
   value,
   onChange,
@@ -46,7 +46,7 @@ function FormFieldComponent({
   field: FormField;
   value: any;
   onChange: (value: any) => void;
-}) {
+}) => {
   const handleChange = (newValue: any) => {
     onChange(newValue);
   };
@@ -170,7 +170,7 @@ function FormFieldComponent({
         </Field>
       );
   }
-}
+});
 
 /**
  * A dynamic form component that generates input fields based on a JSON schema.
@@ -178,7 +178,9 @@ function FormFieldComponent({
  */
 export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoading }: ToolParameterFormProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const fields = parseSchema(schema);
+  
+  // Memoize fields to prevent recreation on every render
+  const fields = useMemo(() => parseSchema(schema), [schema]);
 
   // Initialize form data with defaults
   useEffect(() => {
@@ -189,9 +191,9 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
       }
     });
     setFormData(initialData);
-  }, [schema, fields]);
+  }, [fields]);
 
-  // Update parent when form data changes
+  // Update parent when form data changes - use a callback to avoid dependency issues
   useEffect(() => {
     // Only include fields that have values
     const cleanedData = Object.entries(formData).reduce(
@@ -204,15 +206,20 @@ export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoad
       {} as Record<string, any>
     );
 
-    onParametersChange(cleanedData);
+    // Use a timeout to debounce updates to parent
+    const timeoutId = setTimeout(() => {
+      onParametersChange(cleanedData);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [formData, onParametersChange]);
 
-  const handleFieldChange = (fieldName: string, value: any) => {
+  const handleFieldChange = useCallback((fieldName: string, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [fieldName]: value,
     }));
-  };
+  }, []);
 
   const isFormValid = () => {
     return fields.every((field) => {

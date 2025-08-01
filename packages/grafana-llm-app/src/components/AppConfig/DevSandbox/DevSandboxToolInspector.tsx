@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button, Spinner, Icon, TextArea, CollapsableSection, Tab, TabsBar } from '@grafana/ui';
 import { Tool } from '@modelcontextprotocol/sdk/types';
 import { mcp } from '@grafana/llm';
@@ -71,7 +71,7 @@ interface ToolCallResult {
   error?: string;
 }
 
-function ToolInspector({ tool }: ToolInspectorProps) {
+const ToolInspector = React.memo(({ tool }: ToolInspectorProps) => {
   const { client } = mcp.useMCPClient();
   const [expanded, setExpanded] = useState(false);
   const [parametersInput, setParametersInput] = useState('{}');
@@ -79,7 +79,12 @@ function ToolInspector({ tool }: ToolInspectorProps) {
   const [inputMode, setInputMode] = useState<'form' | 'json'>('form');
   const [callResult, setCallResult] = useState<ToolCallResult | null>(null);
 
-  const handleTestTool = async () => {
+  // Memoize the callback to prevent unnecessary re-renders
+  const handleFormParametersChange = useCallback((parameters: any) => {
+    setFormParameters(parameters);
+  }, []);
+
+  const handleTestTool = useCallback(async () => {
     if (!client) {
       return;
     }
@@ -125,7 +130,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-  };
+  }, [client, inputMode, formParameters, parametersInput, tool.name]);
 
   const formatSchema = (schema: any) => {
     if (!schema) {
@@ -169,9 +174,9 @@ function ToolInspector({ tool }: ToolInspectorProps) {
     return JSON.stringify(example, null, 2);
   };
 
-  const fillExampleParameters = () => {
+  const fillExampleParameters = useCallback(() => {
     setParametersInput(generateExampleParameters());
-  };
+  }, [tool.inputSchema]);
 
   return (
     <div
@@ -279,7 +284,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
             {inputMode === 'form' ? (
               <ToolParameterForm
                 schema={tool.inputSchema}
-                onParametersChange={setFormParameters}
+                onParametersChange={handleFormParametersChange}
                 onSubmit={handleTestTool}
                 isLoading={callResult?.loading}
               />
@@ -370,7 +375,7 @@ function ToolInspector({ tool }: ToolInspectorProps) {
       )}
     </div>
   );
-}
+});
 
 interface DevSandboxToolInspectorProps {
   tools: Tool[];
@@ -379,36 +384,43 @@ interface DevSandboxToolInspectorProps {
 export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps) {
   const [searchFilter, setSearchFilter] = useState('');
 
-  const filteredTools = tools.filter((tool) => {
+  // Memoize filtered tools to prevent recalculation on every render
+  const filteredTools = React.useMemo(() => {
     const searchLower = searchFilter.toLowerCase();
-    const name = (tool.annotations?.title ?? tool.name).toLowerCase();
-    const description = (tool.description || '').toLowerCase();
-    return name.includes(searchLower) || description.includes(searchLower);
-  });
+    return tools.filter((tool) => {
+      const name = (tool.annotations?.title ?? tool.name).toLowerCase();
+      const description = (tool.description || '').toLowerCase();
+      return name.includes(searchLower) || description.includes(searchLower);
+    });
+  }, [tools, searchFilter]);
 
-  // Group tools by category
-  const groupedTools = filteredTools.reduce(
-    (groups, tool) => {
-      const category = TOOL_CATEGORIES[tool.name] || 'Ungrouped';
-      if (!groups[category]) {
-        groups[category] = [];
+  // Memoize grouped tools
+  const { groupedTools, sortedCategories } = React.useMemo(() => {
+    const grouped = filteredTools.reduce(
+      (groups, tool) => {
+        const category = TOOL_CATEGORIES[tool.name] || 'Ungrouped';
+        if (!groups[category]) {
+          groups[category] = [];
+        }
+        groups[category].push(tool);
+        return groups;
+      },
+      {} as Record<string, Tool[]>
+    );
+
+    // Sort categories with Ungrouped at the end
+    const sorted = Object.keys(grouped).sort((a, b) => {
+      if (a === 'Ungrouped') {
+        return 1;
       }
-      groups[category].push(tool);
-      return groups;
-    },
-    {} as Record<string, Tool[]>
-  );
+      if (b === 'Ungrouped') {
+        return -1;
+      }
+      return a.localeCompare(b);
+    });
 
-  // Sort categories with Ungrouped at the end
-  const sortedCategories = Object.keys(groupedTools).sort((a, b) => {
-    if (a === 'Ungrouped') {
-      return 1;
-    }
-    if (b === 'Ungrouped') {
-      return -1;
-    }
-    return a.localeCompare(b);
-  });
+    return { groupedTools: grouped, sortedCategories: sorted };
+  }, [filteredTools]);
 
   if (tools.length === 0) {
     return (
@@ -462,8 +474,8 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
           sortedCategories.map((category) => (
             <CollapsableSection key={category} label={`${category} (${groupedTools[category].length})`} isOpen={true}>
               <div style={{ marginTop: '8px' }}>
-                {groupedTools[category].map((tool, i) => (
-                  <ToolInspector key={i} tool={tool} />
+                {groupedTools[category].map((tool) => (
+                  <ToolInspector key={tool.name} tool={tool} />
                 ))}
               </div>
             </CollapsableSection>
