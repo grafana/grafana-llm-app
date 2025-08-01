@@ -1,21 +1,8 @@
 import React from 'react';
-import { Button, Modal, Spinner, Icon, CollapsableSection } from '@grafana/ui';
+import { Spinner, Icon, CollapsableSection } from '@grafana/ui';
+import { RenderedToolCall } from './types';
 
-export interface RenderedToolCall {
-  name: string;
-  arguments: string;
-  running: boolean;
-  error?: string;
-  response?: any;
-}
-
-interface DevSandboxToolCallsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  toolCalls: Map<string, RenderedToolCall>;
-}
-
-function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) {
+export function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedToolCall> }) {
   return (
     <div>
       {toolCalls.size === 0 ? (
@@ -100,26 +87,5 @@ function ToolCallsList({ toolCalls }: { toolCalls: Map<string, RenderedToolCall>
         </ul>
       )}
     </div>
-  );
-}
-
-export function DevSandboxToolCallsModal({ isOpen, onClose, toolCalls }: DevSandboxToolCallsModalProps) {
-  return (
-    <Modal title={`Tool Calls (${toolCalls.size})`} isOpen={isOpen} onDismiss={onClose}>
-      <div
-        style={{
-          maxHeight: '500px',
-          overflowY: 'auto',
-          padding: '8px 0',
-        }}
-      >
-        <ToolCallsList toolCalls={toolCalls} />
-      </div>
-      <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="secondary" onClick={onClose}>
-          Close
-        </Button>
-      </div>
-    </Modal>
   );
 }

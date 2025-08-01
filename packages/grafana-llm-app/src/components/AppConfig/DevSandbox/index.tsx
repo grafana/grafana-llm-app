@@ -1,5 +1,5 @@
 export { DevSandbox } from './DevSandbox';
 export { DevSandboxChat } from './DevSandboxChat';
-export { DevSandboxToolsModal } from './DevSandboxToolsModal';
-export { DevSandboxToolCallsModal, type RenderedToolCall } from './DevSandboxToolCallsModal';
 export { DevSandboxToolInspector } from './DevSandboxToolInspector';
+export { ToolCallsList } from './ToolCallsList';
+export type { RenderedToolCall } from './types';
