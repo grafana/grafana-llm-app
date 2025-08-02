@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
@@ -363,8 +364,15 @@ func TestCheckHealth(t *testing.T) {
 				t.Errorf("LLMProvider details should be %+v, got %+v", tc.expDetails.LLMProvider, details.LLMProvider)
 			}
 			for k, v := range tc.expDetails.LLMProvider.Models {
-				if details.LLMProvider.Models[k] != v {
-					t.Errorf("LLMProvider model %s should be %+v, got %+v", k, v, details.LLMProvider.Models[k])
+				actual := details.LLMProvider.Models[k]
+				if actual.OK != v.OK || actual.Error != v.Error {
+					t.Errorf("LLMProvider model %s should be %+v, got %+v", k, v, actual)
+				}
+				if !actual.OK && actual.Error != "" &&
+					!strings.Contains(actual.Error, "not configured") &&
+					!strings.Contains(actual.Error, "disabled") &&
+					actual.Response == nil {
+					t.Errorf("LLMProvider model %s API error should have Response field set, got nil", k)
 				}
 			}
 			if details.Vector != tc.expDetails.Vector {
