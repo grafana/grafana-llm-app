@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -13,14 +14,16 @@ import (
 var supportedModels = []Model{ModelBase, ModelLarge}
 
 type modelHealth struct {
-	OK    bool   `json:"ok"`
-	Error string `json:"error,omitempty"`
+	OK       bool `json:"ok"`
+	Error    string `json:"error,omitempty"`
+	Response any `json:"response,omitempty"`
 }
 
 type llmProviderHealthDetails struct {
 	Configured bool                  `json:"configured"`
 	OK         bool                  `json:"ok"`
 	Error      string                `json:"error,omitempty"`
+	Response   any                   `json:"response,omitempty"`
 	Models     map[Model]modelHealth `json:"models"`
 }
 
@@ -44,6 +47,67 @@ func getVersion() string {
 		return "unknown"
 	}
 	return buildInfo.Version
+}
+
+func extractErrorResponse(err error) any {
+	var reqErr *openai.RequestError
+	if errors.As(err, &reqErr) {
+		if reqErr.HTTPStatusCode > 0 {
+			var responseBody any
+			if len(reqErr.Body) > 0 {
+				if jsonErr := json.Unmarshal(reqErr.Body, &responseBody); jsonErr == nil {
+					return responseBody
+				}
+			}
+			return map[string]any{
+				"status_code": reqErr.HTTPStatusCode,
+				"status":      reqErr.HTTPStatus,
+				"error":       reqErr.Error(),
+			}
+		}
+	}
+	
+	var apiErr *openai.APIError
+	if errors.As(err, &apiErr) {
+		return map[string]any{
+			"error": map[string]any{
+				"message": apiErr.Message,
+				"type":    apiErr.Type,
+				"code":    apiErr.Code,
+				"param":   apiErr.Param,
+			},
+		}
+	}
+	
+	return nil
+}
+
+// getUnconfiguredError returns a specific error message based on the provider type
+func (a *App) getUnconfiguredError() string {
+	provider := a.settings.getEffectiveProvider()
+
+	switch provider {
+	case ProviderTypeAnthropic:
+		return "Anthropic API key is not configured"
+	case ProviderTypeOpenAI:
+		return "OpenAI API key is not configured"
+	case ProviderTypeAzure:
+		hasAPIKey := a.settings.OpenAI.apiKey != ""
+		hasMappings := len(a.settings.OpenAI.AzureMapping) > 0
+
+		if !hasAPIKey && !hasMappings {
+			return "Azure OpenAI API key and model mappings are not configured"
+		}
+		if !hasAPIKey {
+			return "Azure OpenAI API key is not configured"
+		}
+		if !hasMappings {
+			return "Azure model mappings are not configured"
+		}
+		return "Azure OpenAI configuration is incomplete"
+	default:
+		return "LLM provider not configured"
+	}
 }
 
 func (a *App) testProviderModel(ctx context.Context, model Model) error {
@@ -91,7 +155,7 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 	}
 
 	for _, model := range supportedModels {
-		health := modelHealth{OK: false, Error: "LLM provider not configured"}
+		health := modelHealth{OK: false, Error: a.getUnconfiguredError()}
 		if d.Configured {
 			health.OK = true
 			health.Error = ""
@@ -99,6 +163,7 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 			if err != nil {
 				health.OK = false
 				health.Error = err.Error()
+				health.Response = extractErrorResponse(err)
 			}
 		}
 		d.Models[model] = health
@@ -113,6 +178,15 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 	if !anyOK {
 		d.OK = false
 		d.Error = "No functioning models are available"
+		
+		var firstErrorResponse any
+		for _, v := range d.Models {
+			if !v.OK && v.Response != nil {
+				firstErrorResponse = v.Response
+				break
+			}
+		}
+		d.Response = firstErrorResponse
 	}
 
 	// Only cache result if provider is ok to use.
@@ -171,6 +245,7 @@ func (a *App) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) 
 	if err != nil {
 		provider.OK = false
 		provider.Error = err.Error()
+		provider.Response = extractErrorResponse(err)
 	}
 
 	vector := a.vectorHealth(ctx)

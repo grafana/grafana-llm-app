@@ -58,7 +58,7 @@ export function AnthropicConfig({
           name="anthropicKey"
           value={secrets.anthropicKey}
           isConfigured={secretsSet.anthropicKey ?? false}
-          placeholder="sk-ant-..."
+          placeholder={secretsSet.anthropicKey ? 'sk-ant-...' : 'not configured'}
           onChange={(e) => onChangeSecrets({ ...secrets, anthropicKey: e.currentTarget.value })}
           onReset={() => onChangeSecrets({ ...secrets, anthropicKey: '' })}
         />
