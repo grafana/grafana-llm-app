@@ -390,9 +390,14 @@ export function DevSandboxToolInspector({ tools }: DevSandboxToolInspectorProps)
   const filteredTools = React.useMemo(() => {
     const searchLower = searchFilter.toLowerCase();
     return tools.filter((tool) => {
-      const name = (tool.annotations?.title ?? tool.name).toLowerCase();
+      const name = tool.name.toLowerCase();
+      const title = (tool.annotations?.title ?? '').toLowerCase();
       const description = (tool.description || '').toLowerCase();
-      return name.includes(searchLower) || description.includes(searchLower);
+      return (
+        name.includes(searchLower) ||
+        title.includes(searchLower) ||
+        description.includes(searchLower)
+      );
     });
   }, [tools, searchFilter]);
 
