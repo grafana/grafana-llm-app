@@ -1,23 +1,22 @@
 import React, { Suspense, useState } from 'react';
-import { Button, FieldSet, LoadingPlaceholder, Modal } from '@grafana/ui';
+import { Button, Checkbox, FieldSet, LoadingPlaceholder, Modal, Tab, TabsBar } from '@grafana/ui';
 import { useAsync } from 'react-use';
 import { llm, mcp } from '@grafana/llm';
 import { DevSandboxChat } from './DevSandboxChat';
-import { DevSandboxToolsModal } from './DevSandboxToolsModal';
-import { DevSandboxToolCallsModal, RenderedToolCall } from './DevSandboxToolCallsModal';
+import { RenderedToolCall } from './types';
+import { DevSandboxToolInspector } from './DevSandboxToolInspector';
+
+type SandboxTab = 'chat' | 'tools';
 
 function DevSandboxContent() {
   const { client } = mcp.useMCPClient();
+  const [activeTab, setActiveTab] = useState<SandboxTab>('chat');
 
   // Main state
   const [useStream, setUseStream] = useState(true);
   const [toolCalls, setToolCalls] = useState<Map<string, RenderedToolCall>>(new Map());
 
-  // Modal states
-  const [showToolsModal, setShowToolsModal] = useState(false);
-  const [showToolCallsModal, setShowToolCallsModal] = useState(false);
-
-  // Get available tools for the modals
+  // Get available tools
   const {
     loading: _,
     error: toolsError,
@@ -41,46 +40,27 @@ function DevSandboxContent() {
 
   return (
     <>
-      <DevSandboxChat useStream={useStream} toolCalls={toolCalls} setToolCalls={setToolCalls} />
-
-      {/* Bottom controls row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Streaming toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <label htmlFor="stream-toggle" style={{ fontSize: '14px' }}>
-              Streaming:
-            </label>
-            <input
-              id="stream-toggle"
-              type="checkbox"
-              checked={useStream}
-              onChange={(e) => setUseStream(e.target.checked)}
-            />
-          </div>
-
-          {/* Tool modal buttons */}
-          <Button variant="secondary" size="sm" onClick={() => setShowToolsModal(true)}>
-            Tool Inspector ({toolsData?.tools?.length || 0})
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => setShowToolCallsModal(true)}>
-            Tool Calls ({toolCalls.size})
-          </Button>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <TabsBar>
+          <Tab label="Chat" active={activeTab === 'chat'} onChangeTab={() => setActiveTab('chat')} />
+          <Tab
+            label="Tool Inspector"
+            active={activeTab === 'tools'}
+            onChangeTab={() => setActiveTab('tools')}
+            counter={toolsData?.tools?.length || 0}
+          />
+        </TabsBar>
+        {activeTab === 'chat' && (
+          <Checkbox label="Streaming" value={useStream} onChange={(e) => setUseStream(e.currentTarget.checked)} />
+        )}
       </div>
 
-      {/* Tool Modals */}
-      <DevSandboxToolsModal
-        isOpen={showToolsModal}
-        onClose={() => setShowToolsModal(false)}
-        tools={toolsData?.tools || []}
-      />
-
-      <DevSandboxToolCallsModal
-        isOpen={showToolCallsModal}
-        onClose={() => setShowToolCallsModal(false)}
-        toolCalls={toolCalls}
-      />
+      <div style={{ paddingTop: 10, minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+        {activeTab === 'chat' && (
+          <DevSandboxChat useStream={useStream} toolCalls={toolCalls} setToolCalls={setToolCalls} />
+        )}
+        {activeTab === 'tools' && <DevSandboxToolInspector tools={toolsData?.tools || []} />}
+      </div>
     </>
   );
 }
