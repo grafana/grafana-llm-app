@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 
@@ -77,7 +76,11 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	}
 
 	// The Grafana URL is required to request Grafana API later
-	app.grafanaAppURL = strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
+	app.grafanaAppURL, err = cfg.AppURL()
+	if err != nil {
+		log.DefaultLogger.Warn("Unable to get Grafana URL", "err", err)
+	}
+	app.grafanaAppURL = strings.TrimRight(app.grafanaAppURL, "/")
 	if app.grafanaAppURL == "" {
 		// For debugging purposes only
 		app.grafanaAppURL = "http://localhost:3000"
