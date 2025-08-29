@@ -399,6 +399,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 	gcomReq.Header.Set("X-Api-Key", a.settings.GrafanaComAPIKey)
 	gcomReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	log.DefaultLogger.Debug("Sending request to Grafana.com", "url", gcomReq.URL)
 	_, err = doRequest(gcomReq)
 	if err != nil {
 		handleError(w, fmt.Errorf("saving plugin setting to gcom: %w", err), http.StatusInternalServerError)
@@ -411,7 +412,7 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 }
 
 func doRequest(req *http.Request) ([]byte, error) {
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("send http request: %w", err)
