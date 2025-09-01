@@ -23,12 +23,14 @@ export default [
         format: "cjs",
         sourcemap: env === "production" ? true : "inline",
         dir: path.dirname(pkg.main),
+        entryFileNames: "[name].cjs"
       },
       {
         format: "esm",
         sourcemap: env === "production" ? true : "inline",
         dir: path.dirname(pkg.module),
         preserveModules: true,
+        entryFileNames: "[name].mjs"
       },
     ],
     watch: {
@@ -43,29 +45,41 @@ export default [
       {
         format: "cjs",
         sourcemap: env === "production" ? true : "inline",
-        file: "./dist/jest.js",
+        file: "./dist/jest.cjs",
       },
       {
         format: "esm",
         sourcemap: env === "production" ? true : "inline",
-        file: "./dist/esm/jest.js",
+        file: "./dist/esm/jest.mjs",
       },
     ],
   },
   {
     input: "src/index.ts",
     plugins: [dts()],
-    output: {
-      file: "./dist/index.d.ts",
-      format: "es",
-    },
+    output: [
+      {
+        file: "./dist/esm/index.d.mts",
+        format: "es",
+      },
+      {
+        file: "./dist/index.d.cts",
+        format: "cjs",
+      },
+    ],
   },
   {
     input: "src/jest.ts",
     plugins: [dts()],
-    output: {
-      file: "./dist/jest.d.ts",
-      format: "es",
-    },
+    output: [
+      {
+        file: "./dist/esm/jest.d.mts",
+        format: "es",
+      },
+      {
+        file: "./dist/jest.d.cts",
+        format: "cjs",
+      },
+    ],
   },
 ];
