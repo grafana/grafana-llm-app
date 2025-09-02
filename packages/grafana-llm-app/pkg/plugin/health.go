@@ -14,9 +14,9 @@ import (
 var supportedModels = []Model{ModelBase, ModelLarge}
 
 type modelHealth struct {
-	OK       bool `json:"ok"`
+	OK       bool   `json:"ok"`
 	Error    string `json:"error,omitempty"`
-	Response any `json:"response,omitempty"`
+	Response any    `json:"response,omitempty"`
 }
 
 type llmProviderHealthDetails struct {
@@ -66,7 +66,7 @@ func extractErrorResponse(err error) any {
 			}
 		}
 	}
-	
+
 	var apiErr *openai.APIError
 	if errors.As(err, &apiErr) {
 		return map[string]any{
@@ -78,7 +78,7 @@ func extractErrorResponse(err error) any {
 			},
 		}
 	}
-	
+
 	return nil
 }
 
@@ -122,7 +122,7 @@ func (a *App) testProviderModel(ctx context.Context, model Model) error {
 			Messages: []openai.ChatCompletionMessage{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello"},
 			},
-			MaxTokens: 1,
+			MaxCompletionTokens: 1,
 		},
 	}
 	_, err = llmProvider.ChatCompletion(ctx, req)
@@ -178,7 +178,7 @@ func (a *App) llmProviderHealth(ctx context.Context) (llmProviderHealthDetails, 
 	if !anyOK {
 		d.OK = false
 		d.Error = "No functioning models are available"
-		
+
 		var firstErrorResponse any
 		for _, v := range d.Models {
 			if !v.OK && v.Response != nil {
