@@ -171,9 +171,13 @@ export interface ChatCompletionsRequest {
   /**
    * The maximum number of tokens to generate in the chat completion.
    *
-   * The total length of input tokens and generated tokens is limited by the model's context length. Example Python code for counting tokens.
+   * This value is now deprecated in favor of `max_completion_tokens`.
    */
   max_tokens?: number;
+  /**
+   * An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens.
+   */
+  max_completion_tokens?: number;
   /**
    * Number between -2.0 and 2.0.
    *

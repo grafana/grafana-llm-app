@@ -57,8 +57,8 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 	log.DefaultLogger.Debug("model", "model", r.Model)
 
 	// Anthropic requires a max tokens value
-	if r.MaxTokens == 0 {
-		r.MaxTokens = DefaultMaxCompletionTokens
+	if r.MaxCompletionTokens == 0 {
+		r.MaxCompletionTokens = DefaultMaxCompletionTokens
 	}
 
 	ForceUserMessage(&r)
@@ -78,8 +78,8 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 	log.DefaultLogger.Debug("model", "model", r.Model)
 
 	// Anthropic requires a max tokens value
-	if r.MaxTokens == 0 {
-		r.MaxTokens = DefaultMaxCompletionTokens
+	if r.MaxCompletionTokens == 0 {
+		r.MaxCompletionTokens = DefaultMaxCompletionTokens
 	}
 
 	ForceUserMessage(&r)
