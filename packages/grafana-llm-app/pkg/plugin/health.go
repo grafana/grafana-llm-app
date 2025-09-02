@@ -122,7 +122,6 @@ func (a *App) testProviderModel(ctx context.Context, model Model) error {
 			Messages: []openai.ChatCompletionMessage{
 				{Role: openai.ChatMessageRoleUser, Content: "Hello"},
 			},
-			MaxCompletionTokens: 1,
 		},
 	}
 	_, err = llmProvider.ChatCompletion(ctx, req)
