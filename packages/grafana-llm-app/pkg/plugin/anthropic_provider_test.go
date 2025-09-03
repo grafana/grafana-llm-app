@@ -87,8 +87,8 @@ func testAnthropicMaxTokensHandling(t *testing.T, tt struct {
 		// Return a mock response
 		if isStreaming {
 			w.Header().Set("Content-Type", "text/event-stream")
-			fmt.Fprint(w, `data: {"id":"test","object":"chat.completion.chunk","choices":[{"delta":{"content":"test"}}]}`)
-			fmt.Fprint(w, "\n\ndata: [DONE]\n\n")
+			_, _ = fmt.Fprint(w, `data: {"id":"test","object":"chat.completion.chunk","choices":[{"delta":{"content":"test"}}]}`)
+			_, _ = fmt.Fprint(w, "\n\ndata: [DONE]\n\n")
 		} else {
 			response := openai.ChatCompletionResponse{
 				ID: "test-completion",
@@ -100,7 +100,7 @@ func testAnthropicMaxTokensHandling(t *testing.T, tt struct {
 					},
 				},
 			}
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 		}
 	}))
 	defer server.Close()
@@ -192,7 +192,7 @@ func TestAnthropicProvider_ModelMapping(t *testing.T) {
 				},
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -254,7 +254,7 @@ func TestAnthropicProvider_ForceUserMessage(t *testing.T) {
 				},
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -295,7 +295,7 @@ func TestAnthropicProvider_ErrorHandling(t *testing.T) {
 	// Create a test server that returns an error
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": {"message": "Invalid request"}}`)
+		_, _ = fmt.Fprint(w, `{"error": {"message": "Invalid request"}}`)
 	}))
 	defer server.Close()
 
