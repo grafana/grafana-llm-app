@@ -18,7 +18,7 @@ go get github.com/grafana/grafana-llm-app/llmclient
 
 ## Authentication
 
-The client uses **Grafana API keys** for authentication, not direct LLM provider API keys. This approach provides several benefits:
+The client uses **Grafana service account tokens** for authentication, not direct LLM provider API keys. This approach provides several benefits:
 
 1. **Centralized Configuration**: LLM provider credentials are managed in Grafana
 2. **Security**: No need to distribute LLM provider API keys to client applications
@@ -27,9 +27,9 @@ The client uses **Grafana API keys** for authentication, not direct LLM provider
 
 ### Setting up Authentication
 
-1. **Create a Grafana API Key**: In your Grafana instance, go to Configuration → API Keys and create a new key with appropriate permissions
+1. **Create a Service Account Token**: Create a service account and token in your Grafana instance. See the [official Grafana documentation](https://grafana.com/docs/grafana/latest/administration/service-accounts/#add-a-token-to-a-service-account-in-grafana) for detailed instructions.
 2. **Configure the LLM App**: Ensure the Grafana LLM App plugin is installed and configured with your preferred LLM provider
-3. **Use the API Key**: Pass the Grafana API key to the client (not your OpenAI/Azure API key)
+3. **Use the Token**: Pass the service account token to the client (not your OpenAI/Azure API key)
 
 ## Quick Start
 
@@ -46,10 +46,10 @@ import (
 )
 
 func main() {
-    // Initialize client with Grafana URL and API key
+    // Initialize client with Grafana URL and service account token
     client := llmclient.NewLLMProvider(
         "https://your-grafana-instance.com",
-        "your-grafana-api-key",
+        "your-service-account-token",
     )
 
     ctx := context.Background()
@@ -95,18 +95,18 @@ These abstract models automatically resolve to the appropriate provider-specific
 
 ### Creating a Client
 
-#### `NewLLMProvider(grafanaURL, grafanaAPIKey string) LLMProvider`
+#### `NewLLMProvider(grafanaURL, serviceAccountToken string) LLMProvider`
 
 Creates a new LLM provider client.
 
 ```go
 client := llmclient.NewLLMProvider(
     "https://grafana.example.com",
-    "grafana-api-key-here",
+    "your-service-account-token-here",
 )
 ```
 
-#### `NewLLMProviderWithClient(grafanaURL, grafanaAPIKey string, httpClient *http.Client) LLMProvider`
+#### `NewLLMProviderWithClient(grafanaURL, serviceAccountToken string, httpClient *http.Client) LLMProvider`
 
 Creates a client with a custom HTTP client for advanced configuration.
 
@@ -116,7 +116,7 @@ httpClient := &http.Client{
 }
 client := llmclient.NewLLMProviderWithClient(
     "https://grafana.example.com",
-    "grafana-api-key-here",
+    "your-service-account-token-here",
     httpClient,
 )
 ```
@@ -224,7 +224,7 @@ httpClient := &http.Client{
 
 client := llmclient.NewLLMProviderWithClient(
     "https://grafana.example.com",
-    "grafana-api-key",
+    "service-account-token",
     httpClient,
 )
 ```
@@ -233,7 +233,7 @@ client := llmclient.NewLLMProviderWithClient(
 
 - Go 1.19 or later
 - Access to a Grafana instance with the LLM App plugin installed and configured
-- Valid Grafana API key with appropriate permissions
+- Valid Grafana service account token with appropriate permissions
 
 ## License
 
