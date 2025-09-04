@@ -8,16 +8,16 @@ jobs:
       id-token: none
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
           persist-credentials: false
       - name: Setup Node.js environment
-        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: '22'
           cache: 'npm'
       - name: Setup Go environment
-        uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
         with:
           go-version-file: packages/grafana-llm-app/go.mod
           cache-dependency-path: packages/grafana-llm-app/go.sum
