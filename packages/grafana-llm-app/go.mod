@@ -3,7 +3,7 @@ module github.com/grafana/grafana-llm-app
 go 1.24.6
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.11.0
+	github.com/anthropics/anthropic-sdk-go v1.12.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/grafana/authlib v0.0.0-20250423111852-90ec44e81796
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250617151817-c0f8cbb88d5c
@@ -12,9 +12,9 @@ require (
 	github.com/grafana/mcp-grafana v0.6.5
 	github.com/mark3labs/mcp-go v0.39.1
 	github.com/qdrant/go-client v1.15.2
-	github.com/sashabaranov/go-openai v1.41.1
+	github.com/sashabaranov/go-openai v1.41.2
 	github.com/stretchr/testify v1.11.1
-	google.golang.org/grpc v1.75.0
+	google.golang.org/grpc v1.75.1
 )
 
 require (
