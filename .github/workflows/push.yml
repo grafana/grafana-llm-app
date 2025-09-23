@@ -17,8 +17,8 @@ jobs:
       id-token: write
       attestations: write
     with:
-      go-version: "1.24.1"
-      golangci-lint-version: "2.1.6"
+      go-version: "1.25.1"
+      golangci-lint-version: "2.5.0"
       node-version: "22"
       plugin-directory: packages/grafana-llm-app
       package-manager: npm
