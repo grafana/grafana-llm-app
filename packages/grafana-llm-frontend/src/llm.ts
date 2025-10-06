@@ -367,8 +367,10 @@ export function extractContent(): UnaryFunction<
   Observable<string>
 > {
   return pipe(
-    filter((response: ChatCompletionsResponse<ChatCompletionsChunk>) =>
-      isContentMessage(response.choices[0].delta),
+    filter(
+      (response: ChatCompletionsResponse<ChatCompletionsChunk>) =>
+        response.choices.length > 0 &&
+        isContentMessage(response.choices[0].delta),
     ),
     // The type assertion is needed here because the type predicate above doesn't seem to propagate.
     map(
