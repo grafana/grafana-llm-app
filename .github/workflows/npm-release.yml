@@ -76,5 +76,3 @@ jobs:
         run: |
           cd packages/grafana-llm-frontend
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ fromJSON(steps.get-secrets.outputs.secrets).NPM_TOKEN }}
