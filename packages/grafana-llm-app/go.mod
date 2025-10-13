@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	connectrpc.com/connect v1.19.0 // indirect
+	connectrpc.com/connect v1.19.1 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/PaesslerAG/gval v1.2.4 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
