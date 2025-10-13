@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/build"
+	"github.com/grafana/grafana-plugin-sdk-go/build/buildinfo"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -42,7 +42,7 @@ type healthCheckDetails struct {
 }
 
 func getVersion() string {
-	buildInfo, err := build.GetBuildInfo()
+	buildInfo, err := buildinfo.GetBuildInfo()
 	if err != nil {
 		return "unknown"
 	}
