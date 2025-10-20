@@ -44,7 +44,7 @@
     "@babel/core": "^7.26.0",
     "@grafana/plugin-e2e": "^2.0.2",
     "@grafana/tsconfig": "^2.0.0",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.56.1",
     "@types/lodash": "^4.17.14",
     "@types/node": "^18.15.11",
     "@types/react-router-dom": "^5.3.3",
