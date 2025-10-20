@@ -17,7 +17,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Setup Go environment
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
+        uses: actions/setup-go@c0137caad775660c0844396c52da96e560aba63d
         with:
           go-version-file: packages/grafana-llm-app/go.mod
           cache-dependency-path: packages/grafana-llm-app/go.sum
