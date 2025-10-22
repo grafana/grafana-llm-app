@@ -327,6 +327,7 @@ export function LLMConfig({
                       secretsSet={secretsSet}
                       onChangeSecrets={onChangeSecrets}
                       allowCustomPath={false}
+                      parentProvider={settings.provider}
                     />
                     <ModelConfig
                       provider={settings.provider ?? 'openai'}
@@ -382,6 +383,7 @@ export function LLMConfig({
                       secretsSet={secretsSet}
                       onChangeSecrets={onChangeSecrets}
                       allowCustomPath={true}
+                      parentProvider={settings.provider}
                     />
                     <ModelConfig
                       provider={settings.provider ?? 'custom'}
