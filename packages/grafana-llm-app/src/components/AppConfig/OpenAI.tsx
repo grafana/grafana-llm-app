@@ -34,6 +34,7 @@ export function OpenAIConfig({
   onChange,
   onChangeSecrets,
   allowCustomPath = false,
+  parentProvider,
 }: {
   settings: OpenAISettings;
   onChange: (settings: OpenAISettings) => void;
@@ -41,8 +42,13 @@ export function OpenAIConfig({
   secretsSet: SecretsSet;
   onChangeSecrets: (secrets: Secrets) => void;
   allowCustomPath: boolean;
+  parentProvider?: ProviderType;
 }) {
   const s = useStyles2(getStyles);
+
+  // Get the effective provider - use the stored provider, or default to 'openai' if undefined
+  const effectiveProvider = settings.provider ?? 'openai';
+
   // Helper to update settings using the name of the HTML event.
   const onChangeField = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({
@@ -80,7 +86,7 @@ export function OpenAIConfig({
 
   return (
     <FieldSet>
-      {settings.provider !== 'custom' && (
+      {parentProvider !== 'custom' && (
         <Field label="Provider">
           <Select
             data-testid={testIds.appConfig.provider}
@@ -90,7 +96,7 @@ export function OpenAIConfig({
                 { label: 'Azure OpenAI', value: 'azure' },
               ] as Array<SelectableValue<ProviderType>>
             }
-            value={settings.provider ?? 'openai'}
+            value={effectiveProvider}
             onChange={(e) => onChangeProvider(e.value as ProviderType)}
             width={60}
           />
@@ -98,23 +104,23 @@ export function OpenAIConfig({
       )}
 
       <Field
-        label={settings.provider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'API URL'}
+        label={effectiveProvider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'API URL'}
         className={s.marginTop}
       >
         <Input
           width={60}
           name="url"
           data-testid={testIds.appConfig.openAIUrl}
-          value={settings.provider === 'openai' ? OPENAI_API_URL : settings.url}
+          value={effectiveProvider === 'openai' ? OPENAI_API_URL : settings.url}
           placeholder={
-            settings.provider === 'azure'
+            effectiveProvider === 'azure'
               ? AZURE_OPENAI_URL_TEMPLATE
-              : settings.provider === 'openai'
+              : effectiveProvider === 'openai'
                 ? OPENAI_API_URL
                 : `https://llm.domain.com`
           }
           onChange={onChangeField}
-          disabled={settings.provider === 'openai'}
+          disabled={effectiveProvider === 'openai' && parentProvider !== 'custom'}
         />
       </Field>
 
@@ -145,20 +151,20 @@ export function OpenAIConfig({
         </Field>
       )}
 
-      <Field label={settings.provider === 'azure' ? 'Azure OpenAI Key' : 'API Key'}>
+      <Field label={effectiveProvider === 'azure' ? 'Azure OpenAI Key' : 'API Key'}>
         <SecretInput
           width={60}
           data-testid={testIds.appConfig.openAIKey}
           name="openAIKey"
           value={secrets.openAIKey}
           isConfigured={secretsSet.openAIKey ?? false}
-          placeholder={settings.provider === 'azure' ? '' : 'sk-...'}
+          placeholder={effectiveProvider === 'azure' ? '' : 'sk-...'}
           onChange={(e) => onChangeSecrets({ ...secrets, openAIKey: e.currentTarget.value })}
           onReset={() => onChangeSecrets({ ...secrets, openAIKey: '' })}
         />
       </Field>
 
-      {settings.provider === 'openai' && (
+      {effectiveProvider === 'openai' && (
         <Field label="API Organization ID">
           <Input
             width={60}
@@ -171,7 +177,7 @@ export function OpenAIConfig({
         </Field>
       )}
 
-      {settings.provider === 'azure' && (
+      {effectiveProvider === 'azure' && (
         <Field label="Azure OpenAI Model Mapping" description="Mapping from model name to Azure deployment name.">
           <AzureModelDeploymentConfig
             modelMapping={settings.azureModelMapping ?? []}
