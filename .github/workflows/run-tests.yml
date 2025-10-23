@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload e2e test artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@2d9f9cdfa99fedaddba68e9b5b5c281eca26cc63
         with:
           name: e2e-test-results-pr
           path: |
