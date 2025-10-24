@@ -130,11 +130,7 @@ export class GrafanaLiveTransport implements Transport {
       // comments once that happens.
       //@ts-expect-error
       const options: LivePublishOptions = { useSocket: true };
-      this._grafanaLiveSrv.publish(
-        this._publishChannel,
-        message,
-        options,
-      );
+      this._grafanaLiveSrv.publish(this._publishChannel, message, options);
     }
 
     // If that option isn't available, we can first fall back to trying to

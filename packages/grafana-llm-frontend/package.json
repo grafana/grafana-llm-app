@@ -47,7 +47,7 @@
     "test:watch": "jest --watch --onlyChanged",
     "test:ci": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint --cache --ignore-path ../../.gitignore --ext .js,.jsx,.ts,.tsx . && npm run typecheck && npm run lint:package && npm run lint:types",
+    "lint": "eslint --cache --ext .js,.jsx,.ts,.tsx . && npm run typecheck && npm run lint:package && npm run lint:types",
     "lint:fix": "npm run lint -- --fix",
     "lint:package": "publint",
     "lint:types": "attw --pack .",
