@@ -51,7 +51,7 @@ function ModelMappingField({
   modelNames: string[];
   onChange: (model: string, deployment: string) => void;
   onRemove: () => void;
-}): JSX.Element {
+}): React.ReactElement {
   return (
     <InlineFieldRow>
       <InlineField label="Model">

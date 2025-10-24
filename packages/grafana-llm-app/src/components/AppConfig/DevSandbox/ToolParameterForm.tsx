@@ -175,21 +175,19 @@ FormFieldComponent.displayName = 'FormFieldComponent';
  * Provides a user-friendly interface for entering tool parameters.
  */
 export function ToolParameterForm({ schema, onParametersChange, onSubmit, isLoading }: ToolParameterFormProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
-
   // Memoize fields to prevent recreation on every render
   const fields = useMemo(() => parseSchema(schema), [schema]);
 
   // Initialize form data with defaults
-  useEffect(() => {
+  const [formData, setFormData] = useState<Record<string, any>>(() => {
     const initialData: Record<string, any> = {};
     fields.forEach((field) => {
       if (field.default !== undefined) {
         initialData[field.name] = field.default;
       }
     });
-    setFormData(initialData);
-  }, [fields]);
+    return initialData;
+  });
 
   // Update parent when form data changes - use a callback to avoid dependency issues
   useEffect(() => {

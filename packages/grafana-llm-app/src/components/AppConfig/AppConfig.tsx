@@ -100,12 +100,11 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
     }
   }, [settings.enableGrafanaManagedLLM]);
 
-  useEffect(() => {
-    // clear health check status if any setting changed
-    if (updated) {
-      setHealthCheck(undefined);
-    }
-  }, [updated]);
+  // Helper function to mark settings as updated and clear health check
+  const markAsUpdated = () => {
+    setUpdated(true);
+    setHealthCheck(undefined);
+  };
 
   const doSave = async () => {
     if (errorState !== undefined) {
@@ -154,7 +153,8 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             jsonData: originalSettings,
             secureJsonData: {},
           });
-          plugin.meta.jsonData = originalSettings;
+          // Revert UI to original settings to match backend state
+          setSettings(originalSettings);
           setHealthCheck(healthCheckResult);
           setIsUpdating(false);
           return;
@@ -172,13 +172,13 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         }
       }
 
-      // Update the frontend settings explicitly, it is otherwise not updated until page reload
-      plugin.meta.jsonData = settingsToSave;
+      // Update local state to immediately reflect saved settings in the UI
+      setSettings(settingsToSave);
 
       setIsUpdating(false);
       setUpdated(false);
     } catch (e) {
-      // Rolllback to original settings on any error
+      // Rollback to original settings on any error
       try {
         await updateAndSavePluginSettings(plugin.meta.id, settings.enableGrafanaManagedLLM, {
           enabled,
@@ -186,7 +186,8 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           jsonData: originalSettings,
           secureJsonData: {},
         });
-        plugin.meta.jsonData = originalSettings;
+        // Revert UI to original settings to match backend state
+        setSettings(originalSettings);
       } catch (rollbackError) {
         console.error('Failed to rollback settings:', rollbackError);
       }
@@ -201,14 +202,14 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         settings={settings}
         onChange={(newSettings: AppPluginSettings) => {
           setSettings(newSettings);
-          setUpdated(true);
+          markAsUpdated();
         }}
         secrets={newSecrets}
         secretsSet={configuredSecrets}
         optIn={managedLLMOptIn}
         setOptIn={(optIn) => {
           setManagedLLMOptIn(optIn);
-          setUpdated(true);
+          markAsUpdated();
         }}
         onChangeSecrets={(secrets: Secrets) => {
           // Update the new secrets.
@@ -218,7 +219,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           for (const key of Object.keys(secrets)) {
             setConfiguredSecrets({ ...configuredSecrets, [key]: false });
           }
-          setUpdated(true);
+          markAsUpdated();
         }}
       />
       {settings.displayVectorStoreOptions === true && (
@@ -228,7 +229,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           secretsSet={configuredSecrets}
           onChange={(vector) => {
             setSettings({ ...settings, vector });
-            setUpdated(true);
+            markAsUpdated();
           }}
           onChangeSecrets={(secrets) => {
             // Update the new secrets.
@@ -238,7 +239,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
             for (const key of Object.keys(secrets)) {
               setConfiguredSecrets({ ...configuredSecrets, [key]: false });
             }
-            setUpdated(true);
+            markAsUpdated();
           }}
         />
       )}
