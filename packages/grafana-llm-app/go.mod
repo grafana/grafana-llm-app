@@ -8,7 +8,7 @@ require (
 	github.com/grafana/authlib v0.0.0-20250423111852-90ec44e81796
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250617151817-c0f8cbb88d5c
 	github.com/grafana/grafana-plugin-sdk-go v0.280.0
-	github.com/grafana/incident-go v0.0.0-20250528074347-db4fb90f383e
+	github.com/grafana/incident-go v0.0.0-20251003115753-d71681611ddd
 	github.com/grafana/mcp-grafana v0.7.7
 	github.com/mark3labs/mcp-go v0.41.1
 	github.com/qdrant/go-client v1.15.2
