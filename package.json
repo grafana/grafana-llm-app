@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "scripts": {
     "build": "npm run build --workspaces",
     "build:all": "npm run build && npm run backend:build",
