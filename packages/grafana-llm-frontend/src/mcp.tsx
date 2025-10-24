@@ -133,7 +133,6 @@ export class GrafanaLiveTransport implements Transport {
       this._grafanaLiveSrv.publish(
         this._publishChannel,
         message,
-        //@ts-expect-error
         options,
       );
     }
