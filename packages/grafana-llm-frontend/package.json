@@ -62,6 +62,7 @@
     "@grafana/data": "^10.4.0 || ^11 || ^12",
     "@grafana/runtime": "^10.4.0 || ^11 || ^12",
     "@rollup/plugin-node-resolve": "^16.0.0",
+    "@types/semver": "^7.7.1",
     "@types/uuid": "^10.0.0",
     "prettier": "^3.4.2",
     "react": "^18",
@@ -69,7 +70,7 @@
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-node-externals": "^8.0.0",
-    "rxjs": "^7.8.1",
+    "rxjs": "^7.8.2",
     "typescript": "5.6.2"
   },
   "dependencies": {
@@ -83,6 +84,6 @@
     "@grafana/data": "^10.4.0 ||^11 || ^12",
     "@grafana/runtime": "^10.4.0 || ^11 || ^12",
     "react": "^18",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.2"
   }
 }
