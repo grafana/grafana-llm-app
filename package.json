@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "build": "npm run build --workspaces",
     "build:all": "npm run build && npm run backend:build",
@@ -25,6 +26,8 @@
     "packages/grafana-llm-app"
   ],
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.38.0",
     "@grafana/eslint-config": "^8.0.0",
     "@grafana/plugin-e2e": "^2.0.2",
     "@swc/core": "1.6.13",
