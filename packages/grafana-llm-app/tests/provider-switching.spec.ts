@@ -123,6 +123,26 @@ test.describe('Provider Switching UI Consistency', () => {
     await expect(providerDropdown).not.toBeVisible();
   });
 
+  test('should allow editing URL field in custom mode', async ({ page }) => {
+    // Switch to Custom card
+    const customCard = page.locator('text=Use a Custom API').locator('..');
+    await customCard.click();
+    await page.waitForTimeout(500);
+
+    // Verify URL field is visible and enabled
+    const urlField = page.getByTestId(testIds.appConfig.openAIUrl);
+    await expect(urlField).toBeVisible();
+    await expect(urlField).toBeEnabled();
+
+    // Clear any existing value and type a custom URL
+    await urlField.clear();
+    const customUrl = 'https://my-custom-llm-api.example.com';
+    await urlField.fill(customUrl);
+
+    // Verify the URL was set correctly
+    await expect(urlField).toHaveValue(customUrl);
+  });
+
   test('should switch to Anthropic provider correctly', async ({ page }) => {
     // Select Anthropic card
     const anthropicCard = page.locator('text=Use Anthropic API').locator('..');
