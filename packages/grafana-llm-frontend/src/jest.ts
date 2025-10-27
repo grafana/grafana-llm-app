@@ -12,6 +12,7 @@
 export const grafanaLLMESModules = [
   "@modelcontextprotocol/sdk",
   "pkce-challenge",
+  "marked",
 ];
 
 /**
