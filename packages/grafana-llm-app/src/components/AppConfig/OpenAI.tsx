@@ -111,7 +111,7 @@ export function OpenAIConfig({
           width={60}
           name="url"
           data-testid={testIds.appConfig.openAIUrl}
-          value={effectiveProvider === 'openai' ? OPENAI_API_URL : settings.url}
+          value={effectiveProvider === 'openai' && parentProvider !== 'custom' ? OPENAI_API_URL : settings.url}
           placeholder={
             effectiveProvider === 'azure'
               ? AZURE_OPENAI_URL_TEMPLATE
