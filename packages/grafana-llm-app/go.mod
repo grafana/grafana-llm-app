@@ -6,7 +6,7 @@ require (
 	github.com/anthropics/anthropic-sdk-go v1.14.0
 	github.com/go-openapi/strfmt v0.24.0
 	github.com/grafana/authlib v0.0.0-20250423111852-90ec44e81796
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20250617151817-c0f8cbb88d5c
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20250925215610-d92957c70d5c
 	github.com/grafana/grafana-plugin-sdk-go v0.280.0
 	github.com/grafana/incident-go v0.0.0-20250528074347-db4fb90f383e
 	github.com/grafana/mcp-grafana v0.7.7
@@ -44,13 +44,15 @@ require (
 	github.com/go-openapi/loads v0.23.1 // indirect
 	github.com/go-openapi/runtime v0.29.0 // indirect
 	github.com/go-openapi/spec v0.22.0 // indirect
-	github.com/go-openapi/swag v0.23.1 // indirect
+	github.com/go-openapi/swag v0.24.1 // indirect
+	github.com/go-openapi/swag/cmdutils v0.24.0 // indirect
 	github.com/go-openapi/swag/conv v0.25.1 // indirect
 	github.com/go-openapi/swag/fileutils v0.25.1 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.1 // indirect
 	github.com/go-openapi/swag/jsonutils v0.25.1 // indirect
 	github.com/go-openapi/swag/loading v0.25.1 // indirect
 	github.com/go-openapi/swag/mangling v0.25.1 // indirect
+	github.com/go-openapi/swag/netutils v0.24.0 // indirect
 	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
@@ -81,7 +83,6 @@ require (
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
 	github.com/jaegertracing/jaeger-idl v0.5.0 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jszwedko/go-datemath v0.1.1-0.20230526204004-640a500621d6 // indirect
