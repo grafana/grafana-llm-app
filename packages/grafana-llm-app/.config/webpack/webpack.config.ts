@@ -186,6 +186,8 @@ const config = async (env): Promise<Configuration> => ({
     new ESLintPlugin({
       extensions: ['.ts', '.tsx'],
       lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
+      cwd: path.resolve(__dirname, '../..'), // Use package root as working directory to find eslint.config.js
+      configType: 'flat', // Use ESLint flat config format
     }),
     ...(env.development ? [new LiveReloadPlugin()] : []),
   ],

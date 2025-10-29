@@ -25,8 +25,10 @@
     "packages/grafana-llm-app"
   ],
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.38.0",
     "@grafana/eslint-config": "^8.0.0",
-    "@grafana/plugin-e2e": "^1.14.6",
+    "@grafana/plugin-e2e": "^2.0.2",
     "@swc/core": "1.6.13",
     "@swc/helpers": "^0.5.13",
     "@swc/jest": "^0.2.37",
@@ -38,9 +40,15 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.4.2",
+    "rxjs": "7.8.2",
     "typescript": "5.6.2"
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "rxjs": "7.8.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }
