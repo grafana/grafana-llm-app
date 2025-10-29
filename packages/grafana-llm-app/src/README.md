@@ -1,4 +1,4 @@
-# Grafana LLM app (public preview)
+# Grafana LLM plugin
 
 This Grafana application plugin centralizes access to LLMs across Grafana.
 
@@ -17,8 +17,6 @@ Future functionality will include:
 - token and cost estimation
 - RBAC to only allow certain users to use LLM functionality
   <br/><br/>
-
-Note: The Grafana LLM App plugin is currently in [Public preview](https://grafana.com/docs/release-life-cycle/). Grafana Labs offers support on a best-effort basis, and there might be breaking changes before the feature is generally available.
 
 ## For users
 
