@@ -1,0 +1,52 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:base"],
+    "rangeStrategy": "replace",
+    "preserveSemverRanges": true,
+    "schedule": ["before 6am on Monday"],
+    "semanticCommits": "enabled",
+    "separateMajorMinor": true,
+    "separateMultipleMajor": true,
+    "prHourlyLimit": 2,
+    "prConcurrentLimit": 5,
+    "packageRules": [
+      {
+        "description": "Group Go dependencies for main app",
+        "matchManagers": ["gomod"],
+        "matchPaths": ["packages/grafana-llm-app/**"],
+        "groupName": "go-dependencies",
+        "schedule": ["before 6am on Monday"]
+      },
+      {
+        "description": "Group Go dependencies for llmclient",
+        "matchManagers": ["gomod"],
+        "matchPaths": ["packages/grafana-llm-app/llmclient/**"],
+        "groupName": "go-dependencies",
+        "schedule": ["before 6am on Monday"]
+      },
+      {
+        "description": "Group npm dependencies",
+        "matchManagers": ["npm"],
+        "groupName": "npm-dependencies",
+        "schedule": ["before 6am on Monday"]
+      },
+      {
+        "description": "Group GitHub Actions dependencies",
+        "matchManagers": ["github-actions"],
+        "groupName": "github-actions",
+        "schedule": ["before 6am on Monday"]
+      },
+      {
+        "description": "Group patch updates together",
+        "matchUpdateTypes": ["patch"],
+        "groupName": "patch updates",
+        "automerge": true
+      },
+      {
+        "description": "Prioritize security updates",
+        "vulnerabilityAlerts": true,
+        "labels": ["security"],
+        "prPriority": 10
+      }
+    ]
+  }  
