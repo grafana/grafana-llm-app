@@ -1,6 +1,6 @@
 {
   "name": "@grafana/llm-app",
-  "version": "0.22.10",
+  "version": "1.0.0",
   "private": true,
   "description": "Plugin to easily allow llm based extensions to grafana",
   "scripts": {
