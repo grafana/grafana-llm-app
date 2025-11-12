@@ -475,7 +475,7 @@ export function streamChatCompletions(
         throw new Error(event.message.error);
       }
     }),
-    // Stop the stream when we get a done message or when the finish_reason is "stop"
+    // Stop the stream when we get a done message from the plugin
     takeWhile((event) => {
       // If it's an error response, we should continue to let the tap operator handle it
       if (isErrorResponse(event.message)) {
@@ -488,15 +488,6 @@ export function streamChatCompletions(
         event.message.choices[0].delta &&
         "done" in event.message.choices[0].delta &&
         event.message.choices[0].delta.done === true
-      ) {
-        return false;
-      }
-
-      // Check for finish_reason = "stop"
-      if (
-        event.message.choices &&
-        "finish_reason" in event.message.choices[0] &&
-        event.message.choices[0].finish_reason === "stop"
       ) {
         return false;
       }
