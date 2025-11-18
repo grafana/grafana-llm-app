@@ -53,7 +53,7 @@
     "css-loader": "^7.1.2",
     "eslint-webpack-plugin": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^9.0.2",
-    "glob": "^11.0.0",
+    "glob": "^11.1.0",
     "identity-obj-proxy": "3.0.0",
     "prettier": "^3.4.2",
     "replace-in-file-webpack-plugin": "^1.0.6",
