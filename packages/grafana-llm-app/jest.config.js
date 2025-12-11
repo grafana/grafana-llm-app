@@ -7,6 +7,7 @@ const additionalESModules = [
   ...grafanaESModules,
   'react-calendar',
   'get-user-locale',
+  "marked",
   'memoize',
   'mimic-function',
   '@wojtekmaj/date-utils',
