@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Release a new version of the npm library'
+        description: "Release a new version of the npm library"
         required: true
         default: false
-        type: 'boolean'
+        type: "boolean"
 
 permissions:
   contents: write
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
           # Releases should always be made off of 'main'
-          ref: 'main'
+          ref: "main"
           fetch-depth: 0
           persist-credentials: false
 
@@ -38,19 +38,8 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
         with:
-          go-version: '1.21'
-
-      - name: Store Go cache paths
-        id: go-cache-paths
-        run: echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
-
-      - name: Restore go-build cache
-        id: restore-go-build-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-build-
+          go-version-file: packages/grafana-llm-app/go.mod
+          cache-dependency-path: packages/grafana-llm-app/go.sum
 
       - name: Install utilities
         run: sudo apt-get install jq
@@ -58,7 +47,7 @@ jobs:
       - name: Install Mage
         uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b
         with:
-            install-only: true
+          install-only: true
 
       - name: Install dependencies
         run: npm ci
