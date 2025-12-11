@@ -2,7 +2,7 @@ const { grafanaLLMESModules } = require("@grafana/llm/jest");
 
 // Helper function to transform specific packages in node_modules
 const nodeModulesToTransform = (moduleNames) =>
-  `node_modules\/(?!(${moduleNames.join("|")})\/)`;
+  `node_modules/(?!.*(${moduleNames.join("|")})/)`;
 
 // Array of known nested grafana package dependencies that only bundle an ESM version
 const grafanaESModules = [
@@ -12,6 +12,7 @@ const grafanaESModules = [
   "d3-force",
   "d3-interpolate",
   "d3-scale-chromatic",
+  "marked",
   "ol",
   "react-colorful",
   "uuid",
