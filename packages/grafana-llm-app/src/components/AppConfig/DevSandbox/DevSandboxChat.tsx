@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button, Spinner, Stack, TextArea } from '@grafana/ui';
 import { useAsync } from 'react-use';
-import { finalize, lastValueFrom, partition, startWith } from 'rxjs';
+import { finalize, lastValueFrom, partition, share, startWith, tap } from 'rxjs';
 import { llm, mcp } from '@grafana/llm';
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types';
 import { RenderedToolCall } from './types';
@@ -56,6 +56,7 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [sessionUsage, setSessionUsage] = useState<llm.Usage | null>(null);
 
   // Ref for auto-scrolling
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,27 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory]);
+
+  const accumulateUsage = useCallback(
+    (usage: llm.Usage) => {
+      setSessionUsage((prev) => {
+        if (!prev) {
+          return { ...usage };
+        }
+        return {
+          ...prev,
+          prompt_tokens: (prev.prompt_tokens ?? 0) + (usage.prompt_tokens ?? 0),
+          completion_tokens: (prev.completion_tokens ?? 0) + (usage.completion_tokens ?? 0),
+          total_tokens: (prev.total_tokens ?? 0) + (usage.total_tokens ?? 0),
+        };
+      });
+    },
+    []
+  );
+
+  const handleResetUsage = () => {
+    setSessionUsage(null);
+  };
 
   // Get available tools
   const {
@@ -82,16 +104,30 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
   }, [client]);
 
   const handleStreamingChatWithHistory = async (messages: llm.Message[], tools: any[]) => {
-    let stream = llm.streamChatCompletions({
-      model: llm.Model.LARGE,
-      messages,
-      tools: mcp.convertToolsToOpenAI(tools),
-    });
+    const createStream = () =>
+      llm
+        .streamChatCompletions({
+          model: llm.Model.LARGE,
+          messages,
+          tools: mcp.convertToolsToOpenAI(tools),
+        })
+        .pipe(
+          tap((chunk) => {
+            if (chunk.usage) {
+              accumulateUsage(chunk.usage);
+            }
+          }),
+          share()
+        );
 
-    let [toolCallsStream, otherMessages] = partition(
-      stream,
-      (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
-    );
+    let stream = createStream();
+
+    const isToolCallChunk = (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => {
+      const delta = chunk.choices[0]?.delta;
+      return delta ? llm.isToolCallsMessage(delta) : false;
+    };
+
+    let [toolCallsStream, otherMessages] = partition(stream, isToolCallChunk);
 
     let contentMessages = otherMessages.pipe(
       llm.accumulateContent(),
@@ -115,16 +151,9 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
       const tcs = toolCallMessages.tool_calls.filter((tc) => tc.type === 'function');
       await Promise.all(tcs.map((fc) => handleToolCall(fc, client, toolCalls, setToolCalls, messages)));
 
-      stream = llm.streamChatCompletions({
-        model: llm.Model.LARGE,
-        messages,
-        tools: mcp.convertToolsToOpenAI(tools),
-      });
+      stream = createStream();
 
-      [toolCallsStream, otherMessages] = partition(
-        stream,
-        (chunk: llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>) => llm.isToolCallsMessage(chunk.choices[0].delta)
-      );
+      [toolCallsStream, otherMessages] = partition(stream, isToolCallChunk);
 
       const firstMessage: Partial<llm.ChatCompletionsResponse<llm.ChatCompletionsChunk>> = {
         choices: [{ delta: { role: 'assistant', content: '' } }],
@@ -155,6 +184,9 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
       messages,
       tools: mcp.convertToolsToOpenAI(tools),
     });
+    if (response.usage) {
+      accumulateUsage(response.usage);
+    }
 
     let functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
 
@@ -167,6 +199,9 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
         messages,
         tools: mcp.convertToolsToOpenAI(tools),
       });
+      if (response.usage) {
+        accumulateUsage(response.usage);
+      }
       functionCalls = response.choices[0].message.tool_calls?.filter((tc) => tc.type === 'function') ?? [];
     }
 
@@ -258,7 +293,8 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
       <div
         ref={chatContainerRef}
         style={{
-          height: '400px',
+          height: 'min(320px, 45vh)',
+          minHeight: '200px',
           overflowY: 'auto',
           border: '1px solid var(--border-color)',
           borderRadius: '8px',
@@ -297,16 +333,41 @@ export function DevSandboxChat({ useStream, toolCalls, setToolCalls }: DevSandbo
                     lineHeight: '1.4',
                   }}
                 >
-                  {message.content ||
-                    (message.role === 'assistant' && isGenerating && index === chatHistory.length - 1 ? (
-                      <span style={{ opacity: 0.7 }}>...</span>
-                    ) : (
-                      ''
-                    ))}
+                  {message.content}
+                  {message.role === 'assistant' && isGenerating && index === chatHistory.length - 1 && (
+                    <Spinner size="sm" style={{ marginLeft: '8px' }} />
+                  )}
                 </div>
               </div>
             ))}
           </Stack>
+        )}
+      </div>
+
+      <div
+        style={{
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          backgroundColor: 'var(--background-color-primary)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <strong>Session token usage</strong>
+          {sessionUsage && (
+            <Button size="sm" variant="secondary" onClick={handleResetUsage}>
+              Reset
+            </Button>
+          )}
+        </div>
+        {sessionUsage ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <span>Prompt: {sessionUsage.prompt_tokens.toLocaleString()}</span>
+            <span>Completion: {sessionUsage.completion_tokens.toLocaleString()}</span>
+            <span>Total: {sessionUsage.total_tokens.toLocaleString()}</span>
+          </div>
+        ) : (
+          <span style={{ opacity: 0.7 }}>Send a message to see prompt, completion, and total tokens.</span>
         )}
       </div>
 
