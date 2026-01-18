@@ -1,26 +1,29 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": ["config:base"],
+    "extends": ["config:recommended"],
     "rangeStrategy": "replace",
-    "preserveSemverRanges": true,
     "schedule": ["before 6am on Monday"],
     "semanticCommits": "enabled",
     "separateMajorMinor": true,
     "separateMultipleMajor": true,
     "prHourlyLimit": 2,
     "prConcurrentLimit": 5,
+    "vulnerabilityAlerts": {
+      "enabled": true,
+      "labels": ["security"]
+    },
     "packageRules": [
       {
         "description": "Group Go dependencies for main app",
         "matchManagers": ["gomod"],
-        "matchPaths": ["packages/grafana-llm-app/**"],
+        "matchFileNames": ["packages/grafana-llm-app/**/go.mod"],
         "groupName": "go-dependencies",
         "schedule": ["before 6am on Monday"]
       },
       {
         "description": "Group Go dependencies for llmclient",
         "matchManagers": ["gomod"],
-        "matchPaths": ["packages/grafana-llm-app/llmclient/**"],
+        "matchFileNames": ["llmclient/**/go.mod"],
         "groupName": "go-dependencies",
         "schedule": ["before 6am on Monday"]
       },
@@ -41,12 +44,6 @@
         "matchUpdateTypes": ["patch"],
         "groupName": "patch updates",
         "automerge": true
-      },
-      {
-        "description": "Prioritize security updates",
-        "vulnerabilityAlerts": true,
-        "labels": ["security"],
-        "prPriority": 10
       }
     ]
-  }  
+  }
