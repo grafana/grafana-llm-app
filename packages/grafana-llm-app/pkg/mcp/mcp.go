@@ -54,14 +54,14 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	srv := server.NewMCPServer("grafana-llm-app", pluginVersion)
 	tools.AddSearchTools(srv)
 	tools.AddDatasourceTools(srv)
-	tools.AddIncidentTools(srv)
+	tools.AddIncidentTools(srv, true)
 	tools.AddPrometheusTools(srv)
 	tools.AddLokiTools(srv)
-	tools.AddAlertingTools(srv)
-	tools.AddDashboardTools(srv)
+	tools.AddAlertingTools(srv, true)
+	tools.AddDashboardTools(srv, true)
 	tools.AddOnCallTools(srv)
 	tools.AddAssertsTools(srv)
-	tools.AddSiftTools(srv)
+	tools.AddSiftTools(srv, true)
 
 	acc, err := newAccessTokenClient(settings.AccessToken, settings.Tenant, settings.IsGrafanaCloud)
 	if err != nil {
