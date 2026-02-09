@@ -69,7 +69,26 @@
         "scope": "folders:*"
       },
       {
+        "action": "folders:create"
+      },
+      {
+        "action": "folders:write",
+        "scope": "folders:*"
+      },
+      {
         "action": "alert.rules:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:create",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:write",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:delete",
         "scope": "folders:*"
       },
       {
