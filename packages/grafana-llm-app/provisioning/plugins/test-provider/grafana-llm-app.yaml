@@ -59,7 +59,10 @@ apps:
       # llmGateway:
       #   url: http://llm-gateway:4033
       mcp:
-        enabled: true
+        disabled: false
+        # toolsets:
+        #   incident: false
+        #   oncall: false
 
     secureJsonData:
       # openAIKey: $OPENAI_API_KEY

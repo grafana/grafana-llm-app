@@ -8,6 +8,22 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+// Toolset identifies an MCP tool family that can be enabled or disabled.
+type Toolset string
+
+const (
+	ToolsetSearch     Toolset = "search"
+	ToolsetDatasource Toolset = "datasource"
+	ToolsetIncident   Toolset = "incident"
+	ToolsetPrometheus Toolset = "prometheus"
+	ToolsetLoki       Toolset = "loki"
+	ToolsetAlerting   Toolset = "alerting"
+	ToolsetDashboard  Toolset = "dashboard"
+	ToolsetOnCall     Toolset = "oncall"
+	ToolsetAsserts    Toolset = "asserts"
+	ToolsetSift       Toolset = "sift"
+)
+
 // Settings contains configuration required by the MCP servers.
 type Settings struct {
 	// AccessToken is a Grafana Cloud access policy token that is exchanged with
@@ -25,6 +41,16 @@ type Settings struct {
 
 	// IsGrafanaCloud indicates whether this is running in Grafana Cloud environment.
 	IsGrafanaCloud bool
+
+	// If nil, all toolsets are enabled.
+	IsToolsetEnabled func(toolset Toolset) bool
+}
+
+func (s Settings) isToolsetEnabled(toolset Toolset) bool {
+	if s.IsToolsetEnabled == nil {
+		return true
+	}
+	return s.IsToolsetEnabled(toolset)
 }
 
 // MCP represents the complete MCP (Model Context Protocol) infrastructure for Grafana.
@@ -52,16 +78,37 @@ type MCP struct {
 func New(settings Settings, pluginVersion string) (*MCP, error) {
 	log.DefaultLogger.Debug("Initializing MCP server")
 	srv := server.NewMCPServer("grafana-llm-app", pluginVersion)
-	tools.AddSearchTools(srv)
-	tools.AddDatasourceTools(srv)
-	tools.AddIncidentTools(srv, true)
-	tools.AddPrometheusTools(srv)
-	tools.AddLokiTools(srv)
-	tools.AddAlertingTools(srv, true)
-	tools.AddDashboardTools(srv, true)
-	tools.AddOnCallTools(srv)
-	tools.AddAssertsTools(srv)
-	tools.AddSiftTools(srv, true)
+	if settings.isToolsetEnabled(ToolsetSearch) {
+		tools.AddSearchTools(srv)
+	}
+	if settings.isToolsetEnabled(ToolsetDatasource) {
+		tools.AddDatasourceTools(srv)
+	}
+	// Incident, asserts, and sift toolsets require Grafana Cloud.
+	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetIncident) {
+		tools.AddIncidentTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetPrometheus) {
+		tools.AddPrometheusTools(srv)
+	}
+	if settings.isToolsetEnabled(ToolsetLoki) {
+		tools.AddLokiTools(srv)
+	}
+	if settings.isToolsetEnabled(ToolsetAlerting) {
+		tools.AddAlertingTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetDashboard) {
+		tools.AddDashboardTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetOnCall) {
+		tools.AddOnCallTools(srv)
+	}
+	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetAsserts) {
+		tools.AddAssertsTools(srv)
+	}
+	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetSift) {
+		tools.AddSiftTools(srv, true)
+	}
 
 	acc, err := newAccessTokenClient(settings.AccessToken, settings.Tenant, settings.IsGrafanaCloud)
 	if err != nil {
