@@ -8,7 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// Toolset identifies an MCP tool family that can be enabled or disabled.
+// Toolset identifies an MCP tool family that can be enabled or disabled
 type Toolset string
 
 const (
