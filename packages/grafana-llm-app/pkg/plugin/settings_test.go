@@ -3,6 +3,7 @@ package plugin
 import (
 	"testing"
 
+	"github.com/grafana/grafana-llm-app/pkg/mcp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -372,6 +373,172 @@ func TestDisabledBackwardCompatibility(t *testing.T) {
 
 			if settings.Disabled != tc.expectedResult {
 				t.Errorf("expected Disabled to be %v, got %v", tc.expectedResult, settings.Disabled)
+			}
+		})
+	}
+}
+
+func boolPtr(b bool) *bool { return &b }
+
+func TestMCPToolsetsIsEnabled(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		toolsets MCPToolsets
+		toolset  mcp.Toolset
+		expected bool
+	}{
+		{
+			name:     "nil pointer defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetSearch,
+			expected: true,
+		},
+		{
+			name:     "explicitly enabled",
+			toolsets: MCPToolsets{Search: boolPtr(true)},
+			toolset:  mcp.ToolsetSearch,
+			expected: true,
+		},
+		{
+			name:     "explicitly disabled",
+			toolsets: MCPToolsets{Search: boolPtr(false)},
+			toolset:  mcp.ToolsetSearch,
+			expected: false,
+		},
+		{
+			name:     "unknown toolset returns false",
+			toolsets: MCPToolsets{},
+			toolset:  "unknown",
+			expected: false,
+		},
+		{
+			name:     "datasource nil defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetDatasource,
+			expected: true,
+		},
+		{
+			name:     "incident disabled",
+			toolsets: MCPToolsets{Incident: boolPtr(false)},
+			toolset:  mcp.ToolsetIncident,
+			expected: false,
+		},
+		{
+			name:     "prometheus nil defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetPrometheus,
+			expected: true,
+		},
+		{
+			name:     "loki disabled",
+			toolsets: MCPToolsets{Loki: boolPtr(false)},
+			toolset:  mcp.ToolsetLoki,
+			expected: false,
+		},
+		{
+			name:     "alerting enabled",
+			toolsets: MCPToolsets{Alerting: boolPtr(true)},
+			toolset:  mcp.ToolsetAlerting,
+			expected: true,
+		},
+		{
+			name:     "dashboard disabled",
+			toolsets: MCPToolsets{Dashboard: boolPtr(false)},
+			toolset:  mcp.ToolsetDashboard,
+			expected: false,
+		},
+		{
+			name:     "oncall nil defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetOnCall,
+			expected: true,
+		},
+		{
+			name:     "asserts disabled",
+			toolsets: MCPToolsets{Asserts: boolPtr(false)},
+			toolset:  mcp.ToolsetAsserts,
+			expected: false,
+		},
+		{
+			name:     "sift disabled",
+			toolsets: MCPToolsets{Sift: boolPtr(false)},
+			toolset:  mcp.ToolsetSift,
+			expected: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.toolsets.IsEnabled(tc.toolset)
+			if result != tc.expected {
+				t.Errorf("IsEnabled(%q) = %v, want %v", tc.toolset, result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestMCPToolsetsSettings(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		settings        backend.AppInstanceSettings
+		enabledToolset  mcp.Toolset
+		expectedEnabled bool
+	}{
+		{
+			name: "no toolsets config means all enabled",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"mcp": {}}`),
+			},
+			enabledToolset:  mcp.ToolsetSearch,
+			expectedEnabled: true,
+		},
+		{
+			name: "empty toolsets means all enabled",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"mcp": {"toolsets": {}}}`),
+			},
+			enabledToolset:  mcp.ToolsetIncident,
+			expectedEnabled: true,
+		},
+		{
+			name: "incident explicitly disabled",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"mcp": {"toolsets": {"incident": false}}}`),
+			},
+			enabledToolset:  mcp.ToolsetIncident,
+			expectedEnabled: false,
+		},
+		{
+			name: "oncall explicitly disabled, search still enabled",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"mcp": {"toolsets": {"oncall": false}}}`),
+			},
+			enabledToolset:  mcp.ToolsetSearch,
+			expectedEnabled: true,
+		},
+		{
+			name: "oncall explicitly disabled",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"mcp": {"toolsets": {"oncall": false}}}`),
+			},
+			enabledToolset:  mcp.ToolsetOnCall,
+			expectedEnabled: false,
+		},
+		{
+			name: "prometheus explicitly enabled",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"mcp": {"toolsets": {"prometheus": true}}}`),
+			},
+			enabledToolset:  mcp.ToolsetPrometheus,
+			expectedEnabled: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings, err := loadSettings(tc.settings)
+			if err != nil {
+				t.Fatalf("loadSettings failed: %s", err)
+			}
+			result := settings.MCP.Toolsets.IsEnabled(tc.enabledToolset)
+			if result != tc.expectedEnabled {
+				t.Errorf("IsEnabled(%q) = %v, want %v", tc.enabledToolset, result, tc.expectedEnabled)
 			}
 		})
 	}

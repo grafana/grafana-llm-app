@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/grafana/grafana-llm-app/pkg/mcp"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector"
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/embed"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -159,10 +160,55 @@ type LLMGatewaySettings struct {
 	URL string `json:"url"`
 }
 
-// MCPSettings contains the configuration for the Grafana MCP server.
 type MCPSettings struct {
-	// Disabled indicates whether the MCP server should be disabled.
 	Disabled bool `json:"disabled"`
+	// Nil (omitted) fields default to enabled; set to false to disable.
+	Toolsets MCPToolsets `json:"toolsets"`
+}
+
+// A nil pointer means the toolset is enabled by default; a pointer to false disables it.
+type MCPToolsets struct {
+	Search     *bool `json:"search"`
+	Datasource *bool `json:"datasource"`
+	Incident   *bool `json:"incident"`
+	Prometheus *bool `json:"prometheus"`
+	Loki       *bool `json:"loki"`
+	Alerting   *bool `json:"alerting"`
+	Dashboard  *bool `json:"dashboard"`
+	OnCall     *bool `json:"oncall"`
+	Asserts    *bool `json:"asserts"`
+	Sift       *bool `json:"sift"`
+}
+
+// An unknown toolset name logs a warning and returns false.
+func (f MCPToolsets) IsEnabled(toolset mcp.Toolset) bool {
+	var ptr *bool
+	switch toolset {
+	case mcp.ToolsetSearch:
+		ptr = f.Search
+	case mcp.ToolsetDatasource:
+		ptr = f.Datasource
+	case mcp.ToolsetIncident:
+		ptr = f.Incident
+	case mcp.ToolsetPrometheus:
+		ptr = f.Prometheus
+	case mcp.ToolsetLoki:
+		ptr = f.Loki
+	case mcp.ToolsetAlerting:
+		ptr = f.Alerting
+	case mcp.ToolsetDashboard:
+		ptr = f.Dashboard
+	case mcp.ToolsetOnCall:
+		ptr = f.OnCall
+	case mcp.ToolsetAsserts:
+		ptr = f.Asserts
+	case mcp.ToolsetSift:
+		ptr = f.Sift
+	default:
+		log.DefaultLogger.Warn("Unknown MCP toolset", "toolset", toolset)
+		return false
+	}
+	return ptr == nil || *ptr
 }
 
 // Settings contains the plugin's settings and secrets required by the plugin backend.

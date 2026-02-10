@@ -107,6 +107,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 			ServiceAccountToken: app.saToken,
 			IsGrafanaCloud:      app.settings.EnableGrafanaManagedLLM,
 			Tenant:              app.settings.Tenant,
+			IsToolsetEnabled: app.settings.MCP.Toolsets.IsEnabled,
 		}
 		app.mcpServer, err = mcp.New(mcpSettings, PluginVersion)
 		if err != nil {
