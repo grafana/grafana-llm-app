@@ -79,6 +79,10 @@ func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionReq
 
 func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc *openai.Client) (<-chan ChatCompletionStreamResponse, error) {
 	r.Stream = true
+	if r.StreamOptions == nil {
+		r.StreamOptions = &openai.StreamOptions{}
+	}
+	r.StreamOptions.IncludeUsage = true
 
 	ForceUserMessage(&r)
 
