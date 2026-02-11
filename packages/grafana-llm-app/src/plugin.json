@@ -58,7 +58,7 @@
       },
       {
         "action": "dashboards:create",
-        "scope": "dashboards:*"
+        "scope": "folders:uid:*"
       },
       {
         "action": "dashboards:write",
@@ -90,6 +90,9 @@
       {
         "action": "alert.rules:delete",
         "scope": "folders:*"
+      },
+      {
+        "action": "alert.provisioning.provenance:write"
       },
       {
         "action": "alert.notifications:read"
