@@ -42,7 +42,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@grafana/plugin-e2e": "^2.0.2",
+    "@grafana/plugin-e2e": "^3.0.0",
     "@grafana/tsconfig": "^2.0.0",
     "@playwright/test": "^1.52.0",
     "@types/lodash": "^4.17.14",

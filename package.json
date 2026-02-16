@@ -28,7 +28,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.38.0",
     "@grafana/eslint-config": "^8.0.0",
-    "@grafana/plugin-e2e": "^2.0.2",
+    "@grafana/plugin-e2e": "^3.0.0",
     "@swc/core": "1.6.13",
     "@swc/helpers": "^0.5.13",
     "@swc/jest": "^0.2.37",
