@@ -8,16 +8,16 @@ jobs:
       id-token: none
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           persist-credentials: false
       - name: Setup Node.js environment
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
           node-version: '22'
           cache: 'npm'
       - name: Setup Go environment
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
         with:
           go-version-file: packages/grafana-llm-app/go.mod
           cache-dependency-path: packages/grafana-llm-app/go.sum
@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload e2e test artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: e2e-test-results-pr
           path: |
