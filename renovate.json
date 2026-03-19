@@ -1,49 +1,105 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": ["config:recommended"],
-    "rangeStrategy": "replace",
-    "schedule": ["before 6am on Monday"],
-    "semanticCommits": "enabled",
-    "separateMajorMinor": true,
-    "separateMultipleMajor": true,
-    "prHourlyLimit": 2,
-    "prConcurrentLimit": 5,
+    "extends": [
+      "config:best-practices",
+      ":disableDependencyDashboard",
+      "github>grafana/grafana-renovate-config//presets/base",
+      "github>grafana/grafana-renovate-config//presets/automerge",
+      "github>grafana/grafana-renovate-config//presets/labels",
+      "github>grafana/grafana-renovate-config//presets/github-actions",
+      "github>grafana/grafana-renovate-config//presets/plugin-ci-workflows",
+      "github>grafana/grafana-renovate-config//presets/shared-workflows",
+      "github>grafana/grafana-renovate-config//presets/rate-limits",
+      "github>grafana/grafana-renovate-config//presets/npm",
+      ":preserveSemverRanges"
+    ],
+    "prConcurrentLimit": 10,
+    "minimumReleaseAge": "14 days",
+    "rebaseWhen": "behind-base-branch",
+    "pinDigests": false,
+    "platformAutomerge": true,
     "vulnerabilityAlerts": {
       "enabled": true,
       "labels": ["security"]
     },
     "packageRules": [
       {
-        "description": "Group Go dependencies for main app",
-        "matchManagers": ["gomod"],
-        "matchFileNames": ["packages/grafana-llm-app/**/go.mod"],
-        "groupName": "go-dependencies",
-        "schedule": ["before 6am on Monday"]
+        "description": "Disable pin-type updates to prevent 'pin dependencies' PRs",
+        "matchUpdateTypes": ["pin"],
+        "enabled": false
       },
       {
-        "description": "Group Go dependencies for llmclient",
-        "matchManagers": ["gomod"],
-        "matchFileNames": ["llmclient/**/go.mod"],
-        "groupName": "go-dependencies",
-        "schedule": ["before 6am on Monday"]
+        "description": "Disable pinDigest updates to prevent 'pin dependencies' PRs",
+        "matchUpdateTypes": ["pinDigest"],
+        "enabled": false
       },
       {
-        "description": "Group npm dependencies",
-        "matchManagers": ["npm"],
-        "groupName": "npm-dependencies",
-        "schedule": ["before 6am on Monday"]
+        "description": "Group and schedule all digest updates weekly to reduce noise",
+        "matchUpdateTypes": ["digest"],
+        "groupName": "Weekly digest updates",
+        "schedule": ["before 5am on Monday"],
+        "automerge": true,
+        "automergeType": "pr"
       },
       {
-        "description": "Group GitHub Actions dependencies",
+        "description": "Group GitHub Actions version updates weekly",
         "matchManagers": ["github-actions"],
-        "groupName": "github-actions",
-        "schedule": ["before 6am on Monday"]
+        "matchUpdateTypes": ["major", "minor", "patch"],
+        "groupName": "GitHub Actions updates",
+        "schedule": ["before 5am on Monday"],
+        "automerge": false
       },
       {
-        "description": "Group patch updates together",
+        "description": "Group Go module patch updates weekly",
+        "matchManagers": ["gomod"],
         "matchUpdateTypes": ["patch"],
-        "groupName": "patch updates",
-        "automerge": true
+        "groupName": "Go module patch updates",
+        "schedule": ["before 5am on Monday"],
+        "automerge": true,
+        "automergeType": "pr"
+      },
+      {
+        "description": "Group Go module minor updates weekly",
+        "matchManagers": ["gomod"],
+        "matchUpdateTypes": ["minor"],
+        "groupName": "Go module minor updates",
+        "schedule": ["before 5am on Monday"],
+        "automerge": false
+      },
+      {
+        "description": "Group Go module major updates weekly",
+        "matchManagers": ["gomod"],
+        "matchUpdateTypes": ["major"],
+        "groupName": "Go module major updates",
+        "schedule": ["before 5am on Monday"],
+        "automerge": false
+      },
+      {
+        "description": "Group all non-major npm dependencies together and schedule weekly",
+        "matchDatasources": ["npm"],
+        "matchUpdateTypes": ["minor", "patch"],
+        "groupName": "npm non-major dependencies",
+        "schedule": ["before 5am on Monday"],
+        "automerge": true,
+        "automergeType": "pr"
+      },
+      {
+        "description": "Group npm devDependencies separately (all update types)",
+        "matchDatasources": ["npm"],
+        "matchDepTypes": ["devDependencies"],
+        "groupName": "npm devDependencies",
+        "schedule": ["before 5am on Monday"],
+        "automerge": true,
+        "automergeType": "pr"
+      },
+      {
+        "description": "Group major npm production updates separately and don't auto-merge",
+        "matchDatasources": ["npm"],
+        "matchDepTypes": ["dependencies", "peerDependencies", "optionalDependencies"],
+        "matchUpdateTypes": ["major"],
+        "groupName": "npm major dependencies",
+        "schedule": ["before 5am on Monday"],
+        "automerge": false
       }
     ]
   }
