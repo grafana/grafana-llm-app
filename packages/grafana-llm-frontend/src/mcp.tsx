@@ -70,12 +70,12 @@ export class GrafanaLiveTransport implements Transport {
     }
     this._subscribeChannel = {
       scope: LiveChannelScope.Plugin,
-      namespace: LLM_PLUGIN_ID,
+      stream: LLM_PLUGIN_ID,
       path: `${path}/subscribe`,
     };
     this._publishChannel = {
       scope: LiveChannelScope.Plugin,
-      namespace: LLM_PLUGIN_ID,
+      stream: LLM_PLUGIN_ID,
       path: `${path}/publish`,
     };
   }

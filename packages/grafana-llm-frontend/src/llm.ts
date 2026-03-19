@@ -452,7 +452,7 @@ export function streamChatCompletions(
 ): Observable<ChatCompletionsResponse<ChatCompletionsChunk>> {
   const channel: LiveChannelAddress = {
     scope: LiveChannelScope.Plugin,
-    namespace: LLM_PLUGIN_ID,
+    stream: LLM_PLUGIN_ID,
     path: LLM_CHAT_COMPLETIONS_PATH + "/" + uuidv4(),
     data: request,
   };
