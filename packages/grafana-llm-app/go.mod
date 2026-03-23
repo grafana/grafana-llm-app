@@ -9,7 +9,7 @@ require (
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
 	github.com/grafana/grafana-plugin-sdk-go v0.290.1
 	github.com/grafana/incident-go v0.0.0-20251003115753-d71681611ddd
-	github.com/grafana/mcp-grafana v0.11.0
+	github.com/grafana/mcp-grafana v0.11.2
 	github.com/mark3labs/mcp-go v0.45.0
 	github.com/qdrant/go-client v1.17.1
 	github.com/sashabaranov/go-openai v1.41.2
