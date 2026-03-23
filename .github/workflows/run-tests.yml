@@ -22,7 +22,7 @@ jobs:
           go-version-file: packages/grafana-llm-app/go.mod
           cache-dependency-path: packages/grafana-llm-app/go.sum
       - name: Install Mage
-        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b
+        uses: magefile/mage-action@35e1490c70b858aec34994e5a0e2546bffba9cca
         with:
           install-only: true
       - name: Install dependencies
