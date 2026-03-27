@@ -124,7 +124,7 @@ func (m *MCP) extractIncidentClientFromHTTPRequest(ctx context.Context, req *htt
 		return ctx
 	}
 	apiKey, _ := cfg.PluginAppClientSecret()
-	incidentUrl := fmt.Sprintf("%s/api/plugins/grafana-incident-app/resources/api/", strings.TrimSuffix(grafanaURL, "/"))
+	incidentUrl := fmt.Sprintf("%s/api/plugins/grafana-irm-app/resources/api/", strings.TrimSuffix(grafanaURL, "/"))
 	// TODO: incident client does not support access tokens. For this reason,
 	// we will not be enabling Incident tools in Grafana Cloud yet.
 	client := incident.NewClient(incidentUrl, apiKey)
