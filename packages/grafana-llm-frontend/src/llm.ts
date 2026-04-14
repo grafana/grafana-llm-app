@@ -605,7 +605,7 @@ export enum StreamStatus {
  * A constant representing the timeout value in milliseconds.
  * @type {number}
  */
-export const TIMEOUT = 10000;
+export const TIMEOUT = 60000;
 
 /**
  * A type representing the state of an LLM stream.
@@ -645,6 +645,7 @@ export type LLMStreamState = {
  * @param {string} [model=Model.LARGE] - The LLM model to use for communication.
  * @param {number} [temperature=1] - The temperature value for text generation (default is 1).
  * @param {function} [notifyError] - A callback function for handling errors.
+ * @param {number} [timeout=TIMEOUT] - Timeout in milliseconds for the initial response before the stream is considered failed.
  *
  * @returns {LLMStreamState} - An object containing the state of the LLM stream.
  * @property {function} setMessages - A function to update the list of messages in the stream.
@@ -663,6 +664,7 @@ export function useLLMStream(
     text?: string,
     traceId?: string,
   ) => void = () => {},
+  timeout = TIMEOUT,
 ): LLMStreamState {
   // The messages array to send to the LLM.
   const [messages, setMessages] = useState<Message[]>([]);
@@ -743,16 +745,16 @@ export function useLLMStream(
 
   // If the stream is generating and we haven't received a reply, it times out.
   useEffect(() => {
-    let timeout: NodeJS.Timeout | undefined;
+    let timeout_: NodeJS.Timeout | undefined;
     if (streamStatus === StreamStatus.GENERATING && reply === "") {
-      timeout = setTimeout(() => {
-        onError(new Error(`LLM stream timed out after ${TIMEOUT}ms`));
-      }, TIMEOUT);
+      timeout_ = setTimeout(() => {
+        onError(new Error(`LLM stream timed out after ${timeout}ms`));
+      }, timeout);
     }
     return () => {
-      timeout && clearTimeout(timeout);
+      timeout_ && clearTimeout(timeout_);
     };
-  }, [streamStatus, reply, onError]);
+  }, [streamStatus, reply, onError, timeout]);
 
   if (asyncError || enabledError) {
     setError(asyncError || enabledError);
