@@ -250,7 +250,7 @@ func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backe
 	}
 
 	c := client.NewHTTPClientWithConfig(strfmt.Default, t)
-	return mcpgrafana.WithGrafanaClient(ctx, c)
+	return mcpgrafana.WithGrafanaClient(ctx, &mcpgrafana.GrafanaClient{GrafanaHTTPAPI: c})
 }
 
 // extractIncidentClientFromGrafanaLiveRequest creates an Incident client and adds it to the context.
