@@ -138,8 +138,8 @@ func defaultModelSettings(provider ProviderType) *ModelSettings {
 		return &ModelSettings{
 			Default: ModelBase,
 			Mapping: map[Model]string{
-				ModelBase:  string(anthropic.ModelClaude4Sonnet20250514),
-				ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+				ModelBase:  string(anthropic.ModelClaudeSonnet4_20250514),
+				ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
 			},
 		}
 	default:
