@@ -257,50 +257,50 @@ func TestModelToAnthropic(t *testing.T) {
 		{
 			input:    ModelBase,
 			settings: nil,
-			expected: string(anthropic.ModelClaude4Sonnet20250514),
+			expected: string(anthropic.ModelClaudeSonnet4_20250514),
 		},
 		{
 			input:    ModelLarge,
 			settings: nil,
-			expected: string(anthropic.ModelClaude4Sonnet20250514),
+			expected: string(anthropic.ModelClaudeSonnet4_20250514),
 		},
 		{
 			input: ModelBase,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelBase:  string(anthropic.ModelClaude4Sonnet20250514),
-					ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+					ModelBase:  string(anthropic.ModelClaudeSonnet4_20250514),
+					ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
 				},
 			},
-			expected: string(anthropic.ModelClaude4Sonnet20250514),
+			expected: string(anthropic.ModelClaudeSonnet4_20250514),
 		},
 		{
 			input: ModelLarge,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelBase:  string(anthropic.ModelClaude4Sonnet20250514),
-					ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+					ModelBase:  string(anthropic.ModelClaudeSonnet4_20250514),
+					ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
 				},
 			},
-			expected: string(anthropic.ModelClaude4Sonnet20250514),
+			expected: string(anthropic.ModelClaudeSonnet4_20250514),
 		},
 		{
 			input: ModelLarge,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelLarge: string(anthropic.ModelClaude4Sonnet20250514),
+					ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
 				},
 			},
-			expected: string(anthropic.ModelClaude4Sonnet20250514),
+			expected: string(anthropic.ModelClaudeSonnet4_20250514),
 		},
 		{
 			input: ModelLarge,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelBase: string(anthropic.ModelClaude4Sonnet20250514),
+					ModelBase: string(anthropic.ModelClaudeSonnet4_20250514),
 				},
 			},
-			expected: string(anthropic.ModelClaude4Sonnet20250514),
+			expected: string(anthropic.ModelClaudeSonnet4_20250514),
 		},
 	} {
 		t.Run(string(tt.input), func(t *testing.T) {
