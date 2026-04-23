@@ -60,7 +60,7 @@
     "protobufjs": "8.0.1",
     "protocol-buffers-schema": "3.6.1",
     "sass": {
-      "immutable": "4.3.8"
+      "immutable": "5.1.5"
     },
     "uuid": "14.0.0"
   }
