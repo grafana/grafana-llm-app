@@ -78,7 +78,7 @@
     "publint": "^0.3.12",
     "react-use": "^17.6.0",
     "semver": "^7.6.3",
-    "uuid": "^11.0.5"
+    "uuid": "^14.0.0"
   },
   "peerDependencies": {
     "@grafana/data": "^10.4.0 ||^11 || ^12",
