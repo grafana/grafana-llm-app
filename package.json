@@ -26,22 +26,22 @@
   ],
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.38.0",
-    "@grafana/eslint-config": "^8.0.0",
-    "@grafana/plugin-e2e": "^2.0.2",
+    "@eslint/js": "^10.0.0",
+    "@grafana/eslint-config": "^9.0.0",
+    "@grafana/plugin-e2e": "^3.0.0",
     "@swc/core": "1.15.26",
     "@swc/helpers": "^0.5.13",
     "@swc/jest": "^0.2.37",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^16.1.0",
     "@types/jest": "^30.0.0",
-    "@types/testing-library__jest-dom": "5.14.9",
+    "@types/testing-library__jest-dom": "6.0.0",
     "concurrently": "^9.1.2",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "prettier": "^3.4.2",
     "rxjs": "7.8.2",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "engines": {
     "node": ">=22"
