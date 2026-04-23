@@ -78,8 +78,8 @@ export function ModelConfig({
   onChange: (settings: ModelSettings) => void;
 }) {
   const defaultModelMapping = defaultModelMappingConfig(provider);
-  settings = initModelSettings(provider, settings, defaultModelMapping);
-  const setDefault = (model: openai.Model) => onChange({ ...settings, default: model });
+  const resolvedSettings = initModelSettings(provider, settings, defaultModelMapping);
+  const setDefault = (model: openai.Model) => onChange({ ...resolvedSettings, default: model });
 
   return (
     <FieldSet>
@@ -96,7 +96,7 @@ export function ModelConfig({
           <Select
             options={defaultModelMapping.map((entry) => ({ label: entry.label, value: entry.id }))}
             width={60}
-            value={settings.default ?? DEFAULT_MODEL_ID}
+            value={resolvedSettings.default ?? DEFAULT_MODEL_ID}
             onChange={(e) => setDefault(e.value ?? (DEFAULT_MODEL_ID as openai.Model))}
           />
         </Field>
@@ -107,8 +107,8 @@ export function ModelConfig({
             Model mappings
           </Label>
           {defaultModelMapping.map((entry, i) => {
-            const modelSetting = settings.mapping[entry.id];
-            const isDefault = settings.default === entry.id;
+            const modelSetting = resolvedSettings.mapping[entry.id];
+            const isDefault = resolvedSettings.default === entry.id;
             const FieldLabel = (
               <>
                 <Label>
@@ -138,10 +138,10 @@ export function ModelConfig({
                   onChange={(e) => {
                     const newModelName = e.currentTarget.value;
                     const newMapping = {
-                      ...settings.mapping,
+                      ...resolvedSettings.mapping,
                       [entry.id]: newModelName || undefined,
                     };
-                    onChange({ ...settings, mapping: newMapping });
+                    onChange({ ...resolvedSettings, mapping: newMapping });
                   }}
                 />
               </Field>
