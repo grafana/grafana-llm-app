@@ -64,4 +64,4 @@ jobs:
       - name: Publish to NPM
         run: |
           cd packages/grafana-llm-frontend
-          npm publish --access public
+          npm publish --access public --provenance
