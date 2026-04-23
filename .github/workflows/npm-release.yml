@@ -31,9 +31,9 @@ jobs:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
 
-      # A newer version of npm is required to make use of Trusted Publishing.
-      - name: Install newer npm
-        run: npm install -g npm@^10.9.0
+      # npm >=11 is required for Trusted Publishing (OIDC-based auth).
+      # npm 10.x --provenance only signs; it doesn't use OIDC for publish auth.
+      # We avoid a global install (breaks on Node 22) and use npx at publish time.
 
       - name: Setup Go environment
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
@@ -64,4 +64,4 @@ jobs:
       - name: Publish to NPM
         run: |
           cd packages/grafana-llm-frontend
-          npm publish --access public --provenance
+          npx -y npm@^11.5.1 publish --access public --provenance
