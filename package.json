@@ -61,6 +61,7 @@
     "protocol-buffers-schema": "3.6.1",
     "sass": {
       "immutable": "4.3.8"
-    }
+    },
+    "uuid": "14.0.0"
   }
 }
