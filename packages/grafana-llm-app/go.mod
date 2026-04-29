@@ -6,11 +6,11 @@ require (
 	github.com/anthropics/anthropic-sdk-go v1.32.0
 	github.com/go-openapi/strfmt v0.26.1
 	github.com/grafana/authlib v0.0.0-20260316143530-e1d123886039
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
-	github.com/grafana/grafana-plugin-sdk-go v0.291.0
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20260330113218-ee77c4f6f90e
+	github.com/grafana/grafana-plugin-sdk-go v0.291.1
 	github.com/grafana/incident-go v0.0.0-20251003115753-d71681611ddd
-	github.com/grafana/mcp-grafana v0.11.4
-	github.com/mark3labs/mcp-go v0.47.0
+	github.com/grafana/mcp-grafana v0.11.6
+	github.com/mark3labs/mcp-go v0.47.1
 	github.com/qdrant/go-client v1.17.1
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/stretchr/testify v1.11.1
@@ -91,7 +91,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20260108123158-1a1acfb6ef2e // indirect
 	github.com/grafana/otel-profiling-go v0.5.1 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect
-	github.com/grafana/pyroscope/api v1.3.0 // indirect
+	github.com/grafana/pyroscope/api v1.3.2 // indirect
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3 // indirect
