@@ -80,9 +80,9 @@
     "uuid": "^14.0.0"
   },
   "peerDependencies": {
-    "@grafana/data": "^10.4.0 ||^11 || ^12",
-    "@grafana/runtime": "^10.4.0 || ^11 || ^12",
-    "react": "^18",
+    "@grafana/data": "^13.0.0",
+    "@grafana/runtime": "^13.0.0",
+    "react": "^19.0.0",
     "rxjs": "^7.8.2"
   }
 }
