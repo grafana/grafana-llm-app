@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build": "npm run build --workspaces",
-    "build:all": "npm run build && npm run backend:build",
+    "build": "turbo run build",
+    "build:all": "turbo run build && npm run backend:build",
     "dev": "npm run frontend:build && npm run backend:build && npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
     "e2e:ci": "npm run e2e:ci --workspace=@grafana/llm-app",
     "backend:update-sdk": "npm run backend:update-sdk --workspace=@grafana/llm-app",
@@ -9,14 +9,14 @@
     "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
     "backend:restart": "npm run backend:restart --workspace=@grafana/llm-app",
     "frontend:build": "npm run build --workspace=@grafana/llm",
-    "lint": "npm run lint --workspaces && npm run format:check --workspaces",
-    "lint:fix": "npm run lint:fix --workspaces && npm run format --workspaces",
-    "format": "npm run format --workspaces",
-    "format:check": "npm run format:check --workspaces",
+    "lint": "turbo run lint && turbo run format:check",
+    "lint:fix": "turbo run lint:fix && turbo run format",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
     "server": "npm run server --workspace=@grafana/llm-app",
     "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
-    "test:ci": "npm run test:ci --workspaces",
-    "typecheck": "npm run typecheck --workspaces"
+    "test:ci": "turbo run test:ci",
+    "typecheck": "turbo run typecheck"
   },
   "author": "Grafana",
   "license": "Apache-2.0",
@@ -41,8 +41,10 @@
     "jest-environment-jsdom": "^30.3.0",
     "prettier": "^3.4.2",
     "rxjs": "7.8.2",
+    "turbo": "^2.9.16",
     "typescript": "5.9.3"
   },
+  "packageManager": "npm@11.6.2",
   "engines": {
     "node": ">=22"
   },
