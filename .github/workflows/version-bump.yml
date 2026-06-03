@@ -33,6 +33,11 @@ jobs:
           VAULT_INSTANCE: ops
         with:
           vault_instance: ${{ env.VAULT_INSTANCE }}
+          # Don't export secrets to the job-wide environment; consume them via this
+          # step's `secrets` output only in the step that needs them (below). This keeps
+          # the GitHub App private key out of the env of later steps that run third-party
+          # code (npm install, npx generate-changelog).
+          export_env: false
           common_secrets: |
             GITHUB_APP_ID=plugins-platform-bot-app:app-id
             GITHUB_APP_PRIVATE_KEY=plugins-platform-bot-app:private-key
@@ -41,8 +46,8 @@ jobs:
         id: generate-github-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
-          app-id: ${{ env.GITHUB_APP_ID }}
-          private-key: ${{ env.GITHUB_APP_PRIVATE_KEY }}
+          app-id: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_ID }}
+          private-key: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
