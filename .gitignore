@@ -46,3 +46,6 @@ __to-upload__
 
 # Dev environment
 .envrc
+
+# Turbo
+.turbo
