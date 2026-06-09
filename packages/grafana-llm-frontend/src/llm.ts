@@ -10,9 +10,7 @@
 
 import {
   isLiveChannelMessageEvent,
-  LiveChannelAddress,
   LiveChannelMessageEvent,
-  LiveChannelScope,
 } from "@grafana/data";
 import {
   getBackendSrv,
@@ -27,8 +25,8 @@ import { filter, map, scan, takeWhile, tap, toArray } from "rxjs/operators";
 import { v4 as uuidv4 } from "uuid";
 
 import {
-  LLM_PLUGIN_ID,
   LLM_PLUGIN_ROUTE,
+  pluginLiveChannel,
   setLLMPluginVersion,
 } from "./constants";
 import { HealthCheckResponse, LLMProviderHealthDetails } from "./types";
@@ -450,12 +448,10 @@ export async function chatCompletions(
 export function streamChatCompletions(
   request: ChatCompletionsRequest,
 ): Observable<ChatCompletionsResponse<ChatCompletionsChunk>> {
-  const channel: LiveChannelAddress = {
-    scope: LiveChannelScope.Plugin,
-    namespace: LLM_PLUGIN_ID,
-    path: LLM_CHAT_COMPLETIONS_PATH + "/" + uuidv4(),
-    data: request,
-  };
+  const channel = pluginLiveChannel(
+    LLM_CHAT_COMPLETIONS_PATH + "/" + uuidv4(),
+    request,
+  );
   const messages = getGrafanaLiveSrv()
     .getStream(channel)
     .pipe(filter((event) => isLiveChannelMessageEvent(event))) as Observable<

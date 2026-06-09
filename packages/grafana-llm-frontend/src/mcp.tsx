@@ -4,7 +4,6 @@ import {
   isLiveChannelMessageEvent,
   LiveChannelAddress,
   LiveChannelMessageEvent,
-  LiveChannelScope,
 } from "@grafana/data";
 import {
   config,
@@ -24,7 +23,11 @@ import {
 import { Observable, filter } from "rxjs";
 import { v4 as uuid } from "uuid";
 
-import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from "./constants";
+import {
+  LLM_PLUGIN_ID,
+  LLM_PLUGIN_ROUTE,
+  pluginLiveChannel,
+} from "./constants";
 import { Tool as OpenAITool } from "./openai";
 
 const MCP_GRAFANA_PATH = "mcp/grafana";
@@ -68,16 +71,8 @@ export class GrafanaLiveTransport implements Transport {
       const pathId = uuid();
       path = `${MCP_GRAFANA_PATH}/${pathId}`;
     }
-    this._subscribeChannel = {
-      scope: LiveChannelScope.Plugin,
-      namespace: LLM_PLUGIN_ID,
-      path: `${path}/subscribe`,
-    };
-    this._publishChannel = {
-      scope: LiveChannelScope.Plugin,
-      namespace: LLM_PLUGIN_ID,
-      path: `${path}/publish`,
-    };
+    this._subscribeChannel = pluginLiveChannel(`${path}/subscribe`);
+    this._publishChannel = pluginLiveChannel(`${path}/publish`);
   }
 
   async start(): Promise<void> {
