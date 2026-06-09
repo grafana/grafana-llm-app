@@ -1,15 +1,17 @@
 import {
   enabled,
   extractContent,
+  streamChatCompletions,
   ChatCompletionsResponse,
   ChatCompletionsChunk,
 } from "./llm";
-import { LLM_PLUGIN_ROUTE } from "./constants";
-import { getBackendSrv } from "@grafana/runtime";
+import { LLM_PLUGIN_ID, LLM_PLUGIN_ROUTE } from "./constants";
+import { getBackendSrv, getGrafanaLiveSrv } from "@grafana/runtime";
 import { of } from "rxjs";
 
 jest.mock("@grafana/runtime", () => ({
   getBackendSrv: jest.fn(),
+  getGrafanaLiveSrv: jest.fn(),
 }));
 
 describe("enabled", () => {
@@ -41,6 +43,22 @@ describe("enabled", () => {
     // Call the enabled function
     const result = await enabled();
     expect(result).toBe(true);
+  });
+});
+
+describe("streamChatCompletions", () => {
+  it("subscribes via a channel carrying both stream and namespace", () => {
+    const getStream = jest.fn().mockReturnValue(of());
+    (getGrafanaLiveSrv as jest.Mock).mockReturnValue({ getStream });
+
+    streamChatCompletions({ model: "large", messages: [] });
+
+    // Grafana >= 12.4 builds the channel id from `stream`; older versions use
+    // `namespace`. Both must be set so the subscribe routes on every version.
+    const channel = getStream.mock.calls[0][0];
+    expect(channel.stream).toBe(LLM_PLUGIN_ID);
+    expect(channel.namespace).toBe(LLM_PLUGIN_ID);
+    expect(channel.path).toMatch(/^llm\/v1\/chat\/completions\//);
   });
 });
 
