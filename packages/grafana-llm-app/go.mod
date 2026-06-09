@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/anthropics/anthropic-sdk-go v1.32.0
-	github.com/go-openapi/strfmt v0.26.1
+	github.com/go-openapi/strfmt v0.26.3
 	github.com/grafana/authlib v0.0.0-20260316143530-e1d123886039
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
 	github.com/grafana/grafana-plugin-sdk-go v0.291.0
