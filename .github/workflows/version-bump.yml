@@ -26,29 +26,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get secrets from Vault
-        id: get-secrets
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main # zizmor: ignore[unpinned-uses]
-        env:
-          VAULT_INSTANCE: ops
-        with:
-          vault_instance: ${{ env.VAULT_INSTANCE }}
-          # Don't export secrets to the job-wide environment; consume them via this
-          # step's `secrets` output only in the step that needs them (below). This keeps
-          # the GitHub App private key out of the env of later steps that run third-party
-          # code (npm install, npx generate-changelog).
-          export_env: false
-          common_secrets: |
-            GITHUB_APP_ID=plugins-platform-bot-app:app-id
-            GITHUB_APP_PRIVATE_KEY=plugins-platform-bot-app:private-key
-
+      # Mint the token via the GitHub App Token Broker (GATB) rather than reading the
+      # app's raw private key from Vault. The raw key was rotated out during the org-wide
+      # GATB migration, which is why the old `get-vault-secrets` + `actions/create-github-app-token`
+      # flow lost push access to `main` (403). The broker-minted token is authorized to
+      # push to protected branches. The `token` output reference is unchanged.
       - name: Generate GitHub token
         id: generate-github-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: grafana/shared-workflows/actions/create-github-app-token@259ba21cb3ff07724f331e26d926d655d24b317b # create-github-app-token/v0.2.3
         with:
-          app-id: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_ID }}
-          private-key: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
+          github_app: grafana-plugins-platform-bot
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
