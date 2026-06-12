@@ -125,21 +125,23 @@ jobs:
         # are set up.
         working-directory: packages/grafana-llm-app
 
-      - name: Commit changes
+      # Direct pushes to `main` are blocked by branch protection, so we open a PR
+      # instead. The matching `vX.Y.Z` tag is created automatically once the PR is
+      # merged, by the `tag-release.yml` workflow.
+      - name: Create branch and open version bump PR
         shell: bash
         run: |
+          BRANCH="version-bump/${NEW_VERSION}"
+          git checkout -b "${BRANCH}"
           git add packages/grafana-llm-app/package.json packages/grafana-llm-frontend/package.json package-lock.json
           git add packages/grafana-llm-app/CHANGELOG.md || true  # No-op if changelog not generated
-          git commit -m "chore(version): bump version to ${{ steps.bump-plugin.outputs.new-version }}"
-          git push origin main
+          git commit -m "chore(version): bump version to ${NEW_VERSION}"
+          git push origin "${BRANCH}"
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "chore(version): bump version to ${NEW_VERSION}" \
+            --body "Automated version bump to \`${NEW_VERSION}\`. The matching git tag is created automatically once this PR is merged (see \`.github/workflows/tag-release.yml\`)."
         env:
-          GITHUB_TOKEN: ${{ steps.generate-github-token.outputs.token }}
-
-      - name: Create git tag
-        shell: bash
-        run: |
-          git tag -a ${{ steps.bump-plugin.outputs.new-version }} -m "Release version ${{ steps.bump-plugin.outputs.new-version }}"
-
-      - name: Push tags
-        shell: bash
-        run: git push origin --tags
+          NEW_VERSION: ${{ steps.bump-plugin.outputs.new-version }}
+          GH_TOKEN: ${{ steps.generate-github-token.outputs.token }}

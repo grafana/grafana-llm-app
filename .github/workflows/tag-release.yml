@@ -1,0 +1,73 @@
+name: Tag release
+
+# When a version bump lands on `main` (via the PR opened by `version-bump.yml`),
+# create and push the matching `vX.Y.Z` git tag. This replaces the inline tagging
+# that `version-bump.yml` used to do before direct pushes to `main` were blocked
+# by branch protection.
+#
+# The job is idempotent: it only creates the tag if it doesn't already exist, so
+# unrelated pushes that touch `package.json` (e.g. dependency bumps) are no-ops.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/grafana-llm-app/package.json
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get secrets from Vault
+        id: get-secrets
+        uses: grafana/shared-workflows/actions/get-vault-secrets@main # zizmor: ignore[unpinned-uses]
+        env:
+          VAULT_INSTANCE: ops
+        with:
+          vault_instance: ${{ env.VAULT_INSTANCE }}
+          # Don't export secrets to the job-wide environment; consume them via this
+          # step's `secrets` output only in the step that needs them (below).
+          export_env: false
+          common_secrets: |
+            GITHUB_APP_ID=plugins-platform-bot-app:app-id
+            GITHUB_APP_PRIVATE_KEY=plugins-platform-bot-app:private-key
+
+      - name: Generate GitHub token
+        id: generate-github-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_ID }}
+          private-key: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          token: ${{ steps.generate-github-token.outputs.token }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Setup Git
+        shell: bash
+        run: |
+          git config user.name 'grafana-plugins-platform-bot[bot]'
+          git config user.email '144369747+grafana-plugins-platform-bot[bot]@users.noreply.github.com'
+
+      - name: Create and push tag if version changed
+        shell: bash
+        run: |
+          VERSION=$(jq -r .version packages/grafana-llm-app/package.json)
+          TAG="v${VERSION}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists, nothing to do."
+            exit 0
+          fi
+          echo "Creating tag ${TAG}"
+          git tag -a "${TAG}" -m "Release version ${TAG}"
+          git push origin "${TAG}"
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-github-token.outputs.token }}
