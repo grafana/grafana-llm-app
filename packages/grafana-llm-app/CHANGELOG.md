@@ -1,5 +1,45 @@
 # Changelog
 
+#### 1.0.9
+
+##### Chores
+
+* **deps:**
+  *  update actions/checkout action to v6.0.3 (#935) (b614bf2a)
+  *  update actions/create-github-app-token action to v3.2.0 (#927) (80d20d90)
+  *  update actions/create-github-app-token action to v3.1.1 (#905) (ead2af75)
+  *  update dependency @swc/core to v1.15.33 (#903) (a5715caf)
+  *  update module github.com/prometheus/prometheus to v0.311.3 [security] (#909) (8a00700c)
+  *  update dependency protobufjs to v8 (#893) (23acd070)
+  *  lock file maintenance (#871) (dd9dd2f5)
+  *  update dependency @swc/core to v1.15.26 (#887) (a57c722e)
+*  Disable install scripts in package manager configs (#914) (fafdaca0)
+* **ci:**  scope Vault secrets to the token step in version-bump workflow (ad482c22)
+
+##### Bug Fixes
+
+* **deps:**
+  *  update module github.com/go-openapi/strfmt to v0.26.3 (#936) (be7e01e4)
+  *  upgrade lodash to 4.18.1 to resolve CVE-2026-4800 (#930) (148e685d)
+  *  bump uuid to 14.0.0 (#897) (d0c8f25b)
+  *  bump dompurify to 3.4.1 (#899) (edb1d6ce)
+  *  add override for protocol-buffers-schema 3.6.1 (#898) (52ccf007)
+  *  bump Go to 1.26.2 (#895) (d78df0b2)
+  *  update dependency uuid to v14 [security] (#894) (a8140e29)
+  *  resolve CVEs in immutable and protobufjs (#892) (4c17b1da)
+  *  update module github.com/grafana/mcp-grafana to v0.11.4 (#888) (69ab0e4c)
+  *  update go module minor updates (#890) (4dca3387)
+* **live:**  set both stream and namespace on plugin Live channels (#939) (c74fbf41)
+* **security/high/:**  update dependency protobufjs to v8.2.0 [security] (#932) (3e22dfb9)
+* **security/unknown/packages/grafana-llm-app:**  update module golang.org/x/net to v0.55.0 [security] (#933) (ee0d56d7)
+* **CVE-2026-39820:**  bump go to 1.26.3 (#918) (fd7e1c53)
+* **ci:**
+  *  add Turborepo for workspace task orchestration (#931) (9a363837)
+  *  use npx npm@11 for publish to fix Trusted Publishing (#902) (d5a2d731)
+  *  add --provenance flag to npm publish (#901) (7d7b8466)
+  *  downgrade npm self-upgrade to ^10.9.0 (#900) (d74368a1)
+
+
 ## Unreleased
 
 - Update Anthropic model defaults by @joe-elliott
