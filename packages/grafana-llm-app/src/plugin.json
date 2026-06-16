@@ -28,7 +28,7 @@
   },
   "includes": [],
   "dependencies": {
-    "grafanaDependency": ">=9.5.2",
+    "grafanaDependency": ">=9.5.2-0",
     "plugins": []
   },
   "iam": {
