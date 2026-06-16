@@ -1,0 +1,69 @@
+{
+  "scripts": {
+    "build": "turbo run build",
+    "build:all": "turbo run build && npm run backend:build",
+    "dev": "npm run frontend:build && npm run backend:build && npm run build -w @grafana/llm && concurrently --names 'llm-frontend,llm-app' 'npm run dev -w @grafana/llm' 'npm run dev -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "e2e:ci": "npm run e2e:ci --workspace=@grafana/llm-app",
+    "backend:update-sdk": "npm run backend:update-sdk --workspace=@grafana/llm-app",
+    "backend:build": "npm run backend:build --workspace=@grafana/llm-app",
+    "backend:test": "npm run backend:test --workspace=@grafana/llm-app",
+    "backend:restart": "npm run backend:restart --workspace=@grafana/llm-app",
+    "frontend:build": "npm run build --workspace=@grafana/llm",
+    "lint": "turbo run lint && turbo run format:check",
+    "lint:fix": "turbo run lint:fix && turbo run format",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
+    "server": "npm run server --workspace=@grafana/llm-app",
+    "test": "concurrently --names 'llm-frontend,llm-app' 'npm run test:watch -w @grafana/llm' 'npm run test:watch -w @grafana/llm-app' -c 'bgBlue.bold,bgMagenta.bold'",
+    "test:ci": "turbo run test:ci",
+    "typecheck": "turbo run typecheck"
+  },
+  "author": "Grafana",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/grafana-llm-frontend",
+    "packages/grafana-llm-app"
+  ],
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.38.0",
+    "@grafana/eslint-config": "^8.0.0",
+    "@grafana/plugin-e2e": "^2.0.2",
+    "@swc/core": "1.15.33",
+    "@swc/helpers": "^0.5.13",
+    "@swc/jest": "^0.2.37",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^16.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/testing-library__jest-dom": "5.14.9",
+    "concurrently": "^9.1.2",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "prettier": "^3.4.2",
+    "rxjs": "7.8.2",
+    "turbo": "^2.9.16",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "rxjs": "7.8.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@remix-run/router": "1.23.2",
+    "react-router-dom-v5-compat": "6.30.3",
+    "@isaacs/brace-expansion": "5.0.1",
+    "diff": "9.0.0",
+    "lodash": "4.18.1",
+    "dompurify": "3.4.1",
+    "immutable": "5.1.5",
+    "protobufjs": "8.2.0",
+    "protocol-buffers-schema": "3.6.1",
+    "sass": {
+      "immutable": "4.3.8"
+    },
+    "uuid": "14.0.0"
+  }
+}

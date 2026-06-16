@@ -1,0 +1,100 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'grafana-llm-app'
+    build:
+      context: ./.config
+      args:
+        grafana_version: ${GRAFANA_VERSION:-main}
+    environment:
+      ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
+      AZURE_OPENAI_API_KEY: $AZURE_OPENAI_API_KEY
+      GF_LOG_LEVEL: debug
+      GF_SERVER_ROUTER_LOGGING: true
+      OPENAI_ORGANIZATION_ID: $OPENAI_ORGANIZATION_ID
+      OPENAI_API_KEY: $OPENAI_API_KEY
+      VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
+      VECTOR_STORE_BASIC_AUTH_PASSWORD: $VECTOR_STORE_BASIC_AUTH_PASSWORD
+      GF_FEATURE_TOGGLES_ENABLE: externalServiceAccounts
+      DEV_MODE: true
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/grafana-llm-app
+      # For grafana/vectorapi embedder or store
+      - ./provisioning/plugins/grafana-vector-api/:/etc/grafana/provisioning/plugins/
+      # For openai embedder and qdrant store
+      # - ./provisioning/plugins/openai-qdrant/:/etc/grafana/provisioning/plugins/
+      # For test provider, no store
+      # - ./provisioning/plugins/test-provider/:/etc/grafana/provisioning/plugins/
+
+  # For openai embedder and qdrant store
+  # qdrant:
+  #   image: qdrant/qdrant
+  #   volumes:
+  #     - qdrant-storage:/qdrant/storage
+
+  # For grafana/vectorapi embedder or store
+  db:
+    image: ankane/pgvector:v0.5.1
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    profiles:
+      - vector
+
+  # For grafana/vectorapi embedder or store
+  vectorapi:
+    image: grafana/vectorapi
+    environment:
+      PORT: 8889
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - 8889:8889
+    volumes:
+      - sentence-transformers:/app/.sentence_transfomers
+    profiles:
+      - vector
+
+  # Playwright server for interactive development
+  playwright-server:
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    container_name: 'playwright-server'
+    working_dir: /app
+    command: sh -c "npm install --legacy-peer-deps && npx playwright run-server --port 5000 --host 0.0.0.0"
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    profiles:
+      - testing
+    depends_on:
+      - grafana
+
+  # Playwright runner for CI/automated testing
+  playwright-runner:
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    container_name: 'playwright-runner'
+    working_dir: /app
+    command: sh -c "npm install --legacy-peer-deps && echo 'Waiting for Grafana to be ready...' && until curl -f http://grafana:3000/api/health; do echo 'Waiting for Grafana...'; sleep 2; done && echo 'Grafana is ready! Starting tests...' && npx playwright test"
+    environment:
+      GRAFANA_BASE_URL: http://grafana:3000
+      PW_TEST_HTML_REPORT_OPEN: never
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    profiles:
+      - testing
+    depends_on:
+      - grafana
+
+volumes:
+  sentence-transformers:
+  # For grafana/vectorapi embedder or store
+  # qdrant-storage:

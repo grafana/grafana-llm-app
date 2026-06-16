@@ -1,0 +1,46 @@
+apiVersion: 1
+
+apps:
+  - type: grafana-llm-app
+    jsonData:
+      base64EncodedAccessTokenSet: True
+      enableDevSandbox: true
+      # enableGrafanaManagedLLM: True
+      # displayVectorStoreOptions: False
+      provider: openai
+      openAI:
+        url: https://api.openai.com
+        organizationId: $OPENAI_ORGANIZATION_ID
+      # provider: azure
+      # openAI:
+      #   url: https://<resource>.openai.azure.com
+      #   azureModelMapping:
+      #     - ["base", "gpt-35-turbo"]
+      #     - ["large", "gpt-4-turbo"]
+      vector:
+        enabled: true
+        model: BAAI/bge-small-en-v1.5
+        embed:
+          type: grafana/vectorapi
+          grafanaVectorAPI:
+            url: http://vectorapi:8889
+            authType: no-auth
+            # authType: basic-auth
+            # basicAuthUser: <user>
+        store:
+          type: grafana/vectorapi
+          grafanaVectorAPI:
+            url: http://vectorapi:8889
+            authType: no-auth
+            # authType: basic-auth
+            # basicAuthUser: <user>
+      llmGateway:
+        url: http://llm-gateway:4033
+
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
+      # mock EncodedAccessToken "thestack:thetoken"
+      base64EncodedAccessToken: dGhlc3RhY2s6dGhldG9rZW4=
+      # openAIKey: $AZURE_OPENAI_API_KEY
+      # vectorEmbedderBasicAuthPassword: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
+      # vectorStoreBasicAuthPassword: $VECTOR_STORE_BASIC_AUTH_PASSWORD

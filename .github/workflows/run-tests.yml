@@ -1,0 +1,64 @@
+name: Run tests
+on: [pull_request]
+
+jobs:
+  tests:
+    permissions:
+      contents: read
+      id-token: none
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+        with:
+          persist-credentials: false
+      - name: Setup Node.js environment
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Setup Go environment
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version-file: packages/grafana-llm-app/go.mod
+          cache-dependency-path: packages/grafana-llm-app/go.sum
+      - name: Install Mage
+        uses: magefile/mage-action@35e1490c70b858aec34994e5a0e2546bffba9cca
+        with:
+          install-only: true
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint code
+        run: npm run lint
+      - name: Build plugin
+        run: npm run build:all
+      - name: Run frontend tests
+        run: npm run test:ci
+      - name: Run backend tests
+        run: npm run backend:test
+
+      - name: Run e2e tests
+        run: |
+          cd packages/grafana-llm-app
+          npm run test:e2e
+        env:
+          # Ensure clean environment for e2e tests
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+
+      - name: Upload e2e test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: e2e-test-results-pr
+          path: |
+            packages/grafana-llm-app/test-results/
+            packages/grafana-llm-app/playwright-report/
+          retention-days: 3
+
+      - name: Cleanup e2e services
+        if: always()
+        run: |
+          cd packages/grafana-llm-app
+          npm run server:down || true
+          npm run playwright:stop || true
+          docker system prune -f || true

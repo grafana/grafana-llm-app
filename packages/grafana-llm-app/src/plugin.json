@@ -1,0 +1,122 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "LLM",
+  "id": "grafana-llm-app",
+  "autoEnabled": true,
+  "backend": true,
+  "streaming": true,
+  "executable": "gpx_llm",
+  "info": {
+    "keywords": ["app", "generative", "AI", "LLM", "OpenAI", "assistant"],
+    "description": "Plugin to easily allow LLM based extensions to grafana",
+    "author": {
+      "name": "Grafana"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [
+      {
+        "name": "Configuration",
+        "path": "img/screenshot-configuration.png"
+      }
+    ],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "includes": [],
+  "dependencies": {
+    "grafanaDependency": ">=9.5.2-0",
+    "plugins": []
+  },
+  "iam": {
+    "permissions": [
+      {
+        "action": "orgs:read"
+      },
+      {
+        "action": "teams:read",
+        "scope": "teams:*"
+      },
+      {
+        "action": "users:read",
+        "scope": "global.users:*"
+      },
+      {
+        "action": "datasources:read",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "datasources:query",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "dashboards:read",
+        "scope": "dashboards:uid:*"
+      },
+      {
+        "action": "dashboards:create",
+        "scope": "folders:uid:*"
+      },
+      {
+        "action": "dashboards:write",
+        "scope": "dashboards:uid:*"
+      },
+      {
+        "action": "folders:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "folders:create"
+      },
+      {
+        "action": "folders:write",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:create",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:write",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.rules:delete",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.provisioning.provenance:write"
+      },
+      {
+        "action": "alert.notifications:read"
+      },
+      {
+        "action": "grafana-oncall-app.schedules:read"
+      },
+      {
+        "action": "grafana-oncall-app.user-settings:read"
+      },
+      {
+        "action": "grafana-irm-app.schedules:read"
+      },
+      {
+        "action": "grafana-irm-app.user-settings:read"
+      },
+      {
+        "action": "plugins.app:access",
+        "scope": "plugins:grafana-incident-app"
+      },
+      {
+        "action": "plugins.app:access",
+        "scope": "plugins:grafana-irm-app"
+      }
+    ]
+  }
+}
