@@ -838,3 +838,80 @@ func withProviderURL(t *testing.T, s backend.AppInstanceSettings, url string) ba
 	}
 	return s
 }
+
+// TestErrorResponsesAreSingleJSONDocument ensures the chat completions and
+// models handlers write exactly one JSON document on error paths. The error
+// branches previously fell through after handleError, appending a zero-value
+// success payload (or a second error) to the response body, which corrupted
+// the JSON received by clients.
+func TestErrorResponsesAreSingleJSONDocument(t *testing.T) {
+	ctx := context.Background()
+
+	// decodeSingleJSON asserts body contains exactly one JSON document.
+	decodeSingleJSON := func(t *testing.T, body []byte) map[string]any {
+		t.Helper()
+		dec := json.NewDecoder(bytes.NewReader(body))
+		var doc map[string]any
+		require.NoError(t, dec.Decode(&doc), "body is not valid JSON: %s", body)
+		require.False(t, dec.More(), "body contains more than one JSON document: %s", body)
+		return doc
+	}
+
+	for _, tc := range []struct {
+		name      string
+		settings  backend.AppInstanceSettings
+		method    string
+		path      string
+		body      []byte
+		expStatus int
+	}{
+		{
+			name: "chat completions: azure model with no deployment mapping",
+			settings: backend.AppInstanceSettings{
+				JSONData: []byte(`{"provider": "azure", "openAI": {"url": "https://example.openai.azure.com", "azureModelMapping": [["gpt-4", "gpt-4-deployment"]]}}`),
+				DecryptedSecureJSONData: map[string]string{
+					openAIKey: "abcd1234",
+				},
+			},
+			method:    http.MethodPost,
+			path:      "/llm/v1/chat/completions",
+			body:      []byte(`{"model": "base", "messages": [{"role": "user", "content": "hi"}]}`),
+			expStatus: http.StatusBadRequest,
+		},
+		{
+			name:      "chat completions: no provider configured",
+			settings:  backend.AppInstanceSettings{JSONData: []byte(`{}`)},
+			method:    http.MethodPost,
+			path:      "/llm/v1/chat/completions",
+			body:      []byte(`{"model": "base", "messages": [{"role": "user", "content": "hi"}]}`),
+			expStatus: http.StatusUnprocessableEntity,
+		},
+		{
+			name:      "models: no provider configured",
+			settings:  backend.AppInstanceSettings{JSONData: []byte(`{}`)},
+			method:    http.MethodGet,
+			path:      "/llm/v1/models",
+			expStatus: http.StatusUnprocessableEntity,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			inst, err := NewApp(ctx, tc.settings)
+			require.NoError(t, err)
+			app, ok := inst.(*App)
+			require.True(t, ok, "inst must be of type *App")
+
+			var r mockCallResourceResponseSender
+			err = app.CallResource(ctx, &backend.CallResourceRequest{
+				Method: tc.method,
+				Path:   tc.path,
+				Body:   tc.body,
+			}, &r)
+			require.NoError(t, err)
+			require.NotNil(t, r.response)
+
+			require.Equal(t, tc.expStatus, r.response.Status)
+			doc := decodeSingleJSON(t, r.response.Body)
+			require.Contains(t, doc, "error")
+		})
+	}
+}
