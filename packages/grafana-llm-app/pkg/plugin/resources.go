@@ -293,7 +293,7 @@ func getPluginID(ctx context.Context, slug string, grafanaAppURL string, saToken
 	}
 	respBody, err := doRequest(req)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("%w: %s", err, respBody)
 	}
 	plugin := provisionedPlugin{}
 	err = json.Unmarshal(respBody, &plugin)
