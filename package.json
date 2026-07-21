@@ -70,7 +70,7 @@
     "ws": "8.21.1",
     "js-cookie": "3.0.7",
     "fast-uri": "3.1.2",
-    "hono": "4.12.25",
+    "hono": "4.12.27",
     "ip-address": "10.1.1",
     "postcss": "8.5.10",
     "@opentelemetry/core": "2.8.0",
