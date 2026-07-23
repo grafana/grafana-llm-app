@@ -70,7 +70,7 @@ const initModelSettings = (
 
 export function ModelConfig({
   provider,
-  settings,
+  settings: settingsProp,
   onChange,
 }: {
   provider: ProviderType;
@@ -78,7 +78,7 @@ export function ModelConfig({
   onChange: (settings: ModelSettings) => void;
 }) {
   const defaultModelMapping = defaultModelMappingConfig(provider);
-  settings = initModelSettings(provider, settings, defaultModelMapping);
+  const settings = initModelSettings(provider, settingsProp, defaultModelMapping);
   const setDefault = (model: openai.Model) => onChange({ ...settings, default: model });
 
   return (
