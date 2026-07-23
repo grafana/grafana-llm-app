@@ -42,7 +42,7 @@
     "turbo": "^2.9.16",
     "typescript": "5.9.3"
   },
-  "packageManager": "npm@11.6.2",
+  "packageManager": "npm@11.18.0",
   "engines": {
     "node": ">=22"
   },
@@ -62,18 +62,18 @@
     "sass": {
       "immutable": "4.3.8"
     },
-    "uuid": "14.0.0",
+    "uuid": "14.0.1",
     "websocket-driver": "0.7.5",
     "shell-quote": "1.8.4",
     "ws": "8.21.1",
-    "js-cookie": "3.0.7",
+    "js-cookie": "3.0.8",
     "fast-uri": "3.1.2",
     "hono": "4.12.25",
-    "ip-address": "10.1.1",
-    "postcss": "8.5.10",
-    "@opentelemetry/core": "2.8.0",
+    "ip-address": "10.2.0",
+    "postcss": "8.5.20",
+    "@opentelemetry/core": "2.9.0",
     "js-yaml@^4.0.0": "4.2.0",
     "js-yaml@^3.0.0": "3.15.0",
-    "qs": "6.15.2"
+    "qs": "6.15.3"
   }
 }
