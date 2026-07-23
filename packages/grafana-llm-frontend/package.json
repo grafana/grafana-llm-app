@@ -59,8 +59,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "@grafana/data": "^10.4.0 || ^11 || ^12",
-    "@grafana/runtime": "^10.4.0 || ^11 || ^12",
+    "@grafana/data": "^10.4.0 || ^11 || ^12 || ^13",
+    "@grafana/runtime": "^10.4.0 || ^11 || ^12 || ^13",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@types/semver": "^7.7.1",
     "prettier": "^3.4.2",
@@ -80,8 +80,8 @@
     "uuid": "^14.0.0"
   },
   "peerDependencies": {
-    "@grafana/data": "^10.4.0 ||^11 || ^12",
-    "@grafana/runtime": "^10.4.0 || ^11 || ^12",
+    "@grafana/data": "^10.4.0 || ^11 || ^12 || ^13",
+    "@grafana/runtime": "^10.4.0 || ^11 || ^12 || ^13",
     "react": "^18",
     "rxjs": "^7.8.2"
   }
