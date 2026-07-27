@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
 // PluginVersion is the version of the plugin, as stored in the plugin.json
@@ -69,7 +70,7 @@ func NewApp(ctx context.Context, appSettings backend.AppInstanceSettings) (insta
 	}
 
 	// Getting the service account token that has been shared with the plugin
-	cfg := backend.GrafanaConfigFromContext(ctx)
+	cfg := config.GrafanaConfigFromContext(ctx)
 	app.saToken, err = cfg.PluginAppClientSecret()
 	if err != nil {
 		log.DefaultLogger.Warn("Unable to get service account token", "err", err)

@@ -138,8 +138,8 @@ func defaultModelSettings(provider ProviderType) *ModelSettings {
 		return &ModelSettings{
 			Default: ModelBase,
 			Mapping: map[Model]string{
-				ModelBase:  string(anthropic.ModelClaudeSonnet4_20250514),
-				ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
+				ModelBase:  string(anthropic.ModelClaudeSonnet5),
+				ModelLarge: string(anthropic.ModelClaudeSonnet5),
 			},
 		}
 	default:
@@ -187,7 +187,6 @@ type MCPToolsets struct {
 	CloudWatch    *bool `json:"cloudwatch"`
 	Elasticsearch *bool `json:"elasticsearch"`
 	Examples      *bool `json:"examples"`
-	SearchLogs    *bool `json:"searchlogs"`
 	Folder        *bool `json:"folder"`
 }
 
@@ -233,8 +232,6 @@ func (f MCPToolsets) IsEnabled(toolset mcp.Toolset) bool {
 		ptr = f.Elasticsearch
 	case mcp.ToolsetExamples:
 		ptr = f.Examples
-	case mcp.ToolsetSearchLogs:
-		ptr = f.SearchLogs
 	case mcp.ToolsetFolder:
 		ptr = f.Folder
 	default:

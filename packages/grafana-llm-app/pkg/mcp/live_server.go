@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/incident-go"
 	mcpgrafana "github.com/grafana/mcp-grafana"
 
@@ -185,7 +186,7 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 // If we can't get an access token (e.g. if token exchange fails), no Grafana
 // info is added to the context.
 func extractGrafanaInfoFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext, accessToken, grafanaIdToken string) context.Context {
-	cfg := backend.GrafanaConfigFromContext(ctx)
+	cfg := config.GrafanaConfigFromContext(ctx)
 	if cfg == nil {
 		return ctx
 	}
@@ -215,7 +216,7 @@ func extractGrafanaInfoFromGrafanaLiveRequest(ctx context.Context, pCtx *backend
 func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext, accessToken, grafanaIdToken string) context.Context {
 	t := client.DefaultTransportConfig()
 
-	cfg := backend.GrafanaConfigFromContext(ctx)
+	cfg := config.GrafanaConfigFromContext(ctx)
 	if cfg == nil {
 		return ctx
 	}
@@ -256,7 +257,7 @@ func extractGrafanaClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backe
 // extractIncidentClientFromGrafanaLiveRequest creates an Incident client and adds it to the context.
 // Note: The incident client does not support access tokens, so it uses API key authentication only.
 func extractIncidentClientFromGrafanaLiveRequest(ctx context.Context, pCtx *backend.PluginContext, accessToken, grafanaIdToken string) context.Context {
-	cfg := backend.GrafanaConfigFromContext(ctx)
+	cfg := config.GrafanaConfigFromContext(ctx)
 	if cfg == nil {
 		return ctx
 	}

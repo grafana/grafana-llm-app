@@ -31,7 +31,6 @@ const (
 	ToolsetCloudWatch    Toolset = "cloudwatch"
 	ToolsetElasticsearch Toolset = "elasticsearch"
 	ToolsetExamples      Toolset = "examples"
-	ToolsetSearchLogs    Toolset = "searchlogs"
 	ToolsetFolder        Toolset = "folder"
 )
 
@@ -93,7 +92,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddSearchTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetDatasource) {
-		tools.AddDatasourceTools(srv)
+		tools.AddDatasourceTools(srv, true)
 	}
 	// Incident, asserts, and sift toolsets require Grafana Cloud.
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetIncident) {
@@ -124,7 +123,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddPyroscopeTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetNavigation) {
-		tools.AddNavigationTools(srv)
+		tools.AddNavigationTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetAnnotations) {
 		tools.AddAnnotationTools(srv, true)
@@ -146,9 +145,6 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	}
 	if settings.isToolsetEnabled(ToolsetExamples) {
 		tools.AddExamplesTools(srv)
-	}
-	if settings.isToolsetEnabled(ToolsetSearchLogs) {
-		tools.AddSearchLogsTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetFolder) {
 		tools.AddFolderTools(srv, true)
@@ -172,7 +168,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	m.HTTPServer = server.NewStreamableHTTPServer(srv,
 		// Only allow Stateless mode.
 		server.WithStateLess(true),
-		server.WithLogger(&Logger{}),
+		server.WithStreamableHTTPLogger(NewSlogLogger()),
 		server.WithHTTPContextFunc(m.httpContextFunc()),
 	)
 	return m, nil

@@ -12,6 +12,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -246,9 +247,9 @@ func TestRunStreamMCP(t *testing.T) {
 
 	ctx := context.Background()
 	fmt.Println("server URL", s.server.URL)
-	ctx = backend.WithGrafanaConfig(ctx, backend.NewGrafanaCfg(map[string]string{
-		backend.AppURL:          s.server.URL,
-		backend.AppClientSecret: "abcd1234",
+	ctx = config.WithGrafanaConfig(ctx, config.NewGrafanaCfg(map[string]string{
+		config.AppURL:          s.server.URL,
+		config.AppClientSecret: "abcd1234",
 	}))
 
 	// Initialize app (need to set OpenAISettings:URL in here)
