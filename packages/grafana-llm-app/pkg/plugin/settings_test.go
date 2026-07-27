@@ -574,18 +574,6 @@ func TestMCPToolsetsIsEnabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "searchlogs nil defaults to enabled",
-			toolsets: MCPToolsets{},
-			toolset:  mcp.ToolsetSearchLogs,
-			expected: true,
-		},
-		{
-			name:     "searchlogs disabled",
-			toolsets: MCPToolsets{SearchLogs: boolPtr(false)},
-			toolset:  mcp.ToolsetSearchLogs,
-			expected: false,
-		},
-		{
 			name:     "folder nil defaults to enabled",
 			toolsets: MCPToolsets{},
 			toolset:  mcp.ToolsetFolder,

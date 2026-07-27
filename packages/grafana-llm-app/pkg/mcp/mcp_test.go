@@ -7,8 +7,7 @@ var allToolsets = []Toolset{
 	ToolsetLoki, ToolsetAlerting, ToolsetDashboard, ToolsetOnCall,
 	ToolsetAsserts, ToolsetSift, ToolsetPyroscope, ToolsetNavigation,
 	ToolsetAnnotations, ToolsetRendering, ToolsetAdmin, ToolsetClickHouse,
-	ToolsetCloudWatch, ToolsetElasticsearch, ToolsetExamples,
-	ToolsetSearchLogs, ToolsetFolder,
+	ToolsetCloudWatch, ToolsetElasticsearch, ToolsetExamples, ToolsetFolder,
 }
 
 func TestIsToolsetEnabled(t *testing.T) {

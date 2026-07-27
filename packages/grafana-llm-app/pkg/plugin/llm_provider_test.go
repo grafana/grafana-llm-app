@@ -257,50 +257,50 @@ func TestModelToAnthropic(t *testing.T) {
 		{
 			input:    ModelBase,
 			settings: nil,
-			expected: string(anthropic.ModelClaudeSonnet4_20250514),
+			expected: string(anthropic.ModelClaudeSonnet5),
 		},
 		{
 			input:    ModelLarge,
 			settings: nil,
-			expected: string(anthropic.ModelClaudeSonnet4_20250514),
+			expected: string(anthropic.ModelClaudeSonnet5),
 		},
 		{
 			input: ModelBase,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelBase:  string(anthropic.ModelClaudeSonnet4_20250514),
-					ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
+					ModelBase:  string(anthropic.ModelClaudeSonnet5),
+					ModelLarge: string(anthropic.ModelClaudeSonnet5),
 				},
 			},
-			expected: string(anthropic.ModelClaudeSonnet4_20250514),
+			expected: string(anthropic.ModelClaudeSonnet5),
 		},
 		{
 			input: ModelLarge,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelBase:  string(anthropic.ModelClaudeSonnet4_20250514),
-					ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
+					ModelBase:  string(anthropic.ModelClaudeSonnet5),
+					ModelLarge: string(anthropic.ModelClaudeSonnet5),
 				},
 			},
-			expected: string(anthropic.ModelClaudeSonnet4_20250514),
+			expected: string(anthropic.ModelClaudeSonnet5),
 		},
 		{
 			input: ModelLarge,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelLarge: string(anthropic.ModelClaudeSonnet4_20250514),
+					ModelLarge: string(anthropic.ModelClaudeSonnet5),
 				},
 			},
-			expected: string(anthropic.ModelClaudeSonnet4_20250514),
+			expected: string(anthropic.ModelClaudeSonnet5),
 		},
 		{
 			input: ModelLarge,
 			settings: &ModelSettings{
 				Mapping: map[Model]string{
-					ModelBase: string(anthropic.ModelClaudeSonnet4_20250514),
+					ModelBase: string(anthropic.ModelClaudeSonnet5),
 				},
 			},
-			expected: string(anthropic.ModelClaudeSonnet4_20250514),
+			expected: string(anthropic.ModelClaudeSonnet5),
 		},
 	} {
 		t.Run(string(tt.input), func(t *testing.T) {
