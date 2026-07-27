@@ -1,5 +1,19 @@
 # Changelog
 
+#### 1.1.0
+
+##### Chores
+
+* **deps:**  update to Grafana 13 packages (#962) (cfce0db9)
+*  make grafanaDependency prerelease-inclusive (#947) (92f56b20)
+
+##### Bug Fixes
+
+* **deps:**  update vulnerable dependencies to patched versions (#955) (b4786316)
+* **security:**  apply pending dependency security fixes (#963) (d6e8746a)
+* **ci:**  unbreak E2E (Playwright image) and zizmor (app-token scope) (#950) (585fba7a)
+*  include gcom response message in error text (#954) (80735596)
+
 #### 1.0.9
 
 ##### Chores
