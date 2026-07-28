@@ -438,6 +438,7 @@ func (a *App) handleModels() http.HandlerFunc {
 		if err != nil {
 			log.DefaultLogger.Error("LLM provider has invalid configuration", "err", err)
 			handleError(w, errors.New("LLM provider has invalid configuration"), http.StatusUnprocessableEntity)
+			return
 		}
 		if llmProvider == nil {
 			handleError(w, errors.New("must configure an LLM provider"), http.StatusUnprocessableEntity)
@@ -450,6 +451,7 @@ func (a *App) handleModels() http.HandlerFunc {
 		models, err := llmProvider.Models(r.Context())
 		if errors.Is(err, errBadRequest) {
 			handleError(w, err, http.StatusBadRequest)
+			return
 		} else if err != nil {
 			handleError(w, err, http.StatusInternalServerError)
 			return
@@ -547,6 +549,7 @@ func (a *App) handleChatCompletions() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			handleError(w, errors.New("LLM provider has invalid configuration"), http.StatusUnprocessableEntity)
+			return
 		}
 		if llmProvider == nil {
 			handleError(w, errors.New("must configure an LLM provider"), http.StatusUnprocessableEntity)
@@ -576,6 +579,7 @@ func (a *App) handleChatCompletions() http.HandlerFunc {
 		resp, err := llmProvider.ChatCompletion(r.Context(), req)
 		if errors.Is(err, errBadRequest) {
 			handleError(w, err, http.StatusBadRequest)
+			return
 		} else if err != nil {
 			handleError(w, err, http.StatusInternalServerError)
 			return
