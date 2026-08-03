@@ -56,6 +56,24 @@ apps:
       openAIKey: $OPENAI_API_KEY
 ```
 
+### Using an OpenAI-compatible multi-model gateway
+
+The plugin can talk to OpenAI-compatible multi-model gateways via `provider: custom` and `openAI.url` (the default API path `/v1` is appended). For example [DaoXE](https://daoxe.com?utm_source=github&utm_medium=organic&utm_campaign=docs_pr):
+
+```yaml
+apiVersion: 1
+
+apps:
+  - type: 'grafana-llm-app'
+    disabled: false
+    jsonData:
+      provider: custom
+      openAI:
+        url: https://api.daoxe.com
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY
+```
+
 ### Using Azure OpenAI
 
 To provision the plugin to use Azure OpenAI, use settings similar to this:
