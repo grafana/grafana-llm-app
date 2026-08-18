@@ -129,7 +129,7 @@ func (o *llmProvider) Enabled(ctx context.Context) (bool, error) {
 	if resp.StatusCode != http.StatusOK {
 		return false, nil
 	}
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
 	if err != nil {
 		return false, fmt.Errorf("read response body: %w", err)
 	}
