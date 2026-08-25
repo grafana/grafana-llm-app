@@ -55,6 +55,26 @@ global.TransformStream = TransformStream;
 
 ## Usage
 
+### Handle provider configuration states
+
+Before rendering LLM-powered features, use `llm.health()` to distinguish between an available provider, an unconfigured provider, and a provider that an administrator has configured but that is currently unavailable:
+
+```typescript
+import { llm } from '@grafana/llm';
+
+const health = await llm.health();
+
+if (health.ok) {
+  // The provider is configured and healthy. Show LLM-powered features.
+} else if (!health.configured) {
+  // No provider has been configured. Prompt an administrator to configure one.
+} else {
+  // The provider was configured, but is disabled or unhealthy. Hide LLM-powered features.
+}
+```
+
+Use `llm.enabled()` when you only need a boolean availability check. It returns `true` when the provider is both configured and healthy, but it does not distinguish an unconfigured provider from one that is disabled or unhealthy.
+
 Then in your components you can use the `llm` object from `@grafana/llm` like so:
 
 ```typescript
