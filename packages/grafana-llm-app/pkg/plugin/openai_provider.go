@@ -57,6 +57,7 @@ func (p *openAI) Models(ctx context.Context) (ModelResponse, error) {
 func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (openai.ChatCompletionResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
+	useMaxCompletionTokens(&r)
 
 	ForceUserMessage(&r)
 
@@ -71,6 +72,7 @@ func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) 
 func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionRequest) (<-chan ChatCompletionStreamResponse, error) {
 	r := req.ChatCompletionRequest
 	r.Model = req.Model.toOpenAI(p.models)
+	useMaxCompletionTokens(&r)
 
 	ForceUserMessage(&r)
 
