@@ -7,6 +7,18 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+func TestLoadSettingsAzureAPIVersion(t *testing.T) {
+	settings, err := loadSettings(backend.AppInstanceSettings{
+		JSONData: []byte(`{"provider":"azure","openAI":{"apiVersion":"2024-10-21"}}`),
+	})
+	if err != nil {
+		t.Fatalf("loadSettings failed: %s", err)
+	}
+	if settings.OpenAI.APIVersion != "2024-10-21" {
+		t.Fatalf("expected Azure API version to round-trip, got %q", settings.OpenAI.APIVersion)
+	}
+}
+
 func TestEmbeddingSettingLogic(t *testing.T) {
 
 	// Set up and run test cases

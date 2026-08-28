@@ -7,6 +7,7 @@ export const testIds = {
     openAIApiPath: 'ac-openai-api-path',
     openAIOrganizationID: 'ac-openai-api-organization-id',
     openAIUrl: 'ac-openai-api-url',
+    azureOpenAIApiVersion: 'ac-azure-openai-api-version',
     anthropicKey: 'ac-anthropic-api-key',
     anthropicUrl: 'ac-anthropic-api-url',
     vectorEnabled: 'ac-vector-enabled',

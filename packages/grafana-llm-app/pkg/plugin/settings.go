@@ -55,6 +55,9 @@ type OpenAISettings struct {
 	// Model mappings required for Azure's OpenAI
 	AzureMapping [][]string `json:"azureModelMapping"`
 
+	// Optional Azure OpenAI API version. When empty, go-openai's default is used.
+	APIVersion string `json:"apiVersion,omitempty"`
+
 	// Disabled marks if a user has explicitly disabled LLM functionality.
 	// Deprecated: Use Settings.Disabled instead
 	Disabled bool `json:"disabled"`

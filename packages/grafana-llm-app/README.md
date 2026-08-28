@@ -70,6 +70,7 @@ apps:
       provider: azure
       openAI:
         url: https://<resource>.openai.azure.com
+        apiVersion: "2024-10-21"
         azureModelMapping:
           - ["base", "gpt-35-turbo"]
           - ["large", "gpt-4-turbo"]
@@ -80,6 +81,7 @@ apps:
 where:
 
 - `<resource>` is your Azure OpenAI resource name
+- `apiVersion` is optional; omit it to use the `go-openai` SDK default
 - the `azureModelMapping` field contains `[model, deployment]` pairs so that features know
   which Azure deployment to use in place of each model you wish to be used.
 
@@ -141,6 +143,7 @@ apps:
       # provider: azure
       # openAI:
       #   url: https://<resource>.openai.azure.com
+      #   apiVersion: "2024-10-21"
       #   azureModelMapping:
       #     - ["gpt-3.5-turbo", "gpt-35-turbo"]
       vector:
