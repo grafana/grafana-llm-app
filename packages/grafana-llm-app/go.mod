@@ -14,7 +14,7 @@ require (
 	github.com/qdrant/go-client v1.18.3
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/stretchr/testify v1.11.1
-	google.golang.org/grpc v1.82.1
+	google.golang.org/grpc v1.83.1
 )
 
 require (
