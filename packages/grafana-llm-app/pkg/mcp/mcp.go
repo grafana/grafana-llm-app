@@ -99,10 +99,10 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddIncidentTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetPrometheus) {
-		tools.AddPrometheusTools(srv)
+		tools.AddPrometheusTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetLoki) {
-		tools.AddLokiTools(srv)
+		tools.AddLokiTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetAlerting) {
 		tools.AddAlertingTools(srv, true)
@@ -111,7 +111,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddDashboardTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetOnCall) {
-		tools.AddOnCallTools(srv)
+		tools.AddOnCallTools(srv, true)
 	}
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetAsserts) {
 		tools.AddAssertsTools(srv)
@@ -120,7 +120,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddSiftTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetPyroscope) {
-		tools.AddPyroscopeTools(srv)
+		tools.AddPyroscopeTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetNavigation) {
 		tools.AddNavigationTools(srv, true)
@@ -135,13 +135,13 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddAdminTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetClickHouse) {
-		tools.AddClickHouseTools(srv)
+		tools.AddClickHouseTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetCloudWatch) {
-		tools.AddCloudWatchTools(srv)
+		tools.AddCloudWatchTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetElasticsearch) {
-		tools.AddElasticsearchTools(srv)
+		tools.AddElasticsearchTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetExamples) {
 		tools.AddExamplesTools(srv)
