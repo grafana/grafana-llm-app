@@ -56,8 +56,9 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 	r.Model = req.Model.toAnthropic(p.models)
 	log.DefaultLogger.Debug("model", "model", r.Model)
 
-	// Anthropic requires a max tokens value
-	if r.MaxTokens == 0 && r.MaxCompletionTokens == 0 {
+	// Anthropic requires a max tokens value.
+	// Migrate deprecated MaxTokens to MaxCompletionTokens.
+	if r.MaxCompletionTokens == 0 {
 		r.MaxCompletionTokens = DefaultMaxCompletionTokens
 	}
 
@@ -77,8 +78,9 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 	r.Model = req.Model.toAnthropic(p.models)
 	log.DefaultLogger.Debug("model", "model", r.Model)
 
-	// Anthropic requires a max tokens value
-	if r.MaxTokens == 0 && r.MaxCompletionTokens == 0 {
+	// Anthropic requires a max tokens value.
+	// Migrate deprecated MaxTokens to MaxCompletionTokens.
+	if r.MaxCompletionTokens == 0 {
 		r.MaxCompletionTokens = DefaultMaxCompletionTokens
 	}
 
