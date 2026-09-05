@@ -30,6 +30,9 @@ func NewAzureProvider(settings OpenAISettings, defaultModel Model) (LLMProvider,
 	log.DefaultLogger.Debug("Using Azure OpenAI", "url", settings.URL)
 	cfg := openai.DefaultAzureConfig(settings.apiKey, settings.URL)
 	cfg.HTTPClient = client
+	if settings.APIVersion != "" {
+		cfg.APIVersion = settings.APIVersion
+	}
 	// We pass the deployment as the name of the model, so just return the untransformed string.
 	cfg.AzureModelMapperFunc = func(model string) string {
 		return model
