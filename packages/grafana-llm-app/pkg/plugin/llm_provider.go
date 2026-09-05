@@ -21,23 +21,26 @@ const (
 	ModelLarge = "large"
 )
 
-// UnmarshalJSON accepts either OpenAI named models for backwards
-// compatability, or the new abstract model names.
 func ModelFromString(m string) (Model, error) {
+	if m == "" {
+		return "", fmt.Errorf("model name cannot be empty")
+	}
 	switch {
 	case m == ModelLarge || (strings.HasPrefix(m, "gpt-4") && !strings.Contains(m, "-mini")):
 		return ModelLarge, nil
 	case m == ModelBase || strings.HasPrefix(m, "gpt-3.5") || strings.Contains(m, "-mini"):
 		return ModelBase, nil
 	}
-	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
-	return "", fmt.Errorf("unrecognized model: %s", m)
+	return Model(m), nil
 }
 
 // UnmarshalJSON accepts either OpenAI named models for backwards
 // compatability, or the new abstract model names.
 func (m *Model) UnmarshalJSON(data []byte) error {
 	dataString := string(data)
+	if dataString == `""` || dataString == `null` {
+		return fmt.Errorf("model name cannot be empty")
+	}
 	switch {
 	case dataString == fmt.Sprintf(`"%s"`, ModelLarge) || strings.HasPrefix(dataString, `"gpt-4`):
 		*m = ModelLarge
@@ -46,8 +49,9 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 		*m = ModelBase
 		return nil
 	}
-	// TODO: Give users the ability to specify a default model abstraction in settings, and use that here.
-	return fmt.Errorf("unrecognized model: %s", dataString)
+	unquoted := strings.Trim(dataString, `"`)
+	*m = Model(unquoted)
+	return nil
 }
 
 func (m Model) toOpenAI(modelSettings *ModelSettings) string {
