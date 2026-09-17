@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/grafana/grafana-llm-app/pkg/plugin/vector/store"
@@ -308,7 +306,7 @@ type pluginSettings struct {
 	SecureJSONData map[string]string      `json:"secureJsonData"`
 }
 
-func (a *App) mergeSecureJSONData(b []byte) (url.Values, error) {
+func (a *App) mergeSecureJSONData(b []byte) ([]byte, error) {
 	// Unmarshal the request body to JSON
 	var requestData pluginSettings
 	err := json.Unmarshal(b, &requestData)
@@ -326,20 +324,10 @@ func (a *App) mergeSecureJSONData(b []byte) (url.Values, error) {
 	// Update mandatory fields
 	requestData.SecureJSONData[encodedTenantAndTokenKey] = a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
 
-	// Marshal the request body back to JSON
-	jsonData, err := json.Marshal(requestData.JSONData)
+	newBody, err := json.Marshal(requestData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request jsonData %w", err)
+		return nil, fmt.Errorf("failed to marshal request body %w", err)
 	}
-
-	secureJSONData, err := json.Marshal(requestData.SecureJSONData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request secureJSONData %w", err)
-	}
-
-	newBody := url.Values{}
-	newBody.Set("jsonData", string(jsonData))
-	newBody.Set("secureJsonData", string(secureJSONData))
 
 	return newBody, nil
 }
@@ -390,14 +378,14 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
 		return
 	}
-	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, strings.NewReader(newReqBody.Encode()))
+	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, bytes.NewReader(newReqBody))
 	if err != nil {
 		handleError(w, fmt.Errorf("create gcom request: %w", err), http.StatusInternalServerError)
 		return
 	}
 	gcomReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.saToken))
 	gcomReq.Header.Set("X-Api-Key", a.settings.GrafanaComAPIKey)
-	gcomReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	gcomReq.Header.Set("Content-Type", "application/json")
 
 	log.DefaultLogger.Debug("Sending request to Grafana.com", "url", gcomReq.URL)
 	_, err = doRequest(gcomReq)

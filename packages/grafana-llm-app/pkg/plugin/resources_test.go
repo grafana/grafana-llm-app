@@ -166,12 +166,13 @@ func TestMergeSecureJSONData(t *testing.T) {
 
 			require.NoError(t, err)
 
-			secureJsonString := merged.Get("secureJsonData")
-			var updatedSecureJson map[string]string
-			err = json.Unmarshal([]byte(secureJsonString), &updatedSecureJson)
+			var mergedBody struct {
+				SecureJSONData map[string]string `json:"secureJsonData"`
+			}
+			err = json.Unmarshal(merged, &mergedBody)
 			require.NoError(t, err)
 
-			require.Equal(t, tc.expMerged, updatedSecureJson)
+			require.Equal(t, tc.expMerged, mergedBody.SecureJSONData)
 		})
 	}
 }
