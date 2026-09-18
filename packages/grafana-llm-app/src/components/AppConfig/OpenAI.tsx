@@ -25,6 +25,10 @@ export interface OpenAISettings {
   azureModelMapping?: AzureModelDeployments;
   // If the LLM features have been explicitly disabled.
   disabled?: boolean;
+  // The HTTP header used to send the API key.
+  // Defaults to "Authorization" (Bearer format). Set to a custom value such as
+  // "x-litellm-api-key" for proxies that expect the raw key in a non-standard header.
+  authHeaderName?: string;
 }
 
 export function OpenAIConfig({
@@ -163,6 +167,22 @@ export function OpenAIConfig({
           onReset={() => onChangeSecrets({ ...secrets, openAIKey: '' })}
         />
       </Field>
+
+      {parentProvider === 'custom' && (
+        <Field
+          label="Auth Header Name"
+          description="HTTP header used to send the API key. Defaults to 'Authorization' (Bearer format). Use a custom value such as 'x-litellm-api-key' for proxies that expect the raw key in a non-standard header."
+          className={s.marginTop}
+        >
+          <Input
+            width={40}
+            name="authHeaderName"
+            placeholder="Authorization"
+            value={settings.authHeaderName ?? ''}
+            onChange={onChangeField}
+          />
+        </Field>
+      )}
 
       {effectiveProvider === 'openai' && (
         <Field label="API Organization ID">
