@@ -23,6 +23,8 @@ export interface OpenAISettings {
   provider?: ProviderType;
   // A mapping of OpenAI models to Azure deployment names.
   azureModelMapping?: AzureModelDeployments;
+  // Optional Azure OpenAI API version. The SDK default is used when omitted.
+  apiVersion?: string;
   // If the LLM features have been explicitly disabled.
   disabled?: boolean;
 }
@@ -178,18 +180,34 @@ export function OpenAIConfig({
       )}
 
       {effectiveProvider === 'azure' && (
-        <Field label="Azure OpenAI Model Mapping" description="Mapping from model name to Azure deployment name.">
-          <AzureModelDeploymentConfig
-            modelMapping={settings.azureModelMapping ?? []}
-            modelNames={Object.values(openai.Model)}
-            onChange={(azureModelMapping) =>
-              onChange({
-                ...settings,
-                azureModelMapping,
-              })
-            }
-          />
-        </Field>
+        <>
+          <Field
+            label="Azure OpenAI API version"
+            description="Optional. Leave blank to use the SDK default."
+            className={s.marginTop}
+          >
+            <Input
+              width={60}
+              name="apiVersion"
+              data-testid={testIds.appConfig.azureOpenAIApiVersion}
+              value={settings.apiVersion ?? ''}
+              placeholder="2024-10-21"
+              onChange={onChangeField}
+            />
+          </Field>
+          <Field label="Azure OpenAI Model Mapping" description="Mapping from model name to Azure deployment name.">
+            <AzureModelDeploymentConfig
+              modelMapping={settings.azureModelMapping ?? []}
+              modelNames={Object.values(openai.Model)}
+              onChange={(azureModelMapping) =>
+                onChange({
+                  ...settings,
+                  azureModelMapping,
+                })
+              }
+            />
+          </Field>
+        </>
       )}
     </FieldSet>
   );
