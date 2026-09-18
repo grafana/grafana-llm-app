@@ -26,34 +26,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get secrets from Vault
-        id: get-secrets
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main # zizmor: ignore[unpinned-uses]
-        env:
-          VAULT_INSTANCE: ops
-        with:
-          vault_instance: ${{ env.VAULT_INSTANCE }}
-          # Don't export secrets to the job-wide environment; consume them via this
-          # step's `secrets` output only in the step that needs them (below). This keeps
-          # the GitHub App private key out of the env of later steps that run third-party
-          # code (npm install, npx generate-changelog).
-          export_env: false
-          common_secrets: |
-            GITHUB_APP_ID=plugins-platform-bot-app:app-id
-            GITHUB_APP_PRIVATE_KEY=plugins-platform-bot-app:private-key
-
       - name: Generate GitHub token
         id: generate-github-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: grafana/shared-workflows/actions/create-github-app-token@5bbb526b1728ca57fbe1750c4c27ab6ab06171c2 # create-github-app-token/v1.0.0
         with:
-          app-id: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_ID }}
-          private-key: ${{ fromJSON(steps.get-secrets.outputs.secrets).GITHUB_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          # Scope the token to this repository and to the only permission this
-          # workflow needs (pushing the version-bump commit and tags), rather
-          # than inheriting blanket access to every repo in the org install.
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
+          github_app: grafana-plugins-platform-bot
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
