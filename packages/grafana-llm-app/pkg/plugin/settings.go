@@ -48,6 +48,11 @@ type OpenAISettings struct {
 	// The OrgID to be passed to OpenAI in requests
 	OrganizationID string `json:"organizationId"`
 
+	// AuthHeaderName is the HTTP header used to send the API key. Defaults to "Authorization",
+	// which uses the standard "Bearer <key>" format. Set to a custom value (e.g. "x-litellm-api-key")
+	// for proxies that expect the raw key in a non-standard header.
+	AuthHeaderName string `json:"authHeaderName"`
+
 	// What OpenAI provider the user selected. Note this can specify using the LLMGateway
 	// Deprecated: Use Settings.Provider instead
 	Provider ProviderType `json:"provider"`
@@ -315,12 +320,16 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 	if settings.OpenAI.APIPath == nil {
 		settings.OpenAI.APIPath = &defaultOpenAIAPIPath
 	}
+	if settings.OpenAI.AuthHeaderName == "" {
+		settings.OpenAI.AuthHeaderName = "Authorization"
+	}
 	if settings.Anthropic.URL == "" {
 		settings.Anthropic.URL = "https://api.anthropic.com"
 	}
 	if settings.Vector.Embed.Type == embed.EmbedderOpenAI {
 		settings.Vector.Embed.OpenAI.URL = settings.OpenAI.URL
 		settings.Vector.Embed.OpenAI.AuthType = "openai-key-auth"
+		settings.Vector.Embed.OpenAI.AuthHeaderName = settings.OpenAI.AuthHeaderName
 	}
 
 	provider := settings.getEffectiveProvider()
