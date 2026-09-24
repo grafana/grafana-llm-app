@@ -12,6 +12,7 @@ const additionalESModules = [
   'mimic-function',
   '@wojtekmaj/date-utils',
   '@react-hookz/web',
+  '@ver0',
 ];
 
 // force timezone to UTC to allow tests to work regardless of local timezone
