@@ -8,7 +8,7 @@ require (
 	github.com/grafana/authlib v0.0.0-20260316143530-e1d123886039
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20260330113218-ee77c4f6f90e
 	github.com/grafana/grafana-plugin-sdk-go v0.294.0
-	github.com/grafana/incident-go v0.0.0-20251003115753-d71681611ddd
+	github.com/grafana/incident-go v0.0.0-20260922092049-7a56525cf1f3
 	github.com/grafana/mcp-grafana v0.17.2
 	github.com/mark3labs/mcp-go v0.57.0
 	github.com/qdrant/go-client v1.18.3
@@ -175,8 +175,8 @@ require (
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260921155816-b14227669459 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
