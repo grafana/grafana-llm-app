@@ -300,10 +300,7 @@ export interface ToolCallsMessage {
  * done messages are filtered out by the `streamChatCompletions` function.
  */
 export type ChatCompletionsDelta =
-  | ContentMessage
-  | FunctionCallMessage
-  | DoneMessage
-  | ToolCallsMessage;
+  ContentMessage | FunctionCallMessage | DoneMessage | ToolCallsMessage;
 
 /** A chunk included in a chat completion response. */
 export interface ChatCompletionsChunk {

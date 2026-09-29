@@ -3,6 +3,7 @@
   "compilerOptions": {
     "declarationDir": "./dist",
     "module": "commonjs",
+    "moduleResolution": "node",
     "target": "es6",
     "esModuleInterop": true,
     "isolatedModules": true,
