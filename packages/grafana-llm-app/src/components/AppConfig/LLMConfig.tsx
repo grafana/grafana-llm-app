@@ -5,6 +5,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { Badge, Button, Card, Checkbox, ConfirmModal, FieldSet, Icon, useStyles2 } from '@grafana/ui';
 
 import { AppPluginSettings, Secrets, SecretsSet, ProviderType, getEffectiveProvider } from './AppConfig';
+import { FieldValidationErrors } from './validation';
 import { ModelConfig } from './ModelConfig';
 import { DevSandbox } from './DevSandbox/DevSandbox';
 import { OpenAIConfig } from './OpenAI';
@@ -49,6 +50,7 @@ export function LLMConfig({
   setOptIn,
   onChange,
   onChangeSecrets,
+  fieldErrors,
 }: {
   settings: AppPluginSettings;
   onChange: (settings: AppPluginSettings) => void;
@@ -57,6 +59,7 @@ export function LLMConfig({
   optIn: boolean;
   setOptIn: (optIn: boolean) => void;
   onChangeSecrets: (secrets: Secrets) => void;
+  fieldErrors?: FieldValidationErrors;
 }) {
   const s = useStyles2(getStyles);
   // should only be relevant for Grafana Cloud
@@ -328,6 +331,7 @@ export function LLMConfig({
                       onChangeSecrets={onChangeSecrets}
                       allowCustomPath={false}
                       parentProvider={settings.provider}
+                      errors={fieldErrors}
                     />
                     <ModelConfig
                       provider={settings.provider ?? 'openai'}
@@ -355,6 +359,7 @@ export function LLMConfig({
                       secrets={secrets}
                       secretsSet={secretsSet}
                       onChangeSecrets={onChangeSecrets}
+                      errors={fieldErrors}
                     />
                     <ModelConfig
                       provider={settings.provider ?? 'anthropic'}
@@ -384,6 +389,7 @@ export function LLMConfig({
                       onChangeSecrets={onChangeSecrets}
                       allowCustomPath={true}
                       parentProvider={settings.provider}
+                      errors={fieldErrors}
                     />
                     <ModelConfig
                       provider={settings.provider ?? 'custom'}
