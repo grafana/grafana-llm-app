@@ -77,6 +77,7 @@ func (p *azure) ChatCompletion(ctx context.Context, req ChatCompletionRequest) (
 
 	r := req.ChatCompletionRequest
 	r.Model = deployment
+	useMaxCompletionTokens(&r)
 
 	ForceUserMessage(&r)
 
@@ -97,6 +98,7 @@ func (p *azure) ChatCompletionStream(ctx context.Context, req ChatCompletionRequ
 	r := req.ChatCompletionRequest
 	// For the Azure mapping we want to use the name of the mapped deployment as the model.
 	r.Model = deployment
+	useMaxCompletionTokens(&r)
 
 	ForceUserMessage(&r)
 
