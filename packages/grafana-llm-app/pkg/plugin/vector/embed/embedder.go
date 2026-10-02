@@ -25,6 +25,7 @@ type Settings struct {
 	GrafanaVectorAPISettings grafanaVectorAPISettings `json:"grafanaVectorAPI"`
 }
 
+
 // NewEmbedder creates a new embedder.
 func NewEmbedder(s Settings, secrets map[string]string) (Embedder, error) {
 	log.DefaultLogger.Debug("Creating OpenAI embedder")

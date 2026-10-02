@@ -13,8 +13,9 @@ import (
 )
 
 type openAISettings struct {
-	URL      string
-	AuthType string
+	URL            string
+	AuthType       string
+	AuthHeaderName string
 }
 
 type grafanaVectorAPISettings struct {
@@ -30,11 +31,12 @@ type openAIEmbeddingsAuthSettings struct {
 }
 
 type openAIClient struct {
-	client       *http.Client
-	url          string
-	authType     string
-	providerType EmbedderType
-	authSettings openAIEmbeddingsAuthSettings
+	client         *http.Client
+	url            string
+	authType       string
+	authHeaderName string
+	providerType   EmbedderType
+	authSettings   openAIEmbeddingsAuthSettings
 }
 
 type openAIEmbeddingsRequest struct {
@@ -55,9 +57,16 @@ func (o *openAIClient) setAuth(req *http.Request) {
 	case "basic-auth":
 		req.SetBasicAuth(o.authSettings.BasicAuthUser, o.authSettings.BasicAuthPassword)
 	case "openai-key-auth":
-		req.Header.Add("Authorization", "Bearer "+o.authSettings.OpenAIKey)
+		headerName := o.authHeaderName
+		if headerName == "" {
+			headerName = "Authorization"
+		}
+		if strings.EqualFold(headerName, "Authorization") {
+			req.Header.Add("Authorization", "Bearer "+o.authSettings.OpenAIKey)
+		} else {
+			req.Header.Add(headerName, o.authSettings.OpenAIKey)
+		}
 	}
-
 }
 
 func (o *openAIClient) getProviderString() string {
@@ -132,10 +141,11 @@ func newOpenAIEmbedder(settings Settings, secrets map[string]string) Embedder {
 	switch settings.Type {
 	case EmbedderOpenAI:
 		impl = openAIClient{
-			client:       &http.Client{},
-			url:          settings.OpenAI.URL,
-			authType:     string(settings.OpenAI.AuthType),
-			providerType: settings.Type,
+			client:         &http.Client{},
+			url:            settings.OpenAI.URL,
+			authType:       string(settings.OpenAI.AuthType),
+			authHeaderName: settings.OpenAI.AuthHeaderName,
+			providerType:   settings.Type,
 			authSettings: openAIEmbeddingsAuthSettings{
 				OpenAIKey: secrets["openAIKey"],
 			},
