@@ -180,7 +180,6 @@ type MCPToolsets struct {
 	Dashboard     *bool `json:"dashboard"`
 	OnCall        *bool `json:"oncall"`
 	Asserts       *bool `json:"asserts"`
-	Sift          *bool `json:"sift"`
 	Pyroscope     *bool `json:"pyroscope"`
 	Navigation    *bool `json:"navigation"`
 	Annotations   *bool `json:"annotations"`
@@ -215,8 +214,6 @@ func (f MCPToolsets) IsEnabled(toolset mcp.Toolset) bool {
 		ptr = f.OnCall
 	case mcp.ToolsetAsserts:
 		ptr = f.Asserts
-	case mcp.ToolsetSift:
-		ptr = f.Sift
 	case mcp.ToolsetPyroscope:
 		ptr = f.Pyroscope
 	case mcp.ToolsetNavigation:

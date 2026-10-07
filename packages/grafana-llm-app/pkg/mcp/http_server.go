@@ -13,12 +13,14 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/incident-go"
-	mcpgrafana "github.com/grafana/mcp-grafana"
-	"github.com/mark3labs/mcp-go/server"
+	mcpgrafana "github.com/grafana/mcp-grafana/v2"
 )
 
-// composeHTTPContextFuncs composes multiple server.HTTPContextFuncs into a single one.
-func composeHTTPContextFuncs(funcs ...server.HTTPContextFunc) server.HTTPContextFunc {
+// httpContextFunc extracts information from an HTTP request into a context.
+type httpContextFunc func(ctx context.Context, req *http.Request) context.Context
+
+// composeHTTPContextFuncs composes multiple httpContextFuncs into a single one.
+func composeHTTPContextFuncs(funcs ...httpContextFunc) httpContextFunc {
 	return func(ctx context.Context, req *http.Request) context.Context {
 		for _, f := range funcs {
 			ctx = f(ctx, req)
@@ -135,8 +137,8 @@ func (m *MCP) extractIncidentClientFromHTTPRequest(ctx context.Context, req *htt
 // httpContextFunc returns a function that can be used to extract
 // information from the HTTP request.
 // It is a method of the MCP struct, because it needs access to extra state than is
-// allowed by the server.HTTPContextFunc signature (crucially the access token client).
-func (m *MCP) httpContextFunc() server.HTTPContextFunc {
+// allowed by the httpContextFunc signature (crucially the access token client).
+func (m *MCP) httpContextFunc() httpContextFunc {
 	return composeHTTPContextFuncs(
 		m.extractGrafanaInfoFromHTTPRequest,
 		m.extractGrafanaClientFromHTTPRequest,

@@ -7,7 +7,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-// NewSlogLogger returns the *slog.Logger expected by mcp-go, backed by Grafana's
+// NewSlogLogger returns the *slog.Logger expected by the MCP SDK, backed by Grafana's
 // backend logger.
 func NewSlogLogger() *slog.Logger {
 	return slog.New(&slogHandler{})

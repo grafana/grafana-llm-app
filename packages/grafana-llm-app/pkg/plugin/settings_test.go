@@ -472,12 +472,6 @@ func TestMCPToolsetsIsEnabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "sift disabled",
-			toolsets: MCPToolsets{Sift: boolPtr(false)},
-			toolset:  mcp.ToolsetSift,
-			expected: false,
-		},
-		{
 			name:     "pyroscope nil defaults to enabled",
 			toolsets: MCPToolsets{},
 			toolset:  mcp.ToolsetPyroscope,

@@ -1,10 +1,12 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"sync"
@@ -14,10 +16,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/incident-go"
-	mcpgrafana "github.com/grafana/mcp-grafana"
+	mcpgrafana "github.com/grafana/mcp-grafana/v2"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/mark3labs/mcp-go/server"
 )
 
 const (
@@ -40,8 +41,8 @@ var ErrStreamNotFound = errors.New("stream not found")
 // some user specific information.
 type GrafanaLiveContextFunc func(ctx context.Context, pCtx *backend.PluginContext, accessToken, grafanaIdToken string) context.Context
 
-// GrafanaLiveServer wraps an MCPServer and coordinates Grafana Live connections
-// to the MCP server.
+// GrafanaLiveServer wraps an MCP HTTP handler and coordinates Grafana Live
+// connections to the MCP server.
 //
 // It is effectively a custom MCP transport, similar to SSE, which:
 //
@@ -50,8 +51,8 @@ type GrafanaLiveContextFunc func(ctx context.Context, pCtx *backend.PluginContex
 //   - accepts JSON-RPC messages over the `PublishStream` handler, which MCP clients
 //     can use to perform standard MCP operations (list tools, call tool, etc.)
 type GrafanaLiveServer struct {
-	// server is the MCP server that will handle the MCP messages.
-	server *server.MCPServer
+	// handler is the stateless MCP HTTP handler that will handle the MCP messages.
+	handler http.Handler
 	// Whether we are running in Grafana Cloud.
 	isGrafanaCloud bool
 	// accessTokenClient is the client for getting access tokens.
@@ -79,11 +80,11 @@ func WithIsGrafanaCloud(enabled bool) GrafanaLiveOption {
 }
 
 // NewGrafanaLiveServer creates a new GrafanaLiveServer.
-func NewGrafanaLiveServer(server *server.MCPServer, acc *accessTokenClient, opts ...GrafanaLiveOption) *GrafanaLiveServer {
+func NewGrafanaLiveServer(handler http.Handler, acc *accessTokenClient, opts ...GrafanaLiveOption) *GrafanaLiveServer {
 	s := &GrafanaLiveServer{
-		server: server,
-		acc:    acc,
-		done:   make(chan struct{}),
+		handler: handler,
+		acc:     acc,
+		done:    make(chan struct{}),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -161,18 +162,22 @@ func (s *GrafanaLiveServer) HandleMessage(ctx context.Context, req *backend.Publ
 
 	log.DefaultLogger.Info("Handling message", "len_access_token", len(accessToken), "len_grafana_id_token", len(grafanaIdToken))
 
-	// Process the message through the MCPServer.
-	response := s.server.HandleMessage(ctx, req.Data)
+	// Process the message through the MCP handler, as a stateless JSON request.
+	// The handler derives the tool handler context from the request context.
+	httpReq := httptest.NewRequestWithContext(ctx, http.MethodPost, "/", bytes.NewReader(req.Data))
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json, text/event-stream")
+	rec := httptest.NewRecorder()
+	s.handler.ServeHTTP(rec, httpReq)
 
-	// Only send response if there is one (not for notifications).
-	if response != nil {
-		// Marshal the response to JSON. Errors should be impossible since we've
-		// just unmarshalled from a JSON-RPC message.
-		eventData, _ := json.Marshal(response)
-		return session.sender.SendJSON(eventData)
-	} else {
-		// For notifications, just send nil.
+	switch {
+	case rec.Code == http.StatusAccepted:
+		// Notifications have no response, so just send nil.
 		return session.sender.SendBytes(nil)
+	case rec.Code != http.StatusOK:
+		return fmt.Errorf("mcp handler returned status %d: %s", rec.Code, strings.TrimSpace(rec.Body.String()))
+	default:
+		return session.sender.SendJSON(rec.Body.Bytes())
 	}
 }
 

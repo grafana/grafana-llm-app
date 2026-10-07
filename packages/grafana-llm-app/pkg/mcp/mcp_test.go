@@ -5,7 +5,7 @@ import "testing"
 var allToolsets = []Toolset{
 	ToolsetSearch, ToolsetDatasource, ToolsetIncident, ToolsetPrometheus,
 	ToolsetLoki, ToolsetAlerting, ToolsetDashboard, ToolsetOnCall,
-	ToolsetAsserts, ToolsetSift, ToolsetPyroscope, ToolsetNavigation,
+	ToolsetAsserts, ToolsetPyroscope, ToolsetNavigation,
 	ToolsetAnnotations, ToolsetRendering, ToolsetAdmin, ToolsetClickHouse,
 	ToolsetCloudWatch, ToolsetElasticsearch, ToolsetExamples, ToolsetFolder,
 }
@@ -41,7 +41,6 @@ func TestIsToolsetEnabled(t *testing.T) {
 			{ToolsetDashboard, true},
 			{ToolsetOnCall, false},
 			{ToolsetAsserts, true},
-			{ToolsetSift, true},
 		} {
 			if got := s.isToolsetEnabled(tc.toolset); got != tc.expected {
 				t.Errorf("isToolsetEnabled(%q) = %v, want %v", tc.toolset, got, tc.expected)
@@ -66,7 +65,6 @@ func TestNewGrafanaCloudGating(t *testing.T) {
 	cloudOnly := map[Toolset]bool{
 		ToolsetIncident: true,
 		ToolsetAsserts:  true,
-		ToolsetSift:     true,
 	}
 
 	for _, tc := range []struct {

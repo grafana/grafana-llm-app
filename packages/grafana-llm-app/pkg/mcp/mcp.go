@@ -2,31 +2,33 @@ package mcp
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/mcp-grafana/tools"
-	"github.com/mark3labs/mcp-go/server"
+	"github.com/grafana/mcp-grafana/v2/tools"
+	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // Toolset identifies an MCP tool family that can be enabled or disabled
 type Toolset string
 
 const (
-	ToolsetSearch        Toolset = "search"
-	ToolsetDatasource    Toolset = "datasource"
-	ToolsetIncident      Toolset = "incident"
-	ToolsetPrometheus    Toolset = "prometheus"
-	ToolsetLoki          Toolset = "loki"
-	ToolsetAlerting      Toolset = "alerting"
-	ToolsetDashboard     Toolset = "dashboard"
-	ToolsetOnCall        Toolset = "oncall"
-	ToolsetAsserts       Toolset = "asserts"
-	ToolsetSift          Toolset = "sift"
-	ToolsetPyroscope     Toolset = "pyroscope"
-	ToolsetNavigation    Toolset = "navigation"
-	ToolsetAnnotations   Toolset = "annotations"
-	ToolsetRendering     Toolset = "rendering"
-	ToolsetAdmin         Toolset = "admin"
+	ToolsetSearch      Toolset = "search"
+	ToolsetDatasource  Toolset = "datasource"
+	ToolsetIncident    Toolset = "incident"
+	ToolsetPrometheus  Toolset = "prometheus"
+	ToolsetLoki        Toolset = "loki"
+	ToolsetAlerting    Toolset = "alerting"
+	ToolsetDashboard   Toolset = "dashboard"
+	ToolsetOnCall      Toolset = "oncall"
+	ToolsetAsserts     Toolset = "asserts"
+	ToolsetPyroscope   Toolset = "pyroscope"
+	ToolsetNavigation  Toolset = "navigation"
+	ToolsetAnnotations Toolset = "annotations"
+	ToolsetRendering   Toolset = "rendering"
+	ToolsetAdmin       Toolset = "admin"
+	// ToolsetClickHouse enables the SQL datasource tools, which cover ClickHouse
+	// along with other SQL datasources.
 	ToolsetClickHouse    Toolset = "clickhouse"
 	ToolsetCloudWatch    Toolset = "cloudwatch"
 	ToolsetElasticsearch Toolset = "elasticsearch"
@@ -68,12 +70,12 @@ func (s Settings) isToolsetEnabled(toolset Toolset) bool {
 // real-time communication with MCP clients.
 type MCP struct {
 	// Server is the core MCP server that handles tool registration and execution.
-	Server *server.MCPServer
+	Server *mcpsdk.Server
 	// LiveServer handles Grafana Live connections for MCP communication.
 	LiveServer *GrafanaLiveServer
 	// HTTPServer is the MCP Streamable HTTP server for handling MCP requests over HTTP
 	// via plugin resource endpoints.
-	HTTPServer *server.StreamableHTTPServer
+	HTTPServer http.Handler
 	// Settings contains the configuration for the MCP servers.
 	Settings Settings
 
@@ -87,14 +89,14 @@ type MCP struct {
 // for handling real-time MCP communication.
 func New(settings Settings, pluginVersion string) (*MCP, error) {
 	log.DefaultLogger.Debug("Initializing MCP server")
-	srv := server.NewMCPServer("grafana-llm-app", pluginVersion)
+	srv := mcpsdk.NewServer(&mcpsdk.Implementation{Name: "grafana-llm-app", Version: pluginVersion}, nil)
 	if settings.isToolsetEnabled(ToolsetSearch) {
 		tools.AddSearchTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetDatasource) {
 		tools.AddDatasourceTools(srv, true)
 	}
-	// Incident, asserts, and sift toolsets require Grafana Cloud.
+	// Incident and asserts toolsets require Grafana Cloud.
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetIncident) {
 		tools.AddIncidentTools(srv, true)
 	}
@@ -116,9 +118,6 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetAsserts) {
 		tools.AddAssertsTools(srv)
 	}
-	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetSift) {
-		tools.AddSiftTools(srv, true)
-	}
 	if settings.isToolsetEnabled(ToolsetPyroscope) {
 		tools.AddPyroscopeTools(srv, true)
 	}
@@ -135,7 +134,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		tools.AddAdminTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetClickHouse) {
-		tools.AddClickHouseTools(srv, true)
+		tools.AddSQLTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetCloudWatch) {
 		tools.AddCloudWatchTools(srv, true)
@@ -155,22 +154,34 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 		return nil, fmt.Errorf("failed to create access token client: %w", err)
 	}
 
-	liveServer := NewGrafanaLiveServer(srv, acc, WithIsGrafanaCloud(settings.IsGrafanaCloud))
-	// We need to create the MCP struct before the HTTP server, because we need to
-	// pass use a context func returned by one of the MCP struct's methods to the
-	// HTTP server.
+	// handler serves MCP requests statelessly with plain JSON responses. Both
+	// transports go through it: plugin resource requests (HTTPServer) and
+	// Grafana Live messages (LiveServer).
+	handler := mcpsdk.NewStreamableHTTPHandler(func(*http.Request) *mcpsdk.Server { return srv }, &mcpsdk.StreamableHTTPOptions{
+		Stateless:    true,
+		JSONResponse: true,
+		Logger:       NewSlogLogger(),
+		// Requests arrive via Grafana's plugin resource and Live APIs, never
+		// from a network listener, so DNS rebinding protection does not apply.
+		DisableLocalhostProtection: true,
+	})
 	m := &MCP{
 		Server:            srv,
-		LiveServer:        liveServer,
+		LiveServer:        NewGrafanaLiveServer(handler, acc, WithIsGrafanaCloud(settings.IsGrafanaCloud)),
 		Settings:          settings,
 		accessTokenClient: acc,
 	}
-	m.HTTPServer = server.NewStreamableHTTPServer(srv,
-		// Only allow Stateless mode.
-		server.WithStateLess(true),
-		server.WithStreamableHTTPLogger(NewSlogLogger()),
-		server.WithHTTPContextFunc(m.httpContextFunc()),
-	)
+	// The SDK derives tool handler contexts from the HTTP request's context,
+	// so Grafana info and clients are added to the request context up front.
+	contextFunc := m.httpContextFunc()
+	m.HTTPServer = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The SDK rejects requests without the Accept header the spec requires,
+		// but mcp-go accepted them, so keep existing clients working.
+		if r.Header.Get("Accept") == "" {
+			r.Header.Set("Accept", "application/json, text/event-stream")
+		}
+		handler.ServeHTTP(w, r.WithContext(contextFunc(r.Context(), r)))
+	})
 	return m, nil
 }
 
