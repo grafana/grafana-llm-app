@@ -36,21 +36,22 @@ const TOOL_CATEGORIES: Record<string, string> = {
   list_loki_label_values: 'Loki',
   query_loki_stats: 'Loki',
   // Alerting
-  list_alert_rules: 'Alerting',
-  get_alert_rule_by_uid: 'Alerting',
-  list_contact_points: 'Alerting',
+  alerting_rules_read: 'Alerting',
+  alerting_rules_write: 'Alerting',
+  alerting_silences_read: 'Alerting',
+  alerting_silences_write: 'Alerting',
+  alerting_manage_routing: 'Alerting',
+  alerting_routing_write: 'Alerting',
   // OnCall
   list_oncall_schedules: 'OnCall',
   get_oncall_shift: 'OnCall',
   get_current_oncall_users: 'OnCall',
   list_oncall_teams: 'OnCall',
   list_oncall_users: 'OnCall',
-  // Sift
-  get_sift_investigation: 'Sift',
-  get_sift_analysis: 'Sift',
-  list_sift_investigations: 'Sift',
-  find_error_pattern_logs: 'Sift',
-  find_slow_requests: 'Sift',
+  // SQL
+  query_sql: 'SQL',
+  list_sql_tables: 'SQL',
+  describe_sql_table: 'SQL',
   // Pyroscope
   list_pyroscope_label_names: 'Pyroscope',
   list_pyroscope_label_values: 'Pyroscope',

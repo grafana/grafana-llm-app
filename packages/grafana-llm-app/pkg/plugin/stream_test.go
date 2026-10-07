@@ -352,6 +352,6 @@ func TestRunStreamMCP(t *testing.T) {
 	app.mcpServer.Close()
 	require.Len(t, r.messages, 3)
 	require.Len(t, *s.requests, 1)
-	require.Equal(t, "/api/search?limit=50&page=1", (*s.requests)[0].URL.String())
+	require.Equal(t, "/api/search?limit=50&page=1&type=dash-db", (*s.requests)[0].URL.String())
 	require.Equal(t, `{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"{\"dashboards\":[],\"total\":0,\"hasMore\":false}"}]}}`, string(r.messages[2]))
 }
