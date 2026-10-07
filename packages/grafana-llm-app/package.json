@@ -72,10 +72,10 @@
   },
   "dependencies": {
     "@emotion/css": "^11.13.5",
-    "@grafana/data": "13.2.2",
+    "@grafana/data": "13.2.3",
     "@grafana/llm": "*",
-    "@grafana/runtime": "13.2.2",
-    "@grafana/ui": "13.2.2",
+    "@grafana/runtime": "13.2.3",
+    "@grafana/ui": "13.2.3",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
