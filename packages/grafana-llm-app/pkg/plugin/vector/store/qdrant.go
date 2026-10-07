@@ -188,14 +188,13 @@ func (q *qdrantStore) Search(ctx context.Context, collection string, vector []fl
 		return nil, err
 	}
 
-	result, err := q.pointsClient.Search(ctx, &qdrant.SearchPoints{
+	result, err := q.pointsClient.Query(ctx, &qdrant.QueryPoints{
 		CollectionName: collection,
-		Vector:         vector,
-		Limit:          topK,
+		Query:          qdrant.NewQueryDense(vector),
+		Limit:          &topK,
 		Filter:         qdrantFilter,
-		// Include all payloads in the search result
-		WithVectors: &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-		WithPayload: &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
+		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
 	})
 	if err != nil {
 		return nil, err
