@@ -7,11 +7,32 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
 )
+
+// customAuthTransport injects the configured auth header on every request.
+// go-openai sets "Authorization: Bearer <token>" inside sendRequest before calling HTTPClient.Do,
+// so we pass DefaultConfig("") (empty token) and let this transport override the header.
+type customAuthTransport struct {
+	base       http.RoundTripper
+	headerName string
+	apiKey     string
+}
+
+func (t *customAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	r2 := req.Clone(req.Context())
+	r2.Header.Del("Authorization") // remove the empty "Bearer " set by DefaultConfig("")
+	if strings.EqualFold(t.headerName, "Authorization") {
+		r2.Header.Set("Authorization", "Bearer "+t.apiKey)
+	} else {
+		r2.Header.Set(t.headerName, t.apiKey)
+	}
+	return t.base.RoundTrip(r2)
+}
 
 type openAI struct {
 	settings OpenAISettings
@@ -20,23 +41,33 @@ type openAI struct {
 }
 
 func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvider, error) {
-	client := &http.Client{
-		Timeout: 2 * time.Minute,
-	}
-	cfg := openai.DefaultConfig(settings.apiKey)
-
 	// Defensively check that APIPath is not nil to avoid potential panics
 	// if settings aren't loaded using loadSettings.
 	if settings.APIPath == nil {
-		*settings.APIPath = defaultOpenAIAPIPath
+		settings.APIPath = &defaultOpenAIAPIPath
+	}
+	if settings.AuthHeaderName == "" {
+		settings.AuthHeaderName = "Authorization"
 	}
 
+	httpClient := &http.Client{
+		Timeout: 2 * time.Minute,
+		Transport: &customAuthTransport{
+			base:       http.DefaultTransport,
+			headerName: settings.AuthHeaderName,
+			apiKey:     settings.apiKey,
+		},
+	}
+
+	// Pass empty auth token so go-openai doesn't set its own Authorization header;
+	// customAuthTransport handles auth injection for all header name variants.
+	cfg := openai.DefaultConfig("")
 	base, err := url.JoinPath(settings.URL, *settings.APIPath)
 	if err != nil {
 		return nil, fmt.Errorf("join url: %w", err)
 	}
 	cfg.BaseURL = base
-	cfg.HTTPClient = client
+	cfg.HTTPClient = httpClient
 	cfg.OrgID = settings.OrganizationID
 	return &openAI{
 		settings: settings,
