@@ -285,7 +285,41 @@ export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<Plug
   return lastValueFrom(response);
 };
 
-export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) => {
+// Grafana.com merges only these keys onto the provisioned plugin. Omitted keys stay as stored.
+export function gcomProvisionedPluginOverrides(data: Partial<PluginMeta<AppPluginSettings>>): {
+  jsonData?: Pick<AppPluginSettings, 'disabled' | 'provider' | 'models'>;
+  secureJsonData?: Pick<Secrets, 'openAIKey'>;
+} {
+  const settings = data.jsonData ?? {};
+  const jsonData: Pick<AppPluginSettings, 'disabled' | 'provider' | 'models'> = {};
+  if (typeof settings.disabled === 'boolean') {
+    jsonData.disabled = settings.disabled;
+  }
+  if (settings.provider) {
+    jsonData.provider = settings.provider;
+  }
+  if (settings.models) {
+    jsonData.models = {
+      default: settings.models.default,
+      mapping: settings.models.mapping,
+    };
+  }
+
+  const overrides: {
+    jsonData?: Pick<AppPluginSettings, 'disabled' | 'provider' | 'models'>;
+    secureJsonData?: Pick<Secrets, 'openAIKey'>;
+  } = {};
+  if (Object.keys(jsonData).length > 0) {
+    overrides.jsonData = jsonData;
+  }
+  const secrets = data.secureJsonData as Secrets | undefined;
+  if (typeof secrets?.openAIKey === 'string') {
+    overrides.secureJsonData = { openAIKey: secrets.openAIKey };
+  }
+  return overrides;
+}
+
+export const updateGcomProvisionedPluginSettings = (data: ReturnType<typeof gcomProvisionedPluginOverrides>) => {
   const response = getBackendSrv().fetch({
     url: `/api/plugins/grafana-llm-app/resources/save-plugin-settings`,
     method: 'POST',
@@ -298,15 +332,10 @@ export const updateGcomProvisionedPluginSettings = (data: Partial<PluginMeta>) =
 export const updateAndSavePluginSettings = async (
   pluginId: string,
   persistToGcom = false,
-  data: Partial<PluginMeta>
+  data: Partial<PluginMeta<AppPluginSettings>>
 ) => {
-  const gcomPluginData = {
-    jsonData: data.jsonData,
-    secureJsonData: data.secureJsonData,
-  };
-
   if (persistToGcom === true) {
-    await updateGcomProvisionedPluginSettings(gcomPluginData).then((response: FetchResponse) => {
+    await updateGcomProvisionedPluginSettings(gcomProvisionedPluginOverrides(data)).then((response: FetchResponse) => {
       if (!response.ok) {
         throw response.data;
       }

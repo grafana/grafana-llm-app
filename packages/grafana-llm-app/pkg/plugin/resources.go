@@ -272,64 +272,95 @@ func (a *App) handleLLMState(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// provisionedPlugin is the response returned by a call to grafana.com's provisioned-plugin's endpoint
-// for an specific instance's plugin.
-type provisionedPlugin struct {
-	ID int `json:"id"`
-}
-
-// getPluginID gets the *ID* of the *provisioned plugin* from grafana.com.
-// Note that this differs to the plugin ID referred to by the `backend.CallResourceRequest`,
-// which is 'grafana-llm-app'
-func getPluginID(ctx context.Context, slug string, grafanaAppURL string, saToken string, gcomAPIKey string) (int, error) {
-	gcomPath := "/api/gnet/instances/" + slug + "/provisioned-plugins/grafana-llm-app"
-	req, err := http.NewRequestWithContext(ctx, "GET", grafanaAppURL+gcomPath, nil)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", saToken))
-	req.Header.Set("X-Api-Key", gcomAPIKey)
-	if err != nil {
-		return 0, fmt.Errorf("create http request: %w", err)
-	}
-	respBody, err := doRequest(req)
-	if err != nil {
-		return 0, fmt.Errorf("%w: %s", err, respBody)
-	}
-	plugin := provisionedPlugin{}
-	err = json.Unmarshal(respBody, &plugin)
-	if err != nil {
-		return 0, fmt.Errorf("unmarshal json: %w", err)
-	}
-	return plugin.ID, nil
-}
-
 type pluginSettings struct {
-	JSONData       map[string]interface{} `json:"jsonData"`
-	SecureJSONData map[string]string      `json:"secureJsonData"`
+	JSONData       map[string]any    `json:"jsonData"`
+	SecureJSONData map[string]string `json:"secureJsonData"`
 }
 
-func (a *App) mergeSecureJSONData(b []byte) ([]byte, error) {
-	// Unmarshal the request body to JSON
+type llmAppOverrides struct {
+	JSONData       map[string]any    `json:"jsonData,omitempty"`
+	SecureJSONData map[string]string `json:"secureJsonData,omitempty"`
+}
+
+type provisionedOverridesRequest struct {
+	LLMApp llmAppOverrides `json:"grafana-llm-app"`
+}
+
+// provisionedPluginOverrides keeps the jsonData and secureJsonData keys the
+// Grafana.com overrides endpoint accepts. Omitted keys stay as stored, so
+// existing secrets such as base64EncodedAccessToken are not copied back in.
+// A nil body means there is nothing allowlisted to send.
+func provisionedPluginOverrides(b []byte) ([]byte, error) {
 	var requestData pluginSettings
-	err := json.Unmarshal(b, &requestData)
-	if err != nil {
+	if err := json.Unmarshal(b, &requestData); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal request body to JSON %w", err)
 	}
 
-	// Insert existing plugin secureJSONData fields if missing from request
-	for key, value := range a.settings.DecryptedSecureJSONData {
-		if _, exists := requestData.SecureJSONData[key]; !exists {
-			requestData.SecureJSONData[key] = value
-		}
+	jsonData := map[string]any{}
+	if disabled, ok := requestData.JSONData["disabled"].(bool); ok {
+		jsonData["disabled"] = disabled
+	}
+	if provider, ok := requestData.JSONData["provider"].(string); ok && provider != "" {
+		jsonData["provider"] = provider
+	}
+	if models := modelOverrides(requestData.JSONData["models"]); models != nil {
+		jsonData["models"] = models
 	}
 
-	// Update mandatory fields
-	requestData.SecureJSONData[encodedTenantAndTokenKey] = a.settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
+	secureJSONData := map[string]string{}
+	if key, ok := requestData.SecureJSONData[openAIKey]; ok {
+		secureJSONData[openAIKey] = key
+	}
 
-	newBody, err := json.Marshal(requestData)
+	if len(jsonData) == 0 && len(secureJSONData) == 0 {
+		return nil, nil
+	}
+
+	overrides := provisionedOverridesRequest{}
+	if len(jsonData) > 0 {
+		overrides.LLMApp.JSONData = jsonData
+	}
+	if len(secureJSONData) > 0 {
+		overrides.LLMApp.SecureJSONData = secureJSONData
+	}
+	body, err := json.Marshal(overrides)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body %w", err)
+		return nil, fmt.Errorf("failed to marshal provisioned plugin overrides %w", err)
 	}
+	return body, nil
+}
 
-	return newBody, nil
+func modelOverrides(raw any) map[string]any {
+	models, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+	overrides := map[string]any{}
+	if modelDefault, ok := models["default"].(string); ok && modelDefault != "" {
+		overrides["default"] = modelDefault
+	}
+	mapping, ok := models["mapping"].(map[string]any)
+	if !ok || len(mapping) == 0 {
+		if len(overrides) == 0 {
+			return nil
+		}
+		return overrides
+	}
+	filtered := map[string]string{}
+	for modelID, modelName := range mapping {
+		name, ok := modelName.(string)
+		if !ok {
+			continue
+		}
+		filtered[modelID] = name
+	}
+	if len(filtered) > 0 {
+		overrides["mapping"] = filtered
+	}
+	if len(overrides) == 0 {
+		return nil
+	}
+	return overrides
 }
 
 func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request) {
@@ -338,7 +369,6 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	// Read the request body
 	if req.Body == nil {
 		log.DefaultLogger.Warn("Request body is nil")
 		handleError(w, errors.New("request body required"), http.StatusBadRequest)
@@ -354,31 +384,27 @@ func (a *App) handleSavePluginSettings(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	log.DefaultLogger.Debug("Getting provisioned plugin ID from grafana.com")
-	pluginID, err := getPluginID(req.Context(), a.settings.Tenant, a.grafanaAppURL, a.saToken, a.settings.GrafanaComAPIKey)
-	if err != nil {
-		handleError(w, fmt.Errorf("get plugin ID: %w", err), http.StatusInternalServerError)
-		return
-	}
-
-	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/%d", a.settings.Tenant, pluginID)
-
-	// Read the request body
-	if req.Body == nil {
-		handleError(w, errors.New("request body required"), http.StatusBadRequest)
-		return
-	}
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		handleError(w, fmt.Errorf("failed to read request body to bytes %w", err), http.StatusInternalServerError)
 		return
 	}
-	newReqBody, err := a.mergeSecureJSONData(b)
+	newReqBody, err := provisionedPluginOverrides(b)
 	if err != nil {
-		handleError(w, fmt.Errorf("insert provisioned token: %w", err), http.StatusInternalServerError)
+		handleError(w, fmt.Errorf("build provisioned plugin overrides: %w", err), http.StatusInternalServerError)
 		return
 	}
-	gcomReq, err := http.NewRequestWithContext(req.Context(), "POST", a.grafanaAppURL+gcomPath, bytes.NewReader(newReqBody))
+	if newReqBody == nil {
+		log.DefaultLogger.Info("No allowlisted plugin settings to save; skipping grafana.com")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status": "Success"}`))
+		return
+	}
+
+	gcomPath := fmt.Sprintf("/api/gnet/instances/%s/provisioned-plugins/overrides", a.settings.Tenant)
+	gcomReq, err := http.NewRequestWithContext(
+		req.Context(), http.MethodPost, a.grafanaAppURL+gcomPath, bytes.NewReader(newReqBody),
+	)
 	if err != nil {
 		handleError(w, fmt.Errorf("create gcom request: %w", err), http.StatusInternalServerError)
 		return
@@ -410,10 +436,8 @@ func doRequest(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read http response: %w", err)
 	}
-	if resp.StatusCode == 409 {
-		// Retry usually helps if this happens
-		return doRequest(req)
-	} else if resp.StatusCode/100 != 2 {
+	// 409 from the overrides endpoint is a validation error, so it is not retried.
+	if resp.StatusCode/100 != 2 {
 		return respBody, fmt.Errorf("HTTP error %d", resp.StatusCode)
 	}
 	return respBody, nil
