@@ -29,9 +29,9 @@ func TestModelFromString(t *testing.T) {
 
 		// unknown models
 		{
-			input:    "invalid_model",
-			expected: "",
-			wantErr:  true,
+			input:    "custom_model",
+			expected: Model("custom_model"),
+			wantErr:  false,
 		},
 		{
 			input:    "",
@@ -120,9 +120,9 @@ func TestModelUnmarshalJSON(t *testing.T) {
 
 		// unknown models
 		{
-			input:    []byte(`"invalid_model"`),
-			expected: "",
-			wantErr:  true,
+			input:    []byte(`"custom_model"`),
+			expected: Model("custom_model"),
+			wantErr:  false,
 		},
 		{
 			input:    []byte(`""`),
