@@ -20,12 +20,14 @@ export function AnthropicConfig({
   secretsSet,
   onChange,
   onChangeSecrets,
+  errors,
 }: {
   settings: AnthropicSettings;
   onChange: (settings: AnthropicSettings) => void;
   secrets: Secrets;
   secretsSet: SecretsSet;
   onChangeSecrets: (secrets: Secrets) => void;
+  errors?: { apiKey?: string };
 }) {
   const s = useStyles2(getStyles);
   // Helper to update settings using the name of the HTML event.
@@ -51,7 +53,7 @@ export function AnthropicConfig({
         />
       </Field>
 
-      <Field label="API Key">
+      <Field label="API Key" invalid={Boolean(errors?.apiKey)} error={errors?.apiKey}>
         <SecretInput
           width={60}
           data-testid={testIds.appConfig.anthropicKey}
@@ -61,6 +63,7 @@ export function AnthropicConfig({
           placeholder={secretsSet.anthropicKey ? 'sk-ant-...' : 'not configured'}
           onChange={(e) => onChangeSecrets({ ...secrets, anthropicKey: e.currentTarget.value })}
           onReset={() => onChangeSecrets({ ...secrets, anthropicKey: '' })}
+          invalid={Boolean(errors?.apiKey)}
         />
       </Field>
     </FieldSet>

@@ -37,6 +37,7 @@ export function OpenAIConfig({
   onChangeSecrets,
   allowCustomPath = false,
   parentProvider,
+  errors,
 }: {
   settings: OpenAISettings;
   onChange: (settings: OpenAISettings) => void;
@@ -45,6 +46,7 @@ export function OpenAIConfig({
   onChangeSecrets: (secrets: Secrets) => void;
   allowCustomPath: boolean;
   parentProvider?: ProviderType;
+  errors?: { url?: string; apiKey?: string };
 }) {
   const s = useStyles2(getStyles);
 
@@ -108,6 +110,8 @@ export function OpenAIConfig({
       <Field
         label={effectiveProvider === 'azure' ? 'Azure OpenAI Language API Endpoint' : 'API URL'}
         className={s.marginTop}
+        invalid={Boolean(errors?.url)}
+        error={errors?.url}
       >
         <Input
           width={60}
@@ -123,6 +127,7 @@ export function OpenAIConfig({
           }
           onChange={onChangeField}
           disabled={effectiveProvider === 'openai' && parentProvider !== 'custom'}
+          invalid={Boolean(errors?.url)}
         />
       </Field>
 
@@ -153,7 +158,11 @@ export function OpenAIConfig({
         </Field>
       )}
 
-      <Field label={effectiveProvider === 'azure' ? 'Azure OpenAI Key' : 'API Key'}>
+      <Field
+        label={effectiveProvider === 'azure' ? 'Azure OpenAI Key' : 'API Key'}
+        invalid={Boolean(errors?.apiKey)}
+        error={errors?.apiKey}
+      >
         <SecretInput
           width={60}
           data-testid={testIds.appConfig.openAIKey}
@@ -163,6 +172,7 @@ export function OpenAIConfig({
           placeholder={effectiveProvider === 'azure' ? '' : 'sk-...'}
           onChange={(e) => onChangeSecrets({ ...secrets, openAIKey: e.currentTarget.value })}
           onReset={() => onChangeSecrets({ ...secrets, openAIKey: '' })}
+          invalid={Boolean(errors?.apiKey)}
         />
       </Field>
 
