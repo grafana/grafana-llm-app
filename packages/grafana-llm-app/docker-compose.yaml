@@ -37,7 +37,7 @@ services:
 
   # For grafana/vectorapi embedder or store
   db:
-    image: ankane/pgvector:v0.5.1
+    image: ankane/pgvector:v0.5.1@sha256:d3a9d8ac27bb7e05e333ef25b634d2625adaa85336ab729954b9e94859bf6fa7
     ports:
       - 5432:5432
     environment:
@@ -47,7 +47,7 @@ services:
 
   # For grafana/vectorapi embedder or store
   vectorapi:
-    image: grafana/vectorapi
+    image: grafana/vectorapi@sha256:318780aac2a224948857d3cd8c1c7065fad2ac72ca5b45e5af0b974f7f13f66e
     environment:
       PORT: 8889
       POSTGRES_HOST: db
