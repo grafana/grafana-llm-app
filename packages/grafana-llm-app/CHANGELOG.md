@@ -1,5 +1,22 @@
 # Changelog
 
+#### 1.2.0
+
+##### New Features
+
+* **mcp:**  migrate to mcp-grafana v2 and the official MCP Go SDK (#1027) (69ec2744)
+
+##### Breaking Changes
+
+* **mcp:**  the Sift tools and `sift` toolset are removed; ClickHouse tools are replaced by `query_sql`, `list_sql_tables` and `describe_sql_table`; `alerting_manage_rules` and `alerting_manage_silences` are split into read/write tools (#1027) (69ec2744)
+
+##### Bug Fixes
+
+*  use the new provisioned plugins overrides endpoint (#1029) (9927d59f)
+* **security:**  update golang.org/x/net to v0.60.0 (#1033) (046c799d)
+* **security:**  update otlptracegrpc to v1.45.0 (#1004) (02f25220)
+* **security:**  update shell-quote, dompurify, hono, immutable, fast-uri, ip-address and qs to patched versions (#1030, #1019, #1020, #1016, #1015, #1018, #989, #997, #1013)
+
 #### 1.1.0
 
 ##### Chores
