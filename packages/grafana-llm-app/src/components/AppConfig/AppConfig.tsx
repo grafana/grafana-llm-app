@@ -13,6 +13,7 @@ import { LLMConfig } from './LLMConfig';
 import { OpenAISettings } from './OpenAI';
 import { AnthropicSettings } from './AnthropicConfig';
 import { VectorConfig, VectorSettings } from './Vector';
+import { validateProviderConfig } from './validation';
 ///////////////////////
 
 export type ProviderType = 'openai' | 'azure' | 'grafana' | 'test' | 'custom' | 'anthropic';
@@ -80,14 +81,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheckResult | undefined>(undefined);
 
-  const validateInputs = (): string | undefined => {
-    // Check if Grafana-provided OpenAI enabled, that it has been opted-in
-    if (settings?.provider === 'grafana' && !managedLLMOptIn) {
-      return 'You must click the "I Accept" checkbox to use OpenAI provided by Grafana';
-    }
-    return;
-  };
-  const errorState = validateInputs();
+  const validation = validateProviderConfig(settings, newSecrets, configuredSecrets, managedLLMOptIn);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -107,7 +101,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
   };
 
   const doSave = async () => {
-    if (errorState !== undefined) {
+    if (!validation.isValid) {
       return;
     }
     setIsUpdating(true);
@@ -221,6 +215,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           }
           markAsUpdated();
         }}
+        fieldErrors={validation.fieldErrors}
       />
       {settings.displayVectorStoreOptions === true && (
         <VectorConfig
@@ -244,7 +239,22 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
         />
       )}
 
-      {errorState !== undefined && <Alert title={errorState} severity="error" />}
+      {validation.errors.length > 0 && (
+        <Alert
+          title={
+            validation.errors.length === 1 ? validation.errors[0] : 'Please resolve the following configuration issues:'
+          }
+          severity="error"
+        >
+          {validation.errors.length > 1 && (
+            <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+              {validation.errors.map((err, idx) => (
+                <li key={idx}>{err}</li>
+              ))}
+            </ul>
+          )}
+        </Alert>
+      )}
       {isUpdating ? (
         <LoadingPlaceholder text="Running health check..." />
       ) : (
@@ -255,7 +265,7 @@ export const AppConfig = ({ plugin }: AppConfigProps) => {
           type="submit"
           data-testid={testIds.appConfig.submit}
           onClick={doSave}
-          disabled={!updated || isUpdating || errorState !== undefined}
+          disabled={!updated || isUpdating || !validation.isValid}
         >
           Save &amp; test
         </Button>
