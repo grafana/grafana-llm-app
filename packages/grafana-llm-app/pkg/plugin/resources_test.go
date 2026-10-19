@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -100,81 +101,178 @@ func TestCallResource(t *testing.T) {
 	}
 }
 
-func TestMergeSecureJSONData(t *testing.T) {
-	ctx := context.Background()
-	// Initialize app
-	inst, err := NewApp(ctx, backend.AppInstanceSettings{
-		DecryptedSecureJSONData: map[string]string{
-			openAIKey:                "abcd1234",
-			encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
+func TestSavePluginSettings(t *testing.T) {
+	const overridesPath = "/api/gnet/instances/stackslug/provisioned-plugins/overrides"
+	settingsBody := `{
+		"jsonData": {
+			"provider": "openai",
+			"disabled": false,
+			"models": {"default": "base", "mapping": {"base": "gpt-4.1-mini", "ignored": 1}},
+			"openAI": {"url": "https://api.openai.com"},
+			"enableGrafanaManagedLLM": true,
+			"vector": {"enabled": true}
 		},
-	})
-	if err != nil {
-		t.Fatalf("new app: %s", err)
-	}
-	if inst == nil {
-		t.Fatal("inst must not be nil")
-	}
-	app, ok := inst.(*App)
-	if !ok {
-		t.Fatal("inst must be of type *App")
-	}
+		"secureJsonData": {"openAIKey": "new-key", "anthropicKey": "anthropic-secret"}
+	}`
 
-	// Set up and run test cases
-	for _, tc := range []struct {
-		name string
+	t.Run("posts allowlisted overrides and leaves stored secrets untouched", func(t *testing.T) {
+		t.Setenv("DEV_MODE", "")
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusOK, &requests)
+		app := newSaveSettingsApp(t, server.URL, true)
 
-		secureJSONData []byte
+		rec := callSavePluginSettings(app, settingsBody)
 
-		expMerged map[string]string
-	}{
-		{
-			name: "empty",
-
-			secureJSONData: []byte(`{}`),
-
-			expMerged: map[string]string{
-				openAIKey:                "abcd1234",
-				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
-			},
-		},
-		{
-			name: "override",
-
-			secureJSONData: []byte(`{"openAIKey": "value1"}`),
-
-			expMerged: map[string]string{
-				openAIKey:                "value1",
-				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
-			},
-		},
-		{
-			name: "addition",
-
-			secureJSONData: []byte(`{"someOtherKey": "test"}`),
-
-			expMerged: map[string]string{
-				openAIKey:                "abcd1234",
-				encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
-				"someOtherKey":           "test",
-			},
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			body := []byte(`{"secureJsonData": ` + string(tc.secureJSONData) + `}`)
-			merged, err := app.mergeSecureJSONData(body)
-
-			require.NoError(t, err)
-
-			var mergedBody struct {
-				SecureJSONData map[string]string `json:"secureJsonData"`
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.Len(t, requests, 1)
+		require.Equal(t, http.MethodPost, requests[0].method)
+		require.Equal(t, overridesPath, requests[0].path)
+		require.Equal(t, "Bearer sa-token", requests[0].header.Get("Authorization"))
+		require.Equal(t, "gcom-key", requests[0].header.Get("X-Api-Key"))
+		require.JSONEq(t, `{
+			"grafana-llm-app": {
+				"jsonData": {
+					"disabled": false,
+					"models": {"default": "base", "mapping": {"base": "gpt-4.1-mini"}},
+					"provider": "openai"
+				},
+				"secureJsonData": {"openAIKey": "new-key"}
 			}
-			err = json.Unmarshal(merged, &mergedBody)
-			require.NoError(t, err)
+		}`, string(requests[0].body))
+		require.NotContains(t, string(requests[0].body), encodedTenantAndTokenKey)
+		require.NotContains(t, string(requests[0].body), "stored-key")
+		require.NotContains(t, string(requests[0].body), "anthropic-secret")
+	})
 
-			require.Equal(t, tc.expMerged, mergedBody.SecureJSONData)
+	t.Run("does not copy an omitted openAIKey from stored secrets", func(t *testing.T) {
+		t.Setenv("DEV_MODE", "")
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusOK, &requests)
+		app := newSaveSettingsApp(t, server.URL, true)
+
+		body := `{"jsonData":{"provider":"grafana"},"secureJsonData":{"anthropicKey":"secret"}}`
+		rec := callSavePluginSettings(app, body)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.Len(t, requests, 1)
+		require.JSONEq(t, `{
+			"grafana-llm-app": {"jsonData": {"provider": "grafana"}}
+		}`, string(requests[0].body))
+	})
+
+	t.Run("forwards an empty openAIKey so Grafana.com deletes it", func(t *testing.T) {
+		t.Setenv("DEV_MODE", "")
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusOK, &requests)
+		app := newSaveSettingsApp(t, server.URL, true)
+
+		rec := callSavePluginSettings(app, `{"secureJsonData":{"openAIKey":""}}`)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.JSONEq(t, `{
+			"grafana-llm-app": {"secureJsonData": {"openAIKey": ""}}
+		}`, string(requests[0].body))
+	})
+
+	t.Run("skips Grafana.com when nothing allowlisted is present", func(t *testing.T) {
+		t.Setenv("DEV_MODE", "")
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusOK, &requests)
+		app := newSaveSettingsApp(t, server.URL, true)
+
+		body := `{"jsonData":{"openAI":{"url":"https://api.openai.com"}},"secureJsonData":{"anthropicKey":"secret"}}`
+		rec := callSavePluginSettings(app, body)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.Empty(t, requests)
+		require.NotContains(t, rec.Body.String(), "secret")
+	})
+
+	t.Run("skips Grafana.com when the plugin is not managed", func(t *testing.T) {
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusOK, &requests)
+		app := newSaveSettingsApp(t, server.URL, false)
+
+		rec := callSavePluginSettings(app, settingsBody)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.Empty(t, requests)
+	})
+
+	t.Run("skips Grafana.com in dev mode", func(t *testing.T) {
+		t.Setenv("DEV_MODE", "1")
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusOK, &requests)
+		app := newSaveSettingsApp(t, server.URL, true)
+
+		rec := callSavePluginSettings(app, settingsBody)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.Empty(t, requests)
+	})
+
+	t.Run("returns the Grafana.com error without retrying a 409", func(t *testing.T) {
+		t.Setenv("DEV_MODE", "")
+		requests := []recordedRequest{}
+		server := newRecordingServer(t, http.StatusConflict, &requests)
+		app := newSaveSettingsApp(t, server.URL, true)
+
+		rec := callSavePluginSettings(app, settingsBody)
+
+		require.Equal(t, http.StatusInternalServerError, rec.Code)
+		require.Len(t, requests, 1)
+		require.NotContains(t, rec.Body.String(), "new-key")
+	})
+}
+
+type recordedRequest struct {
+	method string
+	path   string
+	header http.Header
+	body   []byte
+}
+
+func newRecordingServer(t *testing.T, status int, requests *[]recordedRequest) *httptest.Server {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		*requests = append(*requests, recordedRequest{
+			method: r.Method,
+			path:   r.URL.Path,
+			header: r.Header.Clone(),
+			body:   body,
 		})
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
+
+func newSaveSettingsApp(t *testing.T, serverURL string, managed bool) *App {
+	t.Helper()
+	inst, err := NewApp(context.Background(), backend.AppInstanceSettings{})
+	require.NoError(t, err)
+	app, ok := inst.(*App)
+	require.True(t, ok)
+	app.grafanaAppURL = serverURL
+	app.saToken = "sa-token"
+	app.settings.EnableGrafanaManagedLLM = managed
+	app.settings.Tenant = "stackslug"
+	app.settings.GrafanaComAPIKey = "gcom-key"
+	app.settings.DecryptedSecureJSONData = map[string]string{
+		openAIKey:                "stored-key",
+		encodedTenantAndTokenKey: "MTIzOmFiY2QxMjM0",
 	}
+	return app
+}
+
+func callSavePluginSettings(app *App, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/save-plugin-settings", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+	app.handleSavePluginSettings(rec, req)
+	return rec
 }
 
 type mockServer struct {
