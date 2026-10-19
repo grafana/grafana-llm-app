@@ -24,6 +24,11 @@
     },
     "packageRules": [
       {
+        "description": "client_golang v1.25 changed the Prometheus API client's return values, which breaks mcp-grafana (still on v1.24.x). Remove once mcp-grafana upgrades.",
+        "matchPackageNames": ["github.com/prometheus/client_golang"],
+        "allowedVersions": "<1.25.0"
+      },
+      {
         "description": "Disable pin-type updates to prevent 'pin dependencies' PRs",
         "matchUpdateTypes": ["pin"],
         "enabled": false
