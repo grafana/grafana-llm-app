@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
-          node-version: 22
+          node-version: 24
           registry-url: "https://registry.npmjs.org"
 
       # npm >=11 is required for Trusted Publishing (OIDC-based auth).

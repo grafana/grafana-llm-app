@@ -14,7 +14,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
       - name: Setup Go environment
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c

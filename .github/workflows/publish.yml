@@ -34,7 +34,7 @@ jobs:
     with:
       go-version: "1.27.3"
       golangci-lint-version: "2.15.0"
-      node-version: "22"
+      node-version: "24"
       plugin-directory: packages/grafana-llm-app
 
       # Disable playwright tests for now
