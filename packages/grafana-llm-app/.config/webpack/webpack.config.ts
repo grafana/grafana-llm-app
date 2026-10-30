@@ -53,7 +53,7 @@ const config = async (env): Promise<Configuration> => ({
     'd3',
     'angular',
     '@grafana/ui',
-    '@grafana/runtime',
+    /^@grafana\/runtime/i,
     '@grafana/data',
 
     // Mark legacy SDK imports as external if their name starts with the "grafana/" prefix
