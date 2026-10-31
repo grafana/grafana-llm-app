@@ -276,9 +276,6 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   inlineFieldInputWidth: 40,
 });
 
-export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<PluginMeta>) =>
-  updateAppPluginSettings(pluginId, data);
-
 // Grafana.com merges only these keys onto the provisioned plugin. Omitted keys stay as stored.
 export function gcomProvisionedPluginOverrides(data: Partial<PluginMeta<AppPluginSettings>>): {
   jsonData?: Pick<AppPluginSettings, 'disabled' | 'provider' | 'models'>;
@@ -335,7 +332,7 @@ export const updateAndSavePluginSettings = async (
       }
     });
   }
-  await updateGrafanaPluginSettings(pluginId, data);
+  await updateAppPluginSettings(pluginId, data);
 };
 
 const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckResult>> => {
