@@ -1,5 +1,6 @@
 import { PluginType } from '@grafana/data';
 import { openai } from '@grafana/llm';
+import { updateAppPluginSettings } from '@grafana/plugin-compat/apps';
 import { getBackendSrv } from '@grafana/runtime';
 import { render, screen } from '@testing-library/react';
 import { testIds } from 'components/testIds';
@@ -10,6 +11,10 @@ import { AppConfig, AppConfigProps, updateAndSavePluginSettings } from './AppCon
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
   getBackendSrv: jest.fn(),
+}));
+
+jest.mock('@grafana/plugin-compat/apps', () => ({
+  updateAppPluginSettings: jest.fn(),
 }));
 
 describe('Components/AppConfig', () => {
@@ -83,10 +88,11 @@ describe('Components/AppConfig', () => {
       },
     };
 
+    jest.mocked(updateAppPluginSettings).mockResolvedValue({ ...props.plugin.meta, ...settings });
     await updateAndSavePluginSettings('grafana-llm-app', true, settings);
 
-    expect(fetch).toHaveBeenCalledTimes(2);
-    expect(fetch).toHaveBeenNthCalledWith(1, {
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith({
       url: '/api/plugins/grafana-llm-app/resources/save-plugin-settings',
       method: 'POST',
       data: {
@@ -98,10 +104,10 @@ describe('Components/AppConfig', () => {
         secureJsonData: { openAIKey: 'sk-new' },
       },
     });
-    expect(fetch).toHaveBeenNthCalledWith(2, {
-      url: '/api/plugins/grafana-llm-app/settings',
-      method: 'POST',
-      data: settings,
-    });
+    expect(updateAppPluginSettings).toHaveBeenCalledTimes(1);
+    expect(updateAppPluginSettings).toHaveBeenCalledWith('grafana-llm-app', settings);
+    expect(fetch.mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(updateAppPluginSettings).mock.invocationCallOrder[0]
+    );
   });
 });
