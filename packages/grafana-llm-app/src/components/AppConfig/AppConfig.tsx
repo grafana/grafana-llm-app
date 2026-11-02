@@ -3,6 +3,7 @@ import { lastValueFrom } from 'rxjs';
 
 import { css } from '@emotion/css';
 import { AppPluginMeta, GrafanaTheme2, KeyValue, PluginConfigPageProps, PluginMeta } from '@grafana/data';
+import { updateAppPluginSettings } from '@grafana/plugin-compat/apps';
 import { FetchResponse, HealthCheckResult, getBackendSrv } from '@grafana/runtime';
 import { Alert, Button, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 
@@ -275,16 +276,6 @@ export const getStyles = (theme: GrafanaTheme2) => ({
   inlineFieldInputWidth: 40,
 });
 
-export const updateGrafanaPluginSettings = (pluginId: string, data: Partial<PluginMeta>) => {
-  const response = getBackendSrv().fetch({
-    url: `/api/plugins/${pluginId}/settings`,
-    method: 'POST',
-    data,
-  });
-
-  return lastValueFrom(response);
-};
-
 // Grafana.com merges only these keys onto the provisioned plugin. Omitted keys stay as stored.
 export function gcomProvisionedPluginOverrides(data: Partial<PluginMeta<AppPluginSettings>>): {
   jsonData?: Pick<AppPluginSettings, 'disabled' | 'provider' | 'models'>;
@@ -341,11 +332,7 @@ export const updateAndSavePluginSettings = async (
       }
     });
   }
-  await updateGrafanaPluginSettings(pluginId, data).then((response: FetchResponse) => {
-    if (!response.ok) {
-      throw response.data;
-    }
-  });
+  await updateAppPluginSettings(pluginId, data);
 };
 
 const checkPluginHealth = (pluginId: string): Promise<FetchResponse<HealthCheckResult>> => {
