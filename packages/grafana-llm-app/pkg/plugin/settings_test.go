@@ -591,6 +591,66 @@ func TestMCPToolsetsIsEnabled(t *testing.T) {
 			toolset:  mcp.ToolsetFolder,
 			expected: false,
 		},
+		{
+			name:     "sql nil defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetSQL,
+			expected: true,
+		},
+		{
+			name:     "sql disabled",
+			toolsets: MCPToolsets{SQL: boolPtr(false)},
+			toolset:  mcp.ToolsetSQL,
+			expected: false,
+		},
+		{
+			name:     "sql disabled by the deprecated clickhouse setting",
+			toolsets: MCPToolsets{ClickHouse: boolPtr(false)},
+			toolset:  mcp.ToolsetSQL,
+			expected: false,
+		},
+		{
+			name:     "tempo nil defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetTempo,
+			expected: true,
+		},
+		{
+			name:     "api nil defaults to disabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetAPI,
+			expected: false,
+		},
+		{
+			name:     "api enabled explicitly",
+			toolsets: MCPToolsets{API: boolPtr(true)},
+			toolset:  mcp.ToolsetAPI,
+			expected: true,
+		},
+		{
+			name:     "plugin nil defaults to disabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetPlugin,
+			expected: false,
+		},
+		{
+			name:     "quickwit nil defaults to disabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetQuickwit,
+			expected: false,
+		},
+		{
+			name:     "assistant nil defaults to disabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetAssistant,
+			expected: false,
+		},
+		{
+			name:     "docs nil defaults to enabled",
+			toolsets: MCPToolsets{},
+			toolset:  mcp.ToolsetDocs,
+			expected: true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			result := tc.toolsets.IsEnabled(tc.toolset)
@@ -609,7 +669,7 @@ func TestMCPToolsetsSettings(t *testing.T) {
 		expectedEnabled bool
 	}{
 		{
-			name: "no toolsets config means all enabled",
+			name: "no toolsets config keeps the defaults",
 			settings: backend.AppInstanceSettings{
 				JSONData: []byte(`{"mcp": {}}`),
 			},
@@ -617,7 +677,7 @@ func TestMCPToolsetsSettings(t *testing.T) {
 			expectedEnabled: true,
 		},
 		{
-			name: "empty toolsets means all enabled",
+			name: "empty toolsets keeps the defaults",
 			settings: backend.AppInstanceSettings{
 				JSONData: []byte(`{"mcp": {"toolsets": {}}}`),
 			},
