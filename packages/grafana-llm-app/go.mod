@@ -9,7 +9,7 @@ require (
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20260330113218-ee77c4f6f90e
 	github.com/grafana/grafana-plugin-sdk-go v0.298.0
 	github.com/grafana/incident-go v0.0.0-20260922092049-7a56525cf1f3
-	github.com/grafana/mcp-grafana/v2 v2.1.1
+	github.com/grafana/mcp-grafana/v2 v2.2.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/qdrant/go-client v1.20.1
 	github.com/sashabaranov/go-openai v1.43.0
@@ -96,6 +96,7 @@ require (
 	github.com/grafana/authlib/types v0.0.0-20260304161757-e152786a5bb4 // indirect
 	github.com/grafana/dskit v0.0.0-20260108123158-1a1acfb6ef2e // indirect
 	github.com/grafana/mcp-doc-server v1.0.0 // indirect
+	github.com/grafana/mcp-grafana/lokiguard v0.1.0 // indirect
 	github.com/grafana/otel-profiling-go v0.7.0 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.12 // indirect
 	github.com/grafana/pyroscope/api v1.6.0 // indirect

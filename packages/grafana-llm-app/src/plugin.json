@@ -32,7 +32,7 @@
     "plugins": []
   },
   "iam": {
-    "permissions": [
+        "permissions": [
       {
         "action": "orgs:read"
       },
@@ -49,27 +49,71 @@
         "scope": "datasources:*"
       },
       {
+        "action": "datasources:read",
+        "scope": "datasources:uid:grafana"
+      },
+      {
         "action": "datasources:query",
         "scope": "datasources:*"
+      },
+      {
+        "action": "datasources:query",
+        "scope": "datasources:uid:grafana"
       },
       {
         "action": "dashboards:read",
         "scope": "dashboards:uid:*"
       },
       {
+        "action": "dashboards:read",
+        "scope": "dashboards:*"
+      },
+      {
+        "action": "dashboards:read",
+        "scope": "folders:*"
+      },
+      {
         "action": "dashboards:create",
         "scope": "folders:uid:*"
+      },
+      {
+        "action": "dashboards:create",
+        "scope": "folders:*"
+      },
+      {
+        "action": "dashboards:create",
+        "scope": "folders:uid:general"
       },
       {
         "action": "dashboards:write",
         "scope": "dashboards:uid:*"
       },
       {
+        "action": "dashboards:write",
+        "scope": "dashboards:*"
+      },
+      {
+        "action": "dashboards:write",
+        "scope": "folders:*"
+      },
+      {
         "action": "folders:read",
         "scope": "folders:*"
       },
       {
+        "action": "folders:read",
+        "scope": "folders:uid:general"
+      },
+      {
         "action": "folders:create"
+      },
+      {
+        "action": "folders:create",
+        "scope": "folders:*"
+      },
+      {
+        "action": "folders:create",
+        "scope": "folders:uid:general"
       },
       {
         "action": "folders:write",
@@ -110,12 +154,270 @@
         "action": "grafana-irm-app.user-settings:read"
       },
       {
+        "action": "alert.instances:create"
+      },
+      {
+        "action": "alert.instances:read"
+      },
+      {
+        "action": "alert.instances:write"
+      },
+      {
+        "action": "alert.notifications.external:read"
+      },
+      {
+        "action": "alert.notifications.external:read",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "alert.notifications.external:write"
+      },
+      {
+        "action": "alert.notifications.external:write",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "alert.notifications.receivers:create"
+      },
+      {
+        "action": "alert.notifications.receivers:read"
+      },
+      {
+        "action": "alert.notifications.receivers:read",
+        "scope": "receivers:*"
+      },
+      {
+        "action": "alert.notifications.routes:read"
+      },
+      {
+        "action": "alert.notifications.time-intervals:read"
+      },
+      {
+        "action": "alert.rules.external:read"
+      },
+      {
+        "action": "alert.rules.external:read",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "alert.rules.external:write"
+      },
+      {
+        "action": "alert.rules.external:write",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "alert.silences:create"
+      },
+      {
+        "action": "alert.silences:create",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.silences:read"
+      },
+      {
+        "action": "alert.silences:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "alert.silences:write"
+      },
+      {
+        "action": "alert.silences:write",
+        "scope": "folders:*"
+      },
+      {
+        "action": "annotations:create"
+      },
+      {
+        "action": "annotations:create",
+        "scope": "annotations:*"
+      },
+      {
+        "action": "annotations:create",
+        "scope": "annotations:type:organization"
+      },
+      {
+        "action": "annotations:create",
+        "scope": "folders:*"
+      },
+      {
+        "action": "annotations:delete"
+      },
+      {
+        "action": "annotations:delete",
+        "scope": "annotations:*"
+      },
+      {
+        "action": "annotations:delete",
+        "scope": "annotations:type:organization"
+      },
+      {
+        "action": "annotations:delete",
+        "scope": "folders:*"
+      },
+      {
+        "action": "annotations:read"
+      },
+      {
+        "action": "annotations:read",
+        "scope": "annotations:*"
+      },
+      {
+        "action": "annotations:read",
+        "scope": "annotations:type:organization"
+      },
+      {
+        "action": "annotations:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "annotations:write"
+      },
+      {
+        "action": "annotations:write",
+        "scope": "annotations:*"
+      },
+      {
+        "action": "annotations:write",
+        "scope": "annotations:type:organization"
+      },
+      {
+        "action": "annotations:write",
+        "scope": "folders:*"
+      },
+      {
+        "action": "dashboards.permissions:read"
+      },
+      {
+        "action": "dashboards.permissions:read",
+        "scope": "dashboards:*"
+      },
+      {
+        "action": "dashboards.permissions:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "folders.permissions:read"
+      },
+      {
+        "action": "folders.permissions:read",
+        "scope": "folders:*"
+      },
+      {
+        "action": "datasources.permissions:read"
+      },
+      {
+        "action": "serviceaccounts.permissions:read"
+      },
+      {
+        "action": "serviceaccounts.permissions:read",
+        "scope": "serviceaccounts:*"
+      },
+      {
+        "action": "teams.permissions:read"
+      },
+      {
+        "action": "teams.permissions:read",
+        "scope": "teams:*"
+      },
+      {
+        "action": "users.permissions:read"
+      },
+      {
+        "action": "users.permissions:read",
+        "scope": "users:*"
+      },
+      {
+        "action": "datasources:create"
+      },
+      {
+        "action": "datasources:explore"
+      },
+      {
+        "action": "datasources:write"
+      },
+      {
+        "action": "datasources:write",
+        "scope": "datasources:*"
+      },
+      {
+        "action": "grafana-agento11y-app.conversations:read"
+      },
+      {
+        "action": "grafana-agento11y-app.data:read"
+      },
+      {
+        "action": "grafana-agento11y-app.eval:write"
+      },
+      {
+        "action": "grafana-assistant-app.chats:access"
+      },
+      {
+        "action": "grafana-irm-app.alert-groups:read"
+      },
+      {
+        "action": "grafana-irm-app.alert-groups:write"
+      },
+      {
+        "action": "org.users:read"
+      },
+      {
+        "action": "org.users:read",
+        "scope": "users:*"
+      },
+      {
+        "action": "roles:read"
+      },
+      {
+        "action": "roles:read",
+        "scope": "roles:*"
+      },
+      {
+        "action": "teams.roles:read"
+      },
+      {
+        "action": "teams.roles:read",
+        "scope": "teams:*"
+      },
+      {
+        "action": "users.roles:read"
+      },
+      {
+        "action": "users.roles:read",
+        "scope": "users:*"
+      },
+      {
+        "action": "plugins:install"
+      },
+      {
+        "action": "provisioning.repositories:read"
+      },
+      {
+        "action": "snapshots:create"
+      },
+      {
+        "action": "snapshots:delete"
+      },
+      {
+        "action": "snapshots:read"
+      },
+      {
         "action": "plugins.app:access",
         "scope": "plugins:grafana-incident-app"
       },
       {
         "action": "plugins.app:access",
         "scope": "plugins:grafana-irm-app"
+      },
+      {
+        "action": "plugins.app:access",
+        "scope": "plugins:grafana-assistant-app"
+      },
+      {
+        "action": "plugins.app:access",
+        "scope": "plugins:grafana-agento11y-app"
       }
     ]
   }
