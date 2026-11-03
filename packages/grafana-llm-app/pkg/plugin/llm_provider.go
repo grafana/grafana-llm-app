@@ -77,6 +77,23 @@ func (m Model) toProvider(provider ProviderType, modelSettings *ModelSettings) s
 	return modelSettings.getModel(m)
 }
 
+// useMaxCompletionTokens converts max_tokens only when go-openai rejects it
+// for the resolved model. Other reasoning-model validation errors still flow
+// through unchanged when the provider sends the request.
+func useMaxCompletionTokens(r *openai.ChatCompletionRequest) {
+	if r.MaxTokens == 0 || !errors.Is(
+		openai.NewReasoningValidator().Validate(*r),
+		openai.ErrReasoningModelMaxTokensDeprecated,
+	) {
+		return
+	}
+
+	if r.MaxCompletionTokens == 0 {
+		r.MaxCompletionTokens = r.MaxTokens
+	}
+	r.MaxTokens = 0
+}
+
 type ChatCompletionRequest struct {
 	openai.ChatCompletionRequest
 	Model Model `json:"model"`
