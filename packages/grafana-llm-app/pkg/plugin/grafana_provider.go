@@ -30,7 +30,7 @@ func (t *TenantRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 
 func NewGrafanaProvider(settings Settings) (LLMProvider, error) {
 	client := &http.Client{
-		Timeout:   2 * time.Minute,
+		Timeout:   requestTimeout(time.Duration(settings.RequestTimeoutSeconds) * time.Second),
 		Transport: &TenantRoundTripper{next: http.DefaultTransport, tenant: settings.Tenant},
 	}
 	cfg := openai.DefaultConfig(fmt.Sprintf("%s:%s", settings.Tenant, settings.GrafanaComAPIKey))
