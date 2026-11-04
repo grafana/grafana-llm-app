@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
@@ -25,7 +24,7 @@ type anthropicProvider struct {
 
 func NewAnthropicProvider(settings AnthropicSettings, models *ModelSettings) (LLMProvider, error) {
 	client := &http.Client{
-		Timeout: 2 * time.Minute,
+		Timeout: requestTimeout(settings.requestTimeout),
 	}
 	config := openai.DefaultConfig(settings.apiKey)
 	base, err := url.JoinPath(settings.URL, "/v1")

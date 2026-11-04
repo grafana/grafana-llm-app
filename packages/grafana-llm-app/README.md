@@ -56,6 +56,18 @@ apps:
       openAIKey: $OPENAI_API_KEY
 ```
 
+### Request timeout
+
+Each request to the LLM provider, including reading a streamed response, is cancelled after 2 minutes by default.
+Models that reason before answering can need longer for large prompts. Raise the limit with `requestTimeoutSeconds`:
+
+```yaml
+apps:
+  - type: 'grafana-llm-app'
+    jsonData:
+      requestTimeoutSeconds: 300
+```
+
 ### Using Azure OpenAI
 
 To provision the plugin to use Azure OpenAI, use settings similar to this:

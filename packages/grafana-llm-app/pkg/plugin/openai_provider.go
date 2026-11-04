@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
@@ -21,7 +20,7 @@ type openAI struct {
 
 func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvider, error) {
 	client := &http.Client{
-		Timeout: 2 * time.Minute,
+		Timeout: requestTimeout(settings.requestTimeout),
 	}
 	cfg := openai.DefaultConfig(settings.apiKey)
 

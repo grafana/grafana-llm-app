@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"testing"
+	"time"
 
 	"github.com/grafana/grafana-llm-app/pkg/mcp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -721,6 +722,32 @@ func TestGetEffectiveProvider(t *testing.T) {
 			provider := tc.settings.getEffectiveProvider()
 			if provider != tc.expectedProvider {
 				t.Errorf("expected provider to be %s, got %s", tc.expectedProvider, provider)
+			}
+		})
+	}
+}
+
+func TestLoadSettingsRequestTimeout(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		jsonData string
+		want     time.Duration
+	}{
+		{name: "unset keeps default", jsonData: `{}`, want: defaultRequestTimeout},
+		{name: "zero keeps default", jsonData: `{"requestTimeoutSeconds":0}`, want: defaultRequestTimeout},
+		{name: "negative keeps default", jsonData: `{"requestTimeoutSeconds":-5}`, want: defaultRequestTimeout},
+		{name: "override", jsonData: `{"requestTimeoutSeconds":300}`, want: 5 * time.Minute},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings, err := loadSettings(backend.AppInstanceSettings{JSONData: []byte(tc.jsonData)})
+			if err != nil {
+				t.Fatalf("loadSettings failed: %s", err)
+			}
+			if got := requestTimeout(settings.OpenAI.requestTimeout); got != tc.want {
+				t.Errorf("OpenAI request timeout = %s, want %s", got, tc.want)
+			}
+			if got := requestTimeout(settings.Anthropic.requestTimeout); got != tc.want {
+				t.Errorf("Anthropic request timeout = %s, want %s", got, tc.want)
 			}
 		})
 	}

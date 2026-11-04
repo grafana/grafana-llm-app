@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/sashabaranov/go-openai"
@@ -18,7 +17,7 @@ type azure struct {
 
 func NewAzureProvider(settings OpenAISettings, defaultModel Model) (LLMProvider, error) {
 	client := &http.Client{
-		Timeout: 2 * time.Minute,
+		Timeout: requestTimeout(settings.requestTimeout),
 	}
 	p := &azure{
 		settings:     settings,

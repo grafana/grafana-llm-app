@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/grafana/grafana-llm-app/pkg/mcp"
@@ -24,6 +25,18 @@ var (
 	// This has to be a var so we can take its address later.
 	defaultOpenAIAPIPath = "/v1"
 )
+
+// defaultRequestTimeout bounds each request to an LLM provider when
+// Settings.RequestTimeoutSeconds is not set.
+const defaultRequestTimeout = 2 * time.Minute
+
+// requestTimeout returns timeout, or defaultRequestTimeout if it is not positive.
+func requestTimeout(timeout time.Duration) time.Duration {
+	if timeout <= 0 {
+		return defaultRequestTimeout
+	}
+	return timeout
+}
 
 type ProviderType string
 
@@ -66,6 +79,9 @@ type OpenAISettings struct {
 	// provider (excluding the LLMGateway). Stored securely.
 	apiKey string
 
+	// requestTimeout is copied from Settings.RequestTimeoutSeconds by loadSettings.
+	requestTimeout time.Duration
+
 	// TestProvider contains the settings for the test provider.
 	// Only used when Provider is ProviderTypeTest.
 	TestProvider testProvider `json:"testProvider,omitempty"`
@@ -79,6 +95,9 @@ type AnthropicSettings struct {
 	// apiKey is the provider-specific API key needed to authenticate requests
 	// Stored securely.
 	apiKey string
+
+	// requestTimeout is copied from Settings.RequestTimeoutSeconds by loadSettings.
+	requestTimeout time.Duration
 }
 
 // Configured returns whether the provider has been configured
@@ -284,6 +303,10 @@ type Settings struct {
 
 	// MCP settings.
 	MCP MCPSettings `json:"mcp"`
+
+	// RequestTimeoutSeconds bounds each request to the LLM provider, including
+	// reading a streamed response. Unset or not positive keeps the 2 minute default.
+	RequestTimeoutSeconds int `json:"requestTimeoutSeconds"`
 }
 
 func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
@@ -346,6 +369,9 @@ func loadSettings(appSettings backend.AppInstanceSettings) (*Settings, error) {
 
 	settings.OpenAI.apiKey = settings.DecryptedSecureJSONData[openAIKey]
 	settings.Anthropic.apiKey = settings.DecryptedSecureJSONData["anthropicKey"]
+
+	settings.OpenAI.requestTimeout = time.Duration(settings.RequestTimeoutSeconds) * time.Second
+	settings.Anthropic.requestTimeout = settings.OpenAI.requestTimeout
 
 	// TenantID and GrafanaCom token are combined as "tenantId:GComToken" and base64 encoded, the following undoes that.
 	encodedTenantAndToken := settings.DecryptedSecureJSONData[encodedTenantAndTokenKey]
