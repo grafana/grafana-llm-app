@@ -532,15 +532,17 @@ func TestMCPToolsetsIsEnabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "clickhouse nil defaults to enabled",
+			// ToolsetClickHouse is a deprecated alias of ToolsetSQL, so the
+			// legacy clickhouse setting is asserted through the SQL toolset.
+			name:     "deprecated clickhouse key nil defaults to enabled",
 			toolsets: MCPToolsets{},
-			toolset:  mcp.ToolsetClickHouse,
+			toolset:  mcp.ToolsetSQL,
 			expected: true,
 		},
 		{
-			name:     "clickhouse disabled",
+			name:     "deprecated clickhouse key disabled",
 			toolsets: MCPToolsets{ClickHouse: boolPtr(false)},
-			toolset:  mcp.ToolsetClickHouse,
+			toolset:  mcp.ToolsetSQL,
 			expected: false,
 		},
 		{
