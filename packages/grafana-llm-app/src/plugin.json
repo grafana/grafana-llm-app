@@ -32,7 +32,7 @@
     "plugins": []
   },
   "iam": {
-        "permissions": [
+    "permissions": [
       {
         "action": "orgs:read"
       },
