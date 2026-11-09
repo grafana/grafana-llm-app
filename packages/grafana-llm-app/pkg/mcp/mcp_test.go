@@ -2,18 +2,50 @@ package mcp
 
 import "testing"
 
-var allToolsets = []Toolset{
-	ToolsetSearch, ToolsetDatasource, ToolsetIncident, ToolsetPrometheus,
-	ToolsetLoki, ToolsetAlerting, ToolsetDashboard, ToolsetOnCall,
-	ToolsetAsserts, ToolsetPyroscope, ToolsetNavigation,
-	ToolsetAnnotations, ToolsetRendering, ToolsetAdmin, ToolsetClickHouse,
-	ToolsetCloudWatch, ToolsetElasticsearch, ToolsetExamples, ToolsetFolder,
+func TestAllToolsets(t *testing.T) {
+	all := AllToolsets()
+	if len(all) != 34 {
+		t.Errorf("AllToolsets() has %d entries, want 34", len(all))
+	}
+	seen := make(map[Toolset]bool, len(all))
+	for _, ts := range all {
+		if ts == "" {
+			t.Error("AllToolsets() contains an empty toolset")
+		}
+		if seen[ts] {
+			t.Errorf("AllToolsets() contains %q twice", ts)
+		}
+		seen[ts] = true
+	}
+}
+
+func TestIsDefaultEnabled(t *testing.T) {
+	// Keep this list in sync with defaultDisabledToolsets: a toolset that
+	// grants wide privileges, needs an uncommon datasource, or only matters to
+	// interactive Grafana Apps stays off until an operator turns it on.
+	defaultOff := map[Toolset]bool{
+		ToolsetQuickwit:      true,
+		ToolsetInfluxDB:      true,
+		ToolsetCloudLogging:  true,
+		ToolsetRunPanelQuery: true,
+		ToolsetGraphite:      true,
+		ToolsetPlugin:        true,
+		ToolsetAPI:           true,
+		ToolsetAgento11y:     true,
+		ToolsetAssistant:     true,
+	}
+	for _, ts := range AllToolsets() {
+		want := !defaultOff[ts]
+		if got := IsDefaultEnabled(ts); got != want {
+			t.Errorf("IsDefaultEnabled(%q) = %v, want %v", ts, got, want)
+		}
+	}
 }
 
 func TestIsToolsetEnabled(t *testing.T) {
 	t.Run("nil function enables all toolsets", func(t *testing.T) {
 		s := Settings{}
-		for _, ts := range allToolsets {
+		for _, ts := range AllToolsets() {
 			if !s.isToolsetEnabled(ts) {
 				t.Errorf("isToolsetEnabled(%q) = false, want true (nil func)", ts)
 			}
@@ -41,6 +73,8 @@ func TestIsToolsetEnabled(t *testing.T) {
 			{ToolsetDashboard, true},
 			{ToolsetOnCall, false},
 			{ToolsetAsserts, true},
+			{ToolsetSQL, true},
+			{ToolsetClickHouse, true},
 		} {
 			if got := s.isToolsetEnabled(tc.toolset); got != tc.expected {
 				t.Errorf("isToolsetEnabled(%q) = %v, want %v", tc.toolset, got, tc.expected)
@@ -52,7 +86,7 @@ func TestIsToolsetEnabled(t *testing.T) {
 		s := Settings{
 			IsToolsetEnabled: func(Toolset) bool { return false },
 		}
-		for _, ts := range allToolsets {
+		for _, ts := range AllToolsets() {
 			if s.isToolsetEnabled(ts) {
 				t.Errorf("isToolsetEnabled(%q) = true, want false", ts)
 			}
@@ -79,7 +113,7 @@ func TestNewGrafanaCloudGating(t *testing.T) {
 				IsGrafanaCloud:   tc.isGrafanaCloud,
 				IsToolsetEnabled: func(Toolset) bool { return true },
 			}
-			for _, ts := range allToolsets {
+			for _, ts := range AllToolsets() {
 				shouldBeEnabled := !cloudOnly[ts] || tc.isGrafanaCloud
 				// We can't call New() (it needs real infra), so verify the
 				// gating logic matches what New() implements.

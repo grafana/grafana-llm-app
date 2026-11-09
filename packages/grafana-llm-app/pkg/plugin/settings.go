@@ -184,80 +184,139 @@ type LLMGatewaySettings struct {
 
 type MCPSettings struct {
 	Disabled bool `json:"disabled"`
-	// Nil (omitted) fields default to enabled; set to false to disable.
+	// Nil (omitted) fields fall back to the plugin default for that toolset;
+	// see mcp.IsDefaultEnabled. Set to false to disable.
 	Toolsets MCPToolsets `json:"toolsets"`
 }
 
-// A nil pointer means the toolset is enabled by default; a pointer to false disables it.
+// A nil pointer means the toolset uses its default (mcp.IsDefaultEnabled); a
+// pointer to false disables it.
 type MCPToolsets struct {
 	Search        *bool `json:"search"`
 	Datasource    *bool `json:"datasource"`
 	Incident      *bool `json:"incident"`
 	Prometheus    *bool `json:"prometheus"`
 	Loki          *bool `json:"loki"`
+	Elasticsearch *bool `json:"elasticsearch"`
+	Quickwit      *bool `json:"quickwit"`
+	InfluxDB      *bool `json:"influxdb"`
 	Alerting      *bool `json:"alerting"`
 	Dashboard     *bool `json:"dashboard"`
+	Folder        *bool `json:"folder"`
 	OnCall        *bool `json:"oncall"`
 	Asserts       *bool `json:"asserts"`
+	Admin         *bool `json:"admin"`
 	Pyroscope     *bool `json:"pyroscope"`
 	Navigation    *bool `json:"navigation"`
+	Tempo         *bool `json:"tempo"`
 	Annotations   *bool `json:"annotations"`
 	Rendering     *bool `json:"rendering"`
-	Admin         *bool `json:"admin"`
-	ClickHouse    *bool `json:"clickhouse"`
+	Snapshot      *bool `json:"snapshot"`
 	CloudWatch    *bool `json:"cloudwatch"`
-	Elasticsearch *bool `json:"elasticsearch"`
+	CloudLogging  *bool `json:"cloudlogging"`
 	Examples      *bool `json:"examples"`
-	Folder        *bool `json:"folder"`
+	SQL           *bool `json:"sql"`
+	RunPanelQuery *bool `json:"runpanelquery"`
+	Graphite      *bool `json:"graphite"`
+	Plugin        *bool `json:"plugin"`
+	API           *bool `json:"api"`
+	Config        *bool `json:"config"`
+	Provisioning  *bool `json:"provisioning"`
+	Agento11y     *bool `json:"agento11y"`
+	Assistant     *bool `json:"assistant"`
+	Docs          *bool `json:"docs"`
+	User          *bool `json:"user"`
+
+	// ClickHouse is the deprecated name for the SQL toolset.
+	ClickHouse *bool `json:"clickhouse"`
+}
+
+// isEnabledSetting resolves one toolset setting, falling back to the toolset's
+// default when the setting is unset.
+func isEnabledSetting(ptr *bool, toolset mcp.Toolset) bool {
+	if ptr != nil {
+		return *ptr
+	}
+	return mcp.IsDefaultEnabled(toolset)
 }
 
 // An unknown toolset name logs a warning and returns false.
 func (f MCPToolsets) IsEnabled(toolset mcp.Toolset) bool {
-	var ptr *bool
 	switch toolset {
 	case mcp.ToolsetSearch:
-		ptr = f.Search
+		return isEnabledSetting(f.Search, toolset)
 	case mcp.ToolsetDatasource:
-		ptr = f.Datasource
+		return isEnabledSetting(f.Datasource, toolset)
 	case mcp.ToolsetIncident:
-		ptr = f.Incident
+		return isEnabledSetting(f.Incident, toolset)
 	case mcp.ToolsetPrometheus:
-		ptr = f.Prometheus
+		return isEnabledSetting(f.Prometheus, toolset)
 	case mcp.ToolsetLoki:
-		ptr = f.Loki
-	case mcp.ToolsetAlerting:
-		ptr = f.Alerting
-	case mcp.ToolsetDashboard:
-		ptr = f.Dashboard
-	case mcp.ToolsetOnCall:
-		ptr = f.OnCall
-	case mcp.ToolsetAsserts:
-		ptr = f.Asserts
-	case mcp.ToolsetPyroscope:
-		ptr = f.Pyroscope
-	case mcp.ToolsetNavigation:
-		ptr = f.Navigation
-	case mcp.ToolsetAnnotations:
-		ptr = f.Annotations
-	case mcp.ToolsetRendering:
-		ptr = f.Rendering
-	case mcp.ToolsetAdmin:
-		ptr = f.Admin
-	case mcp.ToolsetClickHouse:
-		ptr = f.ClickHouse
-	case mcp.ToolsetCloudWatch:
-		ptr = f.CloudWatch
+		return isEnabledSetting(f.Loki, toolset)
 	case mcp.ToolsetElasticsearch:
-		ptr = f.Elasticsearch
-	case mcp.ToolsetExamples:
-		ptr = f.Examples
+		return isEnabledSetting(f.Elasticsearch, toolset)
+	case mcp.ToolsetQuickwit:
+		return isEnabledSetting(f.Quickwit, toolset)
+	case mcp.ToolsetInfluxDB:
+		return isEnabledSetting(f.InfluxDB, toolset)
+	case mcp.ToolsetAlerting:
+		return isEnabledSetting(f.Alerting, toolset)
+	case mcp.ToolsetDashboard:
+		return isEnabledSetting(f.Dashboard, toolset)
 	case mcp.ToolsetFolder:
-		ptr = f.Folder
+		return isEnabledSetting(f.Folder, toolset)
+	case mcp.ToolsetOnCall:
+		return isEnabledSetting(f.OnCall, toolset)
+	case mcp.ToolsetAsserts:
+		return isEnabledSetting(f.Asserts, toolset)
+	case mcp.ToolsetAdmin:
+		return isEnabledSetting(f.Admin, toolset)
+	case mcp.ToolsetPyroscope:
+		return isEnabledSetting(f.Pyroscope, toolset)
+	case mcp.ToolsetNavigation:
+		return isEnabledSetting(f.Navigation, toolset)
+	case mcp.ToolsetTempo:
+		return isEnabledSetting(f.Tempo, toolset)
+	case mcp.ToolsetAnnotations:
+		return isEnabledSetting(f.Annotations, toolset)
+	case mcp.ToolsetRendering:
+		return isEnabledSetting(f.Rendering, toolset)
+	case mcp.ToolsetSnapshot:
+		return isEnabledSetting(f.Snapshot, toolset)
+	case mcp.ToolsetCloudWatch:
+		return isEnabledSetting(f.CloudWatch, toolset)
+	case mcp.ToolsetCloudLogging:
+		return isEnabledSetting(f.CloudLogging, toolset)
+	case mcp.ToolsetExamples:
+		return isEnabledSetting(f.Examples, toolset)
+	case mcp.ToolsetSQL:
+		// ClickHouse is the deprecated name for this toolset, so either
+		// setting can turn it off.
+		return isEnabledSetting(f.SQL, toolset) && isEnabledSetting(f.ClickHouse, toolset)
+	case mcp.ToolsetRunPanelQuery:
+		return isEnabledSetting(f.RunPanelQuery, toolset)
+	case mcp.ToolsetGraphite:
+		return isEnabledSetting(f.Graphite, toolset)
+	case mcp.ToolsetPlugin:
+		return isEnabledSetting(f.Plugin, toolset)
+	case mcp.ToolsetAPI:
+		return isEnabledSetting(f.API, toolset)
+	case mcp.ToolsetConfig:
+		return isEnabledSetting(f.Config, toolset)
+	case mcp.ToolsetProvisioning:
+		return isEnabledSetting(f.Provisioning, toolset)
+	case mcp.ToolsetAgento11y:
+		return isEnabledSetting(f.Agento11y, toolset)
+	case mcp.ToolsetAssistant:
+		return isEnabledSetting(f.Assistant, toolset)
+	case mcp.ToolsetDocs:
+		return isEnabledSetting(f.Docs, toolset)
+	case mcp.ToolsetUser:
+		return isEnabledSetting(f.User, toolset)
 	default:
 		log.DefaultLogger.Warn("Unknown MCP toolset", "toolset", toolset)
 		return false
 	}
-	return ptr == nil || *ptr
 }
 
 // Settings contains the plugin's settings and secrets required by the plugin backend.

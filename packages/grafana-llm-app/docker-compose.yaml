@@ -17,6 +17,9 @@ services:
       VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD: $VECTOR_EMBEDDER_BASIC_AUTH_PASSWORD
       VECTOR_STORE_BASIC_AUTH_PASSWORD: $VECTOR_STORE_BASIC_AUTH_PASSWORD
       GF_FEATURE_TOGGLES_ENABLE: externalServiceAccounts
+      # The feature toggle alone is not enough: Grafana only creates the plugin
+      # service account (and the IAM role from plugin.json) when this is on too.
+      GF_AUTH_MANAGED_SERVICE_ACCOUNTS_ENABLED: true
       DEV_MODE: true
     ports:
       - 3000:3000/tcp

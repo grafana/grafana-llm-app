@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/mcp-grafana/v2/resources"
 	"github.com/grafana/mcp-grafana/v2/tools"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -13,28 +14,89 @@ import (
 type Toolset string
 
 const (
-	ToolsetSearch      Toolset = "search"
-	ToolsetDatasource  Toolset = "datasource"
-	ToolsetIncident    Toolset = "incident"
-	ToolsetPrometheus  Toolset = "prometheus"
-	ToolsetLoki        Toolset = "loki"
-	ToolsetAlerting    Toolset = "alerting"
-	ToolsetDashboard   Toolset = "dashboard"
-	ToolsetOnCall      Toolset = "oncall"
-	ToolsetAsserts     Toolset = "asserts"
-	ToolsetPyroscope   Toolset = "pyroscope"
-	ToolsetNavigation  Toolset = "navigation"
-	ToolsetAnnotations Toolset = "annotations"
-	ToolsetRendering   Toolset = "rendering"
-	ToolsetAdmin       Toolset = "admin"
-	// ToolsetClickHouse enables the SQL datasource tools, which cover ClickHouse
-	// along with other SQL datasources.
-	ToolsetClickHouse    Toolset = "clickhouse"
-	ToolsetCloudWatch    Toolset = "cloudwatch"
+	ToolsetSearch        Toolset = "search"
+	ToolsetDatasource    Toolset = "datasource"
+	ToolsetIncident      Toolset = "incident"
+	ToolsetPrometheus    Toolset = "prometheus"
+	ToolsetLoki          Toolset = "loki"
 	ToolsetElasticsearch Toolset = "elasticsearch"
-	ToolsetExamples      Toolset = "examples"
+	ToolsetQuickwit      Toolset = "quickwit"
+	ToolsetInfluxDB      Toolset = "influxdb"
+	ToolsetAlerting      Toolset = "alerting"
+	ToolsetDashboard     Toolset = "dashboard"
 	ToolsetFolder        Toolset = "folder"
+	ToolsetOnCall        Toolset = "oncall"
+	ToolsetAsserts       Toolset = "asserts"
+	ToolsetAdmin         Toolset = "admin"
+	ToolsetPyroscope     Toolset = "pyroscope"
+	ToolsetNavigation    Toolset = "navigation"
+	ToolsetTempo         Toolset = "tempo"
+	ToolsetAnnotations   Toolset = "annotations"
+	ToolsetRendering     Toolset = "rendering"
+	ToolsetSnapshot      Toolset = "snapshot"
+	ToolsetCloudWatch    Toolset = "cloudwatch"
+	ToolsetCloudLogging  Toolset = "cloudlogging"
+	ToolsetExamples      Toolset = "examples"
+	// ToolsetSQL enables the SQL datasource tools, which cover ClickHouse,
+	// Snowflake, Athena and BigQuery.
+	ToolsetSQL           Toolset = "sql"
+	ToolsetRunPanelQuery Toolset = "runpanelquery"
+	ToolsetGraphite      Toolset = "graphite"
+	ToolsetPlugin        Toolset = "plugin"
+	ToolsetAPI           Toolset = "api"
+	ToolsetConfig        Toolset = "config"
+	ToolsetProvisioning  Toolset = "provisioning"
+	ToolsetAgento11y     Toolset = "agento11y"
+	ToolsetAssistant     Toolset = "assistant"
+	ToolsetDocs          Toolset = "docs"
+	ToolsetUser          Toolset = "user"
+
+	// ToolsetClickHouse is an alias for ToolsetSQL, kept because the setting
+	// used to be called "clickhouse".
+	//
+	// Deprecated: use ToolsetSQL.
+	ToolsetClickHouse = ToolsetSQL
 )
+
+// AllToolsets returns every toolset this package can register.
+func AllToolsets() []Toolset {
+	return []Toolset{
+		ToolsetSearch, ToolsetDatasource, ToolsetIncident, ToolsetPrometheus,
+		ToolsetLoki, ToolsetElasticsearch, ToolsetQuickwit, ToolsetInfluxDB,
+		ToolsetAlerting, ToolsetDashboard, ToolsetFolder, ToolsetOnCall,
+		ToolsetAsserts, ToolsetAdmin, ToolsetPyroscope, ToolsetNavigation,
+		ToolsetTempo, ToolsetAnnotations, ToolsetRendering, ToolsetSnapshot,
+		ToolsetCloudWatch, ToolsetCloudLogging, ToolsetExamples, ToolsetSQL,
+		ToolsetRunPanelQuery, ToolsetGraphite, ToolsetPlugin, ToolsetAPI,
+		ToolsetConfig, ToolsetProvisioning, ToolsetAgento11y, ToolsetAssistant,
+		ToolsetDocs, ToolsetUser,
+	}
+}
+
+// defaultDisabledToolsets are the toolsets that stay off when their setting is
+// unset. They either grant wide privileges (the plugin install and arbitrary
+// HTTP request tools), need datasources most stacks do not run (InfluxDB,
+// Quickwit, Cloud Logging, Graphite), or only matter to interactive Grafana
+// Apps (Run Panel Query, Agent O11y, Assistant). Turning them on is one
+// setting away.
+var defaultDisabledToolsets = map[Toolset]bool{
+	ToolsetQuickwit:      true,
+	ToolsetInfluxDB:      true,
+	ToolsetCloudLogging:  true,
+	ToolsetRunPanelQuery: true,
+	ToolsetGraphite:      true,
+	ToolsetPlugin:        true,
+	ToolsetAPI:           true,
+	ToolsetAgento11y:     true,
+	ToolsetAssistant:     true,
+}
+
+// IsDefaultEnabled reports whether a toolset is registered when it has no
+// explicit setting. The settings layer uses it to decide the value it passes
+// to Settings.IsToolsetEnabled.
+func IsDefaultEnabled(toolset Toolset) bool {
+	return !defaultDisabledToolsets[toolset]
+}
 
 // Settings contains configuration required by the MCP servers.
 type Settings struct {
@@ -90,11 +152,16 @@ type MCP struct {
 func New(settings Settings, pluginVersion string) (*MCP, error) {
 	log.DefaultLogger.Debug("Initializing MCP server")
 	srv := mcpsdk.NewServer(&mcpsdk.Implementation{Name: "grafana-llm-app", Version: pluginVersion}, nil)
+	// The plugin has no read-only mode: every write-capable toolset registers
+	// its write tools. AddAlertingTools takes a per-tool predicate instead of a
+	// single flag, so answer yes for every tool name.
+	writeEnabled := func(string) bool { return true }
 	if settings.isToolsetEnabled(ToolsetSearch) {
 		tools.AddSearchTools(srv)
 	}
 	if settings.isToolsetEnabled(ToolsetDatasource) {
 		tools.AddDatasourceTools(srv, true)
+		resources.AddDatasources(srv)
 	}
 	// Incident and asserts toolsets require Grafana Cloud.
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetIncident) {
@@ -106,11 +173,23 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	if settings.isToolsetEnabled(ToolsetLoki) {
 		tools.AddLokiTools(srv, true)
 	}
+	if settings.isToolsetEnabled(ToolsetElasticsearch) {
+		tools.AddElasticsearchTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetQuickwit) {
+		tools.AddQuickwitTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetInfluxDB) {
+		tools.AddInfluxDBTools(srv, true)
+	}
 	if settings.isToolsetEnabled(ToolsetAlerting) {
-		tools.AddAlertingTools(srv, true)
+		tools.AddAlertingTools(srv, writeEnabled)
 	}
 	if settings.isToolsetEnabled(ToolsetDashboard) {
 		tools.AddDashboardTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetFolder) {
+		tools.AddFolderTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetOnCall) {
 		tools.AddOnCallTools(srv, true)
@@ -118,11 +197,17 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetAsserts) {
 		tools.AddAssertsTools(srv)
 	}
+	if settings.isToolsetEnabled(ToolsetAdmin) {
+		tools.AddAdminTools(srv)
+	}
 	if settings.isToolsetEnabled(ToolsetPyroscope) {
 		tools.AddPyroscopeTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetNavigation) {
 		tools.AddNavigationTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetTempo) {
+		tools.AddTempoTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetAnnotations) {
 		tools.AddAnnotationTools(srv, true)
@@ -130,23 +215,50 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	if settings.isToolsetEnabled(ToolsetRendering) {
 		tools.AddRenderingTools(srv)
 	}
-	if settings.isToolsetEnabled(ToolsetAdmin) {
-		tools.AddAdminTools(srv)
-	}
-	if settings.isToolsetEnabled(ToolsetClickHouse) {
-		tools.AddSQLTools(srv, true)
+	if settings.isToolsetEnabled(ToolsetSnapshot) {
+		tools.AddSnapshotTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetCloudWatch) {
 		tools.AddCloudWatchTools(srv, true)
 	}
-	if settings.isToolsetEnabled(ToolsetElasticsearch) {
-		tools.AddElasticsearchTools(srv, true)
+	if settings.isToolsetEnabled(ToolsetCloudLogging) {
+		tools.AddCloudLoggingTools(srv, true)
 	}
 	if settings.isToolsetEnabled(ToolsetExamples) {
 		tools.AddExamplesTools(srv)
 	}
-	if settings.isToolsetEnabled(ToolsetFolder) {
-		tools.AddFolderTools(srv, true)
+	if settings.isToolsetEnabled(ToolsetSQL) {
+		tools.AddSQLTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetRunPanelQuery) {
+		tools.AddRunPanelQueryTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetGraphite) {
+		tools.AddGraphiteTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetPlugin) {
+		tools.AddPluginTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetAPI) {
+		tools.AddAPITools(srv, true, true)
+	}
+	if settings.isToolsetEnabled(ToolsetConfig) {
+		tools.AddConfigTools(srv)
+	}
+	if settings.isToolsetEnabled(ToolsetProvisioning) {
+		tools.AddProvisioningTools(srv)
+	}
+	if settings.isToolsetEnabled(ToolsetAgento11y) {
+		tools.AddAgento11yTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetAssistant) {
+		tools.AddAssistantTools(srv, true)
+	}
+	if settings.isToolsetEnabled(ToolsetDocs) {
+		tools.AddDocsTools(srv)
+	}
+	if settings.isToolsetEnabled(ToolsetUser) {
+		tools.AddUserTools(srv)
 	}
 
 	acc, err := newAccessTokenClient(settings.AccessToken, settings.Tenant, settings.IsGrafanaCloud)
