@@ -29,6 +29,8 @@ export interface AppPluginSettings {
   enableGrafanaManagedLLM?: boolean;
   displayVectorStoreOptions?: boolean;
   enableDevSandbox?: boolean;
+  // Seconds each request to the LLM provider may take, including a streamed response. Defaults to 120.
+  requestTimeoutSeconds?: number;
 }
 
 export type Secrets = {
