@@ -64,7 +64,7 @@
     "ws": "8.22.0",
     "js-cookie": "3.0.8",
     "fast-uri": "4.2.2",
-    "hono": "4.13.13",
+    "hono": "4.13.16",
     "ip-address": "10.7.4",
     "postcss": "8.5.30",
     "@opentelemetry/core": "2.12.0",
