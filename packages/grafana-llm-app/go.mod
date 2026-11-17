@@ -7,9 +7,9 @@ require (
 	github.com/go-openapi/strfmt v0.27.4
 	github.com/grafana/authlib v0.0.0-20260316143530-e1d123886039
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20260330113218-ee77c4f6f90e
-	github.com/grafana/grafana-plugin-sdk-go v0.298.0
+	github.com/grafana/grafana-plugin-sdk-go v0.299.0
 	github.com/grafana/incident-go v0.0.0-20260922092049-7a56525cf1f3
-	github.com/grafana/mcp-grafana/v2 v2.2.0
+	github.com/grafana/mcp-grafana/v2 v2.3.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/qdrant/go-client v1.20.1
 	github.com/sashabaranov/go-openai v1.43.0
@@ -119,7 +119,7 @@ require (
 	github.com/hashicorp/memberlist v0.7.0 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
-	github.com/itchyny/gojq v0.12.19 // indirect
+	github.com/itchyny/gojq v0.12.20 // indirect
 	github.com/itchyny/timefmt-go v0.1.9 // indirect
 	github.com/jaegertracing/jaeger-idl v0.14.0 // indirect
 	github.com/jpillora/backoff v1.1.0 // indirect
@@ -145,7 +145,7 @@ require (
 	github.com/olekukonko/errors v1.3.0 // indirect
 	github.com/olekukonko/ll v0.1.9 // indirect
 	github.com/olekukonko/tablewriter v1.1.5 // indirect
-	github.com/pandatix/go-abnf v0.5.3 // indirect
+	github.com/pandatix/go-abnf v0.5.5 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pb33f/go-yaml v0.1.1 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.2 // indirect
@@ -158,7 +158,7 @@ require (
 	github.com/prometheus/exporter-toolkit v0.20.0 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
-	github.com/prometheus/prometheus v0.315.1 // indirect
+	github.com/prometheus/prometheus v0.316.0 // indirect
 	github.com/prometheus/sigv4 v0.5.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
@@ -209,13 +209,13 @@ require (
 	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
 	golang.org/x/net v0.62.0 // indirect
-	golang.org/x/oauth2 v0.37.0 // indirect
+	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/telebot.v3 v3.3.8 // indirect

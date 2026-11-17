@@ -161,7 +161,7 @@ func New(settings Settings, pluginVersion string) (*MCP, error) {
 	}
 	if settings.isToolsetEnabled(ToolsetDatasource) {
 		tools.AddDatasourceTools(srv, true)
-		resources.AddDatasources(srv)
+		resources.Register(srv, resources.Datasources)
 	}
 	// Incident and asserts toolsets require Grafana Cloud.
 	if settings.IsGrafanaCloud && settings.isToolsetEnabled(ToolsetIncident) {
