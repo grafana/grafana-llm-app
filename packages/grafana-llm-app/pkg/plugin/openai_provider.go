@@ -26,11 +26,12 @@ func NewOpenAIProvider(settings OpenAISettings, models *ModelSettings) (LLMProvi
 
 	// Defensively check that APIPath is not nil to avoid potential panics
 	// if settings aren't loaded using loadSettings.
-	if settings.APIPath == nil {
-		*settings.APIPath = defaultOpenAIAPIPath
+	apiPath := defaultOpenAIAPIPath
+	if settings.APIPath != nil {
+		apiPath = *settings.APIPath
 	}
 
-	base, err := url.JoinPath(settings.URL, *settings.APIPath)
+	base, err := url.JoinPath(settings.URL, apiPath)
 	if err != nil {
 		return nil, fmt.Errorf("join url: %w", err)
 	}
