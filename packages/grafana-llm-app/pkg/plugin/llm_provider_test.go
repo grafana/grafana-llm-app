@@ -370,3 +370,22 @@ func TestModelToOpenAI(t *testing.T) {
 		})
 	}
 }
+
+func TestModelToProvider_NilMappingDoesNotPanic(t *testing.T) {
+	// Settings with a default but no mapping, e.g. {"models": {"default": "large"}}.
+	settings := &ModelSettings{Default: Model(ModelLarge)}
+	assert.NotPanics(t, func() {
+		assert.Equal(t, openai.GPT4Dot1Mini, Model(ModelBase).toOpenAI(settings))
+		assert.Equal(t, openai.GPT4Dot1, Model("unknown").toOpenAI(settings))
+	})
+}
+
+func TestModelToProvider_DoesNotMutateSettings(t *testing.T) {
+	settings := &ModelSettings{
+		Mapping: map[Model]string{ModelBase: "custom-base"},
+	}
+	assert.Equal(t, "custom-base", Model(ModelBase).toOpenAI(settings))
+	assert.Equal(t, openai.GPT4Dot1, Model(ModelLarge).toOpenAI(settings))
+	assert.Equal(t, map[Model]string{ModelBase: "custom-base"}, settings.Mapping)
+	assert.Empty(t, settings.Default)
+}

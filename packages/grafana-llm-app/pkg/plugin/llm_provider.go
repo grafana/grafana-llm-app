@@ -65,16 +65,24 @@ func (m Model) toProvider(provider ProviderType, modelSettings *ModelSettings) s
 		modelSettings = defaults
 	}
 	// Next make sure that all of the model IDs have a corresponding name in the
-	// mapping, falling back to the default name if not.
+	// mapping, falling back to the default name if not. Work on a copy so we
+	// neither write to a nil map nor mutate settings shared between requests.
+	merged := ModelSettings{
+		Default: modelSettings.Default,
+		Mapping: make(map[Model]string, len(defaults.Mapping)+len(modelSettings.Mapping)),
+	}
+	for id, name := range modelSettings.Mapping {
+		merged.Mapping[id] = name
+	}
 	for id, name := range defaults.Mapping {
-		if modelSettings.Mapping[id] == "" {
-			modelSettings.Mapping[id] = name
+		if merged.Mapping[id] == "" {
+			merged.Mapping[id] = name
 		}
 	}
-	if modelSettings.Default == "" {
-		modelSettings.Default = defaults.Default
+	if merged.Default == "" {
+		merged.Default = defaults.Default
 	}
-	return modelSettings.getModel(m)
+	return merged.getModel(m)
 }
 
 type ChatCompletionRequest struct {
