@@ -58,8 +58,15 @@ func (p *openAI) ChatCompletion(ctx context.Context, req ChatCompletionRequest) 
 	r.Model = req.Model.toOpenAI(p.models)
 
 	ForceUserMessage(&r)
+	NormalizeTokenLimits(&r)
 
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
+	if err != nil && r.MaxTokens > 0 && r.MaxCompletionTokens == 0 && IsMaxTokensUnsupportedError(err) {
+		log.DefaultLogger.Debug("model does not support MaxTokens; retrying with MaxCompletionTokens", "model", r.Model)
+		r.MaxCompletionTokens = r.MaxTokens
+		r.MaxTokens = 0
+		resp, err = p.oc.CreateChatCompletion(ctx, r)
+	}
 	if err != nil {
 		log.DefaultLogger.Error("error creating openai chat completion", "err", err)
 		return openai.ChatCompletionResponse{}, err
@@ -72,6 +79,7 @@ func (p *openAI) ChatCompletionStream(ctx context.Context, req ChatCompletionReq
 	r.Model = req.Model.toOpenAI(p.models)
 
 	ForceUserMessage(&r)
+	NormalizeTokenLimits(&r)
 
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
@@ -80,8 +88,15 @@ func streamOpenAIRequest(ctx context.Context, r openai.ChatCompletionRequest, oc
 	r.Stream = true
 
 	ForceUserMessage(&r)
+	NormalizeTokenLimits(&r)
 
 	stream, err := oc.CreateChatCompletionStream(ctx, r)
+	if err != nil && r.MaxTokens > 0 && r.MaxCompletionTokens == 0 && IsMaxTokensUnsupportedError(err) {
+		log.DefaultLogger.Debug("model does not support MaxTokens; retrying stream with MaxCompletionTokens", "model", r.Model)
+		r.MaxCompletionTokens = r.MaxTokens
+		r.MaxTokens = 0
+		stream, err = oc.CreateChatCompletionStream(ctx, r)
+	}
 	if err != nil {
 		log.DefaultLogger.Error("error establishing stream", "err", err)
 		return nil, err

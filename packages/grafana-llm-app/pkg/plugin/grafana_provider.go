@@ -62,8 +62,15 @@ func (p *grafanaProvider) ChatCompletion(ctx context.Context, req ChatCompletion
 	r.Model = req.Model.toOpenAI(defaultModelSettings(ProviderTypeGrafana))
 
 	ForceUserMessage(&r)
+	NormalizeTokenLimits(&r)
 
 	resp, err := p.oc.CreateChatCompletion(ctx, r)
+	if err != nil && r.MaxTokens > 0 && r.MaxCompletionTokens == 0 && IsMaxTokensUnsupportedError(err) {
+		log.DefaultLogger.Debug("model does not support MaxTokens; retrying with MaxCompletionTokens", "model", r.Model)
+		r.MaxCompletionTokens = r.MaxTokens
+		r.MaxTokens = 0
+		resp, err = p.oc.CreateChatCompletion(ctx, r)
+	}
 	if err != nil {
 		log.DefaultLogger.Error("error creating grafana chat completion", "err", err)
 		return openai.ChatCompletionResponse{}, err
@@ -76,6 +83,7 @@ func (p *grafanaProvider) ChatCompletionStream(ctx context.Context, req ChatComp
 	r.Model = req.Model.toOpenAI(defaultModelSettings(ProviderTypeGrafana))
 
 	ForceUserMessage(&r)
+	NormalizeTokenLimits(&r)
 
 	return streamOpenAIRequest(ctx, r, p.oc)
 }
