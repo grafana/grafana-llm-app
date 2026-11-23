@@ -11,7 +11,7 @@ require (
 	github.com/grafana/incident-go v0.0.0-20260922092049-7a56525cf1f3
 	github.com/grafana/mcp-grafana/v2 v2.3.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
-	github.com/qdrant/go-client v1.20.1
+	github.com/qdrant/go-client v1.20.2
 	github.com/sashabaranov/go-openai v1.43.0
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/grpc v1.85.0

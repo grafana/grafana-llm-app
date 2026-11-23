@@ -692,8 +692,8 @@ github.com/prometheus/prometheus v0.316.0 h1:f1GRFerhTMKQma+awCoC9T820ecWeGSdF+x
 github.com/prometheus/prometheus v0.316.0/go.mod h1:nd2m0IehYLgxV4yAmoQDsvV45I9Xerh+uTUeCioEMis=
 github.com/prometheus/sigv4 v0.5.0 h1:WWZDeiCPFTBJIniIa+pv3edYtPHtZxDAa5w5Tmp+UuQ=
 github.com/prometheus/sigv4 v0.5.0/go.mod h1:oLsQ72mP5bVxsIrFgv/gT2jY1devyRLZhAvrsWG4SEk=
-github.com/qdrant/go-client v1.20.1 h1:8JjCRQH74EJb90weR+jX9K8VkEsXJUivc1A0KcN7m4k=
-github.com/qdrant/go-client v1.20.1/go.mod h1:ZorGclWceflis4Ddp3EIPhYJTgyAqlNmcl1hoW5iCUE=
+github.com/qdrant/go-client v1.20.2 h1:NBAqIFGPDhldJTu/9BVjxY83HuZ8EtZFdWDfNxL6NHQ=
+github.com/qdrant/go-client v1.20.2/go.mod h1:xWhALijFV54ejsBkl44L5lVu8otDZN2Lq1QzF/rRh78=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
