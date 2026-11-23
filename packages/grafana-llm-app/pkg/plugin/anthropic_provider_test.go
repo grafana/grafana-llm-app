@@ -246,7 +246,7 @@ func TestAnthropicProvider_MigratesDeprecatedMaxTokens(t *testing.T) {
 		Model: ModelBase,
 		ChatCompletionRequest: openai.ChatCompletionRequest{
 			Messages:  []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "hi"}},
-			MaxTokens: 100,
+			MaxTokens: 100, //nolint:staticcheck // exercising the deprecated field
 		},
 	})
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func TestAnthropicProvider_StreamMigratesDeprecatedMaxTokens(t *testing.T) {
 		Model: ModelBase,
 		ChatCompletionRequest: openai.ChatCompletionRequest{
 			Messages:  []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "hi"}},
-			MaxTokens: 100,
+			MaxTokens: 100, //nolint:staticcheck // exercising the deprecated field
 		},
 	})
 	require.NoError(t, err)

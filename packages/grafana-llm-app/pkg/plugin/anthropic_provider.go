@@ -83,6 +83,8 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 // applyMaxCompletionTokens sets the token limit Anthropic requires. A limit
 // given in the deprecated MaxTokens field is migrated to MaxCompletionTokens
 // rather than overridden by the default.
+//
+//nolint:staticcheck // MaxTokens is read deliberately to migrate it.
 func applyMaxCompletionTokens(r *openai.ChatCompletionRequest) {
 	if r.MaxCompletionTokens != 0 {
 		return
