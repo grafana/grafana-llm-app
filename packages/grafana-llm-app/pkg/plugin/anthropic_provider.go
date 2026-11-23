@@ -55,11 +55,7 @@ func (p *anthropicProvider) ChatCompletion(ctx context.Context, req ChatCompleti
 	r.Model = req.Model.toAnthropic(p.models)
 	log.DefaultLogger.Debug("model", "model", r.Model)
 
-	// Anthropic requires a max tokens value.
-	// Migrate deprecated MaxTokens to MaxCompletionTokens.
-	if r.MaxCompletionTokens == 0 {
-		r.MaxCompletionTokens = DefaultMaxCompletionTokens
-	}
+	applyMaxCompletionTokens(&r)
 
 	ForceUserMessage(&r)
 
@@ -77,13 +73,24 @@ func (p *anthropicProvider) ChatCompletionStream(ctx context.Context, req ChatCo
 	r.Model = req.Model.toAnthropic(p.models)
 	log.DefaultLogger.Debug("model", "model", r.Model)
 
-	// Anthropic requires a max tokens value.
-	// Migrate deprecated MaxTokens to MaxCompletionTokens.
-	if r.MaxCompletionTokens == 0 {
-		r.MaxCompletionTokens = DefaultMaxCompletionTokens
-	}
+	applyMaxCompletionTokens(&r)
 
 	ForceUserMessage(&r)
 
 	return streamOpenAIRequest(ctx, r, p.client)
+}
+
+// applyMaxCompletionTokens sets the token limit Anthropic requires. A limit
+// given in the deprecated MaxTokens field is migrated to MaxCompletionTokens
+// rather than overridden by the default.
+func applyMaxCompletionTokens(r *openai.ChatCompletionRequest) {
+	if r.MaxCompletionTokens != 0 {
+		return
+	}
+	if r.MaxTokens > 0 {
+		r.MaxCompletionTokens = r.MaxTokens
+		r.MaxTokens = 0
+		return
+	}
+	r.MaxCompletionTokens = DefaultMaxCompletionTokens
 }

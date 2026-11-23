@@ -230,3 +230,54 @@ func TestNewAnthropicProvider_URLJoinError(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), "join url"))
 }
+
+func TestAnthropicProvider_MigratesDeprecatedMaxTokens(t *testing.T) {
+	var captured map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&captured))
+		_ = json.NewEncoder(w).Encode(openai.ChatCompletionResponse{ID: "test-completion"})
+	}))
+	defer server.Close()
+
+	provider, err := NewAnthropicProvider(AnthropicSettings{URL: server.URL, apiKey: "test-key"}, nil)
+	require.NoError(t, err)
+
+	_, err = provider.ChatCompletion(context.Background(), ChatCompletionRequest{
+		Model: ModelBase,
+		ChatCompletionRequest: openai.ChatCompletionRequest{
+			Messages:  []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "hi"}},
+			MaxTokens: 100,
+		},
+	})
+	require.NoError(t, err)
+
+	assert.EqualValues(t, 100, captured["max_completion_tokens"], "the caller's limit should be kept, not replaced by the default")
+	assert.NotContains(t, captured, "max_tokens", "the deprecated field should not be sent alongside max_completion_tokens")
+}
+
+func TestAnthropicProvider_StreamMigratesDeprecatedMaxTokens(t *testing.T) {
+	var captured map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&captured))
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = fmt.Fprint(w, "data: [DONE]\n\n")
+	}))
+	defer server.Close()
+
+	provider, err := NewAnthropicProvider(AnthropicSettings{URL: server.URL, apiKey: "test-key"}, nil)
+	require.NoError(t, err)
+
+	ch, err := provider.ChatCompletionStream(context.Background(), ChatCompletionRequest{
+		Model: ModelBase,
+		ChatCompletionRequest: openai.ChatCompletionRequest{
+			Messages:  []openai.ChatCompletionMessage{{Role: openai.ChatMessageRoleUser, Content: "hi"}},
+			MaxTokens: 100,
+		},
+	})
+	require.NoError(t, err)
+	for range ch {
+	}
+
+	assert.EqualValues(t, 100, captured["max_completion_tokens"])
+	assert.NotContains(t, captured, "max_tokens")
+}
