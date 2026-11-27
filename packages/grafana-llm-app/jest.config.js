@@ -22,6 +22,13 @@ process.env.TZ = 'UTC';
 module.exports = {
   // Jest configuration provided by Grafana scaffolding
   ...require('./.config/jest.config'),
+  // d3 patch releases ship .mjs only; the scaffolded transform pattern doesn't match .mjs
+  transform: Object.fromEntries(
+    Object.entries(require('./.config/jest.config').transform).map(([k, v]) => [
+      k === '^.+\\.(t|j)sx?$' ? '^.+\\.(t|j|mj)sx?$' : k,
+      v,
+    ])
+  ),
   // Override the transformIgnorePatterns to include our additional modules
   transformIgnorePatterns: [nodeModulesToTransform(additionalESModules)],
   // Map @grafana/llm to source files to avoid React duplication issues in tests
