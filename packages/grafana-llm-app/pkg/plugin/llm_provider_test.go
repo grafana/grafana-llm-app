@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/v2"
 	"github.com/sashabaranov/go-openai"
 	"github.com/stretchr/testify/assert"
 )

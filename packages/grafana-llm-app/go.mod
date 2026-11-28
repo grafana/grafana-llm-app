@@ -3,7 +3,7 @@ module github.com/grafana/grafana-llm-app
 go 1.27.3
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.84.0
+	github.com/anthropics/anthropic-sdk-go/v2 v2.15.0
 	github.com/go-openapi/strfmt v0.27.4
 	github.com/grafana/authlib v0.0.0-20260316143530-e1d123886039
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20260330113218-ee77c4f6f90e
